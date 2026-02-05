@@ -1,0 +1,29 @@
+---
+description: Vue.js Komponenten-Konventionen
+globs: "**/*.vue"
+alwaysApply: false
+---
+
+# Vue Komponenten
+
+## Struktur
+```vue
+<script setup>
+// Imports, Props, Emits, Composables, Reactive State, Methods
+</script>
+
+<template>
+  <!-- HTML -->
+</template>
+
+<style scoped>
+/* Styles */
+</style>
+```
+
+## Regeln
+- Composition API mit `<script setup>` verwenden
+- Props mit `defineProps()` definieren
+- Events mit `defineEmits()` definieren
+- `scoped` Styles bevorzugen
+- Komponenten in PascalCase benennen

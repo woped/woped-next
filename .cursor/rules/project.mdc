@@ -1,0 +1,18 @@
+---
+description: WoPeD Next - Vue.js Projektkonventionen
+alwaysApply: true
+---
+
+# WoPeD Next
+
+Vue.js 3 Frontend mit Vite. Kann als Docker-Container deployed werden.
+
+## Tech Stack
+- Vue.js 3 (Composition API)
+- Vite als Build-Tool
+- nginx für Produktion (Docker)
+
+## Befehle
+- `npm run dev` - Entwicklungsserver
+- `npm run build` - Produktions-Build
+- `docker compose up --build` - Docker starten

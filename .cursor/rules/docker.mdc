@@ -1,0 +1,12 @@
+---
+description: Docker-Konfiguration
+globs: "{Dockerfile,docker-compose.yml,nginx.conf}"
+alwaysApply: false
+---
+
+# Docker Setup
+
+- Multi-Stage Build: Node.js (Build) → nginx (Produktion)
+- Port 80 intern, 8080 extern gemappt
+- nginx serviert statische Dateien aus `/dist`
+- SPA-Routing über `try_files` konfiguriert
