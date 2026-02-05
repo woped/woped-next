@@ -1,14 +1,19 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
+import { useTokenGameStore } from '@/stores/tokenGame'
 import { OperatorType } from '@/types/petri-net'
 import EditorToolbar from './EditorToolbar.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import PropertiesPanel from './PropertiesPanel.vue'
 import ViewToolbar from './ViewToolbar.vue'
 import OverviewPanel from './OverviewPanel.vue'
+import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
 
 const store = usePetriNetStore()
+const tokenGameStore = useTokenGameStore()
+const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
 
 // Canvas dimensions for viewport calculations
 const canvasWidth = ref(800)
@@ -103,8 +108,13 @@ onMounted(() => {
             :canvas-height="canvasHeight"
           />
         </div>
+
+        <!-- Token Game Controls (floating, bottom-right) -->
+        <div class="token-game-container">
+          <TokenGameControls />
+        </div>
       </div>
-      <PropertiesPanel />
+      <PropertiesPanel v-if="!isTokenGameActive" />
     </div>
   </div>
 </template>
@@ -141,6 +151,13 @@ onMounted(() => {
   position: absolute;
   bottom: 12px;
   left: 12px;
+  z-index: 10;
+}
+
+.token-game-container {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
   z-index: 10;
 }
 </style>

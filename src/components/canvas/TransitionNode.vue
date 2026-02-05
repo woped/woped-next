@@ -15,11 +15,32 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  isTokenGameActive: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['click', 'dragend'])
 
 const { width, height, strokeWidth } = VISUAL.transition
+
+// Determine stroke color based on state
+const strokeColor = computed(() => {
+  if (props.isSelected) return '#3b82f6'
+  if (props.isEnabled && props.isTokenGameActive) return '#22c55e' // Green for enabled
+  return '#1a1a1a'
+})
+
+// Determine fill color based on state
+const fillColor = computed(() => {
+  if (props.isEnabled && props.isTokenGameActive) return '#dcfce7' // Light green for enabled
+  return 'white'
+})
 
 // Rectangle config
 const rectConfig = computed(() => ({
@@ -27,9 +48,9 @@ const rectConfig = computed(() => ({
   y: props.transition.position.y - height / 2,
   width,
   height,
-  fill: 'white',
-  stroke: props.isSelected ? '#3b82f6' : '#1a1a1a',
-  strokeWidth: props.isSelected ? 3 : strokeWidth,
+  fill: fillColor.value,
+  stroke: strokeColor.value,
+  strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
 }))
 
 // Group config for dragging

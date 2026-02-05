@@ -2,12 +2,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
+import { useTokenGameStore } from '@/stores/tokenGame'
 import { VISUAL, DEFAULTS } from '@/types/petri-net'
 import { snapToGrid } from '@/utils/geometry'
 import PlaceNode from '@/components/canvas/PlaceNode.vue'
 import TransitionNode from '@/components/canvas/TransitionNode.vue'
 import OperatorNode from '@/components/canvas/OperatorNode.vue'
 import ArcEdge from '@/components/canvas/ArcEdge.vue'
+import TokenAnimation from '@/components/canvas/TokenAnimation.vue'
 
 const props = defineProps({
   showGrid: {
@@ -20,6 +22,21 @@ const emit = defineEmits(['resize'])
 
 const store = usePetriNetStore()
 const { places, transitions, operators, arcs, tool, viewport, arcCreation, selectedIds } = storeToRefs(store)
+
+// Token game store
+const tokenGameStore = useTokenGameStore()
+const { isRunning: isTokenGameActive, enabledTransitions, marking } = storeToRefs(tokenGameStore)
+
+// Helper to check if a transition is enabled
+const isTransitionEnabled = (id) => enabledTransitions.value.includes(id)
+
+// Helper to get token count for a place (from token game if active)
+const getTokenCount = (placeId) => {
+  if (isTokenGameActive.value) {
+    return marking.value.tokens[placeId] ?? 0
+  }
+  return null
+}
 
 // Canvas container ref
 const containerRef = ref(null)
@@ -172,6 +189,14 @@ const handleWheel = (e) => {
 const handleElementClick = (id, type, e) => {
   e.cancelBubble = true
 
+  // If token game is active and clicking on a transition/operator, fire it
+  if (isTokenGameActive.value && (type === 'transition' || type === 'operator')) {
+    if (enabledTransitions.value.includes(id)) {
+      tokenGameStore.fireTransition(id)
+    }
+    return
+  }
+
   switch (tool.value) {
     case 'select':
       store.select(id, e.evt.shiftKey)
@@ -261,7 +286,9 @@ defineExpose({
           :key="place.id"
           :place="place"
           :is-selected="selectedIds.includes(place.id)"
-          :draggable="tool === 'select'"
+          :draggable="tool === 'select' && !isTokenGameActive"
+          :token-override="getTokenCount(place.id)"
+          :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(place.id, 'place', e)"
           @dragend="(e) => handleElementDragEnd(place.id, e)"
         />
@@ -272,7 +299,9 @@ defineExpose({
           :key="transition.id"
           :transition="transition"
           :is-selected="selectedIds.includes(transition.id)"
-          :draggable="tool === 'select'"
+          :draggable="tool === 'select' && !isTokenGameActive"
+          :is-enabled="isTransitionEnabled(transition.id)"
+          :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(transition.id, 'transition', e)"
           @dragend="(e) => handleElementDragEnd(transition.id, e)"
         />
@@ -283,10 +312,15 @@ defineExpose({
           :key="operator.id"
           :operator="operator"
           :is-selected="selectedIds.includes(operator.id)"
-          :draggable="tool === 'select'"
+          :draggable="tool === 'select' && !isTokenGameActive"
+          :is-enabled="isTransitionEnabled(operator.id)"
+          :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(operator.id, 'operator', e)"
           @dragend="(e) => handleElementDragEnd(operator.id, e)"
         />
+
+        <!-- Token Animations -->
+        <TokenAnimation v-if="isTokenGameActive" />
       </v-layer>
     </v-stage>
   </div>

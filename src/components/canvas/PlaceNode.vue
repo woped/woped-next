@@ -15,11 +15,27 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  tokenOverride: {
+    type: Number,
+    default: null,
+  },
+  isTokenGameActive: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['click', 'dragend'])
 
 const { radius, strokeWidth, tokenRadius } = VISUAL.place
+
+// Effective token count (use override if token game is active)
+const effectiveTokens = computed(() => {
+  if (props.isTokenGameActive && props.tokenOverride !== null) {
+    return props.tokenOverride
+  }
+  return props.place.tokens
+})
 
 // Circle config
 const circleConfig = computed(() => ({
@@ -34,7 +50,7 @@ const circleConfig = computed(() => ({
 
 // Token positions for visual representation
 const tokenPositions = computed(() => {
-  const tokens = props.place.tokens
+  const tokens = effectiveTokens.value
   const positions = []
   const centerX = props.place.position.x
   const centerY = props.place.position.y
@@ -67,7 +83,7 @@ const tokenPositions = computed(() => {
 })
 
 // Show number for tokens > 5
-const showTokenNumber = computed(() => props.place.tokens > 5)
+const showTokenNumber = computed(() => effectiveTokens.value > 5)
 
 // Label config
 const labelConfig = computed(() => ({
@@ -85,14 +101,14 @@ const labelConfig = computed(() => ({
 const tokenNumberConfig = computed(() => ({
   x: props.place.position.x,
   y: props.place.position.y,
-  text: String(props.place.tokens),
+  text: String(effectiveTokens.value),
   fontSize: 14,
   fontFamily: 'system-ui, sans-serif',
   fontStyle: 'bold',
   fill: '#1a1a1a',
   align: 'center',
   verticalAlign: 'middle',
-  offsetX: props.place.tokens >= 10 ? 7 : 4,
+  offsetX: effectiveTokens.value >= 10 ? 7 : 4,
   offsetY: 7,
 }))
 

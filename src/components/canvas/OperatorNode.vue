@@ -15,6 +15,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  isTokenGameActive: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['click', 'dragend'])
@@ -26,10 +34,18 @@ const halfSize = size / 2
 const operatorInfo = computed(() => OPERATOR_INFO[props.operator.operatorType])
 const category = computed(() => getOperatorCategory(props.operator.operatorType))
 
-// Colors based on selection
-const strokeColor = computed(() => props.isSelected ? '#3b82f6' : '#1a1a1a')
+// Colors based on selection and token game state
+const strokeColor = computed(() => {
+  if (props.isSelected) return '#3b82f6'
+  if (props.isEnabled && props.isTokenGameActive) return '#22c55e'
+  return '#1a1a1a'
+})
 const fillColor = computed(() => operatorInfo.value?.color || '#4CAF50')
-const currentStrokeWidth = computed(() => props.isSelected ? 3 : strokeWidth)
+const currentStrokeWidth = computed(() => {
+  if (props.isSelected) return 3
+  if (props.isEnabled && props.isTokenGameActive) return 2.5
+  return strokeWidth
+})
 
 // Determine shape based on operator type
 const isAndType = computed(() => {
