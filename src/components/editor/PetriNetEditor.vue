@@ -10,6 +10,7 @@ import PropertiesPanel from './PropertiesPanel.vue'
 import ViewToolbar from './ViewToolbar.vue'
 import OverviewPanel from './OverviewPanel.vue'
 import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
+import AnalysisPanel from '@/components/analysis/AnalysisPanel.vue'
 
 const store = usePetriNetStore()
 const tokenGameStore = useTokenGameStore()
@@ -113,6 +114,11 @@ onMounted(() => {
         <div class="token-game-container">
           <TokenGameControls />
         </div>
+
+        <!-- Analysis Panel (floating, top-right) -->
+        <div v-if="!isTokenGameActive" class="analysis-container">
+          <AnalysisPanel />
+        </div>
       </div>
       <PropertiesPanel v-if="!isTokenGameActive" />
     </div>
@@ -157,6 +163,13 @@ onMounted(() => {
 .token-game-container {
   position: absolute;
   bottom: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.analysis-container {
+  position: absolute;
+  top: 12px;
   right: 12px;
   z-index: 10;
 }
