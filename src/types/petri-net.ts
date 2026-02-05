@@ -1,0 +1,230 @@
+/**
+ * Position interface for 2D coordinates
+ */
+export interface Position {
+  x: number
+  y: number
+}
+
+/**
+ * Place (Stelle) in a Petri net - represented as a circle
+ */
+export interface Place {
+  id: string
+  name: string
+  position: Position
+  tokens: number
+  capacity: number // -1 means unlimited
+}
+
+/**
+ * Transition in a Petri net - represented as a rectangle
+ */
+export interface Transition {
+  id: string
+  name: string
+  position: Position
+  label?: string
+}
+
+/**
+ * Operator types for workflow nets
+ */
+export enum OperatorType {
+  AND_SPLIT = 'and-split',
+  AND_JOIN = 'and-join',
+  XOR_SPLIT = 'xor-split',
+  XOR_JOIN = 'xor-join',
+  AND_SPLIT_JOIN = 'and-split-join',
+  XOR_SPLIT_JOIN = 'xor-split-join',
+  AND_JOIN_XOR_SPLIT = 'and-join-xor-split',
+  XOR_JOIN_AND_SPLIT = 'xor-join-and-split',
+}
+
+/**
+ * Operator transition - special transition for workflow patterns
+ */
+export interface OperatorTransition extends Transition {
+  operatorType: OperatorType
+}
+
+/**
+ * Check if a transition is an operator
+ */
+export function isOperator(transition: Transition): transition is OperatorTransition {
+  return 'operatorType' in transition
+}
+
+/**
+ * Get operator category (split, join, or combined)
+ */
+export function getOperatorCategory(type: OperatorType): 'split' | 'join' | 'combined' {
+  if (type.includes('split-join') || type.includes('join-') && type.includes('-split')) {
+    return 'combined'
+  }
+  if (type.includes('split')) return 'split'
+  return 'join'
+}
+
+/**
+ * Get operator logic type (AND or XOR) for input side
+ */
+export function getOperatorInputType(type: OperatorType): 'and' | 'xor' | null {
+  switch (type) {
+    case OperatorType.AND_JOIN:
+    case OperatorType.AND_SPLIT_JOIN:
+    case OperatorType.AND_JOIN_XOR_SPLIT:
+      return 'and'
+    case OperatorType.XOR_JOIN:
+    case OperatorType.XOR_SPLIT_JOIN:
+    case OperatorType.XOR_JOIN_AND_SPLIT:
+      return 'xor'
+    default:
+      return null
+  }
+}
+
+/**
+ * Get operator logic type (AND or XOR) for output side
+ */
+export function getOperatorOutputType(type: OperatorType): 'and' | 'xor' | null {
+  switch (type) {
+    case OperatorType.AND_SPLIT:
+    case OperatorType.AND_SPLIT_JOIN:
+    case OperatorType.XOR_JOIN_AND_SPLIT:
+      return 'and'
+    case OperatorType.XOR_SPLIT:
+    case OperatorType.XOR_SPLIT_JOIN:
+    case OperatorType.AND_JOIN_XOR_SPLIT:
+      return 'xor'
+    default:
+      return null
+  }
+}
+
+/**
+ * Arc routing mode
+ */
+export type ArcRoutingMode = 'direct' | 'orthogonal' | 'bezier'
+
+/**
+ * Arc (Kante) connecting places and transitions
+ */
+export interface Arc {
+  id: string
+  sourceId: string
+  targetId: string
+  weight: number
+  waypoints: Position[]
+  routingMode?: ArcRoutingMode
+}
+
+/**
+ * Complete Petri net structure
+ */
+export interface PetriNet {
+  id: string
+  name: string
+  places: Place[]
+  transitions: Transition[]
+  operators: OperatorTransition[]
+  arcs: Arc[]
+}
+
+/**
+ * Available editor tools
+ */
+export type Tool = 'select' | 'place' | 'transition' | 'operator' | 'arc' | 'delete'
+
+/**
+ * Element types in the Petri net
+ */
+export type ElementType = 'place' | 'transition' | 'operator' | 'arc'
+
+/**
+ * Union type for any selectable element
+ */
+export type PetriNetElement = Place | Transition | OperatorTransition | Arc
+
+/**
+ * Editor state for arc creation
+ */
+export interface ArcCreationState {
+  isCreating: boolean
+  sourceId: string | null
+  sourceType: 'place' | 'transition' | null
+  tempEndPosition: Position | null
+}
+
+/**
+ * Viewport state for pan and zoom
+ */
+export interface ViewportState {
+  x: number
+  y: number
+  scale: number
+}
+
+/**
+ * Default values for creating new elements
+ */
+export const DEFAULTS = {
+  place: {
+    tokens: 0,
+    capacity: -1,
+  },
+  transition: {},
+  arc: {
+    weight: 1,
+  },
+  viewport: {
+    x: 0,
+    y: 0,
+    scale: 1,
+    minScale: 0.1,
+    maxScale: 5,
+  },
+} as const
+
+/**
+ * Visual constants for rendering
+ */
+export const VISUAL = {
+  place: {
+    radius: 25,
+    strokeWidth: 2,
+    tokenRadius: 4,
+  },
+  transition: {
+    width: 40,
+    height: 30,
+    strokeWidth: 2,
+  },
+  operator: {
+    size: 40, // Size of the operator shape
+    strokeWidth: 2,
+    innerOffset: 8, // Offset for inner shape in combined operators
+  },
+  arc: {
+    strokeWidth: 2,
+    arrowSize: 10,
+  },
+  grid: {
+    size: 20,
+    color: '#e0e0e0',
+  },
+} as const
+
+/**
+ * Operator display info
+ */
+export const OPERATOR_INFO: Record<OperatorType, { label: string; symbol: string; color: string }> = {
+  [OperatorType.AND_SPLIT]: { label: 'AND-Split', symbol: '◇', color: '#4CAF50' },
+  [OperatorType.AND_JOIN]: { label: 'AND-Join', symbol: '◇', color: '#4CAF50' },
+  [OperatorType.XOR_SPLIT]: { label: 'XOR-Split', symbol: '⊗', color: '#FF9800' },
+  [OperatorType.XOR_JOIN]: { label: 'XOR-Join', symbol: '⊗', color: '#FF9800' },
+  [OperatorType.AND_SPLIT_JOIN]: { label: 'AND-Split-Join', symbol: '◇◇', color: '#4CAF50' },
+  [OperatorType.XOR_SPLIT_JOIN]: { label: 'XOR-Split-Join', symbol: '⊗⊗', color: '#FF9800' },
+  [OperatorType.AND_JOIN_XOR_SPLIT]: { label: 'AND-Join/XOR-Split', symbol: '◇⊗', color: '#9C27B0' },
+  [OperatorType.XOR_JOIN_AND_SPLIT]: { label: 'XOR-Join/AND-Split', symbol: '⊗◇', color: '#9C27B0' },
+}
