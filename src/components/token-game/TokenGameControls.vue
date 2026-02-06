@@ -184,7 +184,7 @@ const statusClass = computed(() => {
           </button>
           <button
             v-if="!isPlaying"
-            class="control-btn"
+            class="control-btn play"
             :disabled="totalEnabled === 0 || isAnimating"
             @click="handlePlay"
             :title="$t('tokenGame.play')"
@@ -406,6 +406,21 @@ const statusClass = computed(() => {
 
 .control-btn.primary:hover {
   background: #16a34a;
+}
+
+.control-btn.play {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+
+.control-btn.play:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.control-btn.play:disabled {
+  background: #86efac;
+  border-color: #86efac;
 }
 
 .control-btn.danger {
