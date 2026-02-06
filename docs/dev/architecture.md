@@ -88,6 +88,48 @@ npm run dev
 | vue-konva | 3.x | Canvas-Rendering (Petri-Netz) |
 | nginx | alpine | Webserver (Produktion) |
 
+## State Management (Pinia)
+
+### Reaktivitätsmuster für verschachtelte Objekte
+
+Bei verschachtelten State-Objekten (z.B. `config.editor.showGrid`) können Reaktivitätsprobleme auftreten. Empfohlene Lösungen:
+
+```typescript
+// Store: Getters für verschachtelte Properties
+getters: {
+  showGrid(): boolean {
+    return this.editor.showGrid
+  }
+}
+
+// Store: Explizite Toggle-Actions
+actions: {
+  toggleShowGrid() {
+    this.editor.showGrid = !this.editor.showGrid
+    this.save()
+  }
+}
+```
+
+```typescript
+// Component: $state explizit referenzieren
+const showGrid = computed(() => configStore.$state.editor.showGrid)
+```
+
+### Vue-Konva Integration
+
+Bei vue-konva `v-if` auf Layern vermeiden - stattdessen Konva's native `visible` Property:
+
+```vue
+<v-layer :config="gridLayerConfig">
+
+<script setup>
+const gridLayerConfig = computed(() => ({
+  visible: showGrid.value
+}))
+</script>
+```
+
 ## Internationalisierung (i18n)
 
 Die Anwendung unterstützt mehrere Sprachen über `vue-i18n`:

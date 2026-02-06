@@ -1,0 +1,105 @@
+---
+description: Pinia Store Konventionen und Reaktivitätsmuster
+globs: "**/stores/**/*.ts"
+alwaysApply: false
+---
+
+# Pinia Stores
+
+## Struktur
+```typescript
+import { defineStore } from 'pinia'
+
+export const useExampleStore = defineStore('example', {
+  state: () => ({
+    // Flache Strukturen bevorzugen für einfache Reaktivität
+    // Bei verschachtelten Objekten: Getters und explizite Actions verwenden
+  }),
+
+  getters: {
+    // Getters für abgeleitete Werte und Reaktivität bei verschachtelten Daten
+    myValue(): Type {
+      return this.nested.property
+    }
+  },
+
+  actions: {
+    // Explizite Actions für Mutationen
+    updateValue(value: Type) {
+      this.nested.property = value
+      this.save() // Falls Persistierung gewünscht
+    }
+  }
+})
+```
+
+## Reaktivität bei verschachtelten Objekten
+
+### Problem
+Verschachtelte Objekte (z.B. `state.editor.showGrid`) können Reaktivitätsprobleme verursachen, wenn:
+- `storeToRefs()` auf verschachtelte Properties angewendet wird
+- Computed Properties nicht korrekt tracken
+
+### Lösung 1: Getters verwenden
+```typescript
+// In Store
+getters: {
+  showGrid(): boolean {
+    return this.editor.showGrid
+  }
+}
+
+// In Component mit storeToRefs
+const { showGrid } = storeToRefs(store)
+```
+
+### Lösung 2: $state explizit referenzieren
+```typescript
+// In Component
+const showGrid = computed(() => store.$state.editor.showGrid)
+```
+
+### Lösung 3: Explizite Toggle-Actions
+```typescript
+// In Store
+actions: {
+  toggleShowGrid() {
+    this.editor.showGrid = !this.editor.showGrid
+    this.save()
+  }
+}
+
+// In Component
+store.toggleShowGrid()
+```
+
+## Vue-Konva Spezifika
+
+Bei vue-konva `v-if` vermeiden, stattdessen Konva's native `visible` Property nutzen:
+
+```vue
+<!-- Nicht reaktiv mit v-if -->
+<v-layer v-if="showGrid">
+
+<!-- Besser: visible Property über computed -->
+<v-layer :config="gridLayerConfig">
+
+<script setup>
+const gridLayerConfig = computed(() => ({
+  visible: showGrid.value
+}))
+</script>
+```
+
+## Persistierung
+```typescript
+actions: {
+  save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.$state))
+  },
+  load() {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) this.$patch(JSON.parse(saved))
+  }
+}
+```

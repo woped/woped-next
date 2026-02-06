@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness, computeStatistics } from '@/services/analysis'
+import MetricsSection from './MetricsSection.vue'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -105,6 +106,9 @@ const formatDuration = (ms) => {
         </button>
       </div>
     </div>
+
+    <!-- Process Metrics Section -->
+    <MetricsSection />
 
     <!-- Statistics Section -->
     <div class="section">

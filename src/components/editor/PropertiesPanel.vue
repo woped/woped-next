@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { OperatorType, OPERATOR_INFO } from '@/types/petri-net'
+import SubprocessPreview from './SubprocessPreview.vue'
+import TriggerEditor from '../triggers/TriggerEditor.vue'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
@@ -123,6 +125,18 @@ const updateRoutingMode = () => {
 const updateLabel = () => {
   if (!selectedElement.value || elementType.value !== 'transition') return
   store.updateTransition(selectedIds.value[0], { label: localLabel.value })
+}
+
+// Get triggers from selected transition
+const currentTriggers = computed(() => {
+  if (!selectedElement.value || elementType.value !== 'transition') return []
+  return selectedElement.value.triggers || []
+})
+
+// Update triggers
+const updateTriggers = (newTriggers) => {
+  if (!selectedElement.value || elementType.value !== 'transition') return
+  store.updateTransition(selectedIds.value[0], { triggers: newTriggers })
 }
 
 // Net name update
@@ -261,6 +275,15 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
             @blur="updateLabel"
           />
         </div>
+
+        <!-- Triggers -->
+        <div class="property-row triggers-section">
+          <label>{{ $t('triggers.title') }}</label>
+          <TriggerEditor
+            :triggers="currentTriggers"
+            @update:triggers="updateTriggers"
+          />
+        </div>
       </div>
 
       <!-- Arc selected -->
@@ -337,6 +360,15 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
             type="text"
             @change="updateName"
             @blur="updateName"
+          />
+        </div>
+
+        <!-- Subprocess Preview -->
+        <div class="property-row preview-row">
+          <SubprocessPreview
+            :subprocess-id="selectedIds[0]"
+            :width="220"
+            :height="130"
           />
         </div>
 
@@ -525,5 +557,16 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
 
 .open-subprocess-btn:hover {
   background-color: #2563eb;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: center;
+}
+
+.triggers-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
 }
 </style>

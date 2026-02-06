@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useTokenGameStore } from '@/stores/tokenGame'
 import { usePetriNetStore } from '@/stores/petriNet'
+import TokenGameStats from './TokenGameStats.vue'
+import ConflictDialog from './ConflictDialog.vue'
 
 const { t } = useI18n()
 const tokenGameStore = useTokenGameStore()
@@ -25,6 +27,8 @@ const {
   isAnimating,
   isInSubprocess,
   subprocessDepth,
+  hasConflict,
+  showConflictDialog,
 } = storeToRefs(tokenGameStore)
 
 // Local delay value for slider
@@ -76,14 +80,19 @@ const handleStepForward = () => {
     } else if (enabledSubprocesses.value.length === 1) {
       tokenGameStore.stepIntoSubprocess(enabledSubprocesses.value[0])
     }
-  } else if (totalEnabled.value > 1 && conflictResolution.value !== 'manual') {
-    // Auto-select based on resolution mode (includes subprocesses)
-    const selection = tokenGameStore.selectNextAction()
-    if (selection) {
-      if (selection.type === 'transition') {
-        tokenGameStore.fireTransition(selection.id)
-      } else {
-        tokenGameStore.stepIntoSubprocess(selection.id)
+  } else if (totalEnabled.value > 1) {
+    if (conflictResolution.value === 'manual') {
+      // Show conflict dialog for manual selection
+      tokenGameStore.setShowConflictDialog(true)
+    } else {
+      // Auto-select based on resolution mode (includes subprocesses)
+      const selection = tokenGameStore.selectNextAction()
+      if (selection) {
+        if (selection.type === 'transition') {
+          tokenGameStore.fireTransition(selection.id)
+        } else {
+          tokenGameStore.stepIntoSubprocess(selection.id)
+        }
       }
     }
   }
@@ -311,6 +320,12 @@ const statusClass = computed(() => {
       <span v-if="canStepOutComputed">{{ $t('subprocess.canStepOut') }}</span>
       <span v-else>{{ $t('subprocess.noProgress') }}</span>
     </div>
+
+    <!-- Token Game Statistics -->
+    <TokenGameStats v-if="isRunning" />
+    
+    <!-- Conflict Dialog -->
+    <ConflictDialog />
   </div>
 </template>
 

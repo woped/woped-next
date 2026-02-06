@@ -364,15 +364,46 @@ export class XESExporter {
 
 ```mermaid
 flowchart TD
-    S1[1. Distribution Types] --> S2[2. Event Queue]
-    S2 --> S3[3. Simulation Engine]
-    S3 --> S4[4. Time Model UI]
-    S4 --> S5[5. Statistics Collector]
+    S1[1. Distribution Types ✅] --> S2[2. Event Queue ✅]
+    S2 --> S3[3. Simulation Engine ✅]
+    S3 --> S4[4. Time Model UI ✅]
+    S4 --> S5[5. Statistics Collector ✅]
     S5 --> S6[6. Dashboard Charts]
     S6 --> S7[7. Resource Management]
-    S7 --> S8[8. XES Export]
+    S7 --> S8[8. XES Export ✅]
     S8 --> S9[9. Capacity Analysis]
 ```
+
+### Implementierte Features
+
+1. **Distribution Types** ✅ - `src/types/simulation.ts`
+   - Constant, Exponential, Normal, Uniform, Triangular
+   
+2. **Priority Queue** ✅ - `src/utils/priorityQueue.ts`
+   - Min-Heap basierte Event-Warteschlange
+   
+3. **Simulation Engine** ✅ - `src/services/simulation/SimulationEngine.ts`
+   - Diskrete Event-Simulation
+   - Arrival/Start/Complete/Depart Events
+   - Marking-basierte Transition-Aktivierung
+   
+4. **Time Model UI** ✅ - `src/components/simulation/TimeModelConfig.vue`
+   - Default-Verteilung konfigurierbar
+   - Pro-Transition Zeitkonfiguration
+   
+5. **Statistics Collector** ✅
+   - Throughput, Cycle Time, Completion Rate
+   - Aktivitätsstatistiken mit Auslastung
+   - Perzentile (P90, P95)
+   
+6. **XES Export** ✅ - `src/services/simulation/XESExporter.ts`
+   - Standard XES Format für Process Mining Tools
+   
+### Noch offen
+
+- Dashboard Charts (Visualisierung)
+- Resource Management (Ressourcen-Allokation)
+- Capacity Analysis (Engpassanalyse)
 
 ## UI-Mockup
 

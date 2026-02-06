@@ -1,3 +1,5 @@
+import type { Trigger } from './triggers'
+
 /**
  * Position interface for 2D coordinates
  */
@@ -25,6 +27,7 @@ export interface Transition {
   name: string
   position: Position
   label?: string
+  triggers?: Trigger[]
 }
 
 /**

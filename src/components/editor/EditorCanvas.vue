@@ -20,7 +20,14 @@ const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcC
 
 // Config store for editor settings
 const configStore = useConfigStore()
-const { editor: editorConfig } = storeToRefs(configStore)
+
+// Grid settings from config store
+// Note: Using $state explicitly ensures proper Vue reactivity tracking
+// for nested properties. This is necessary because storeToRefs() doesn't
+// deeply track nested object properties in Pinia.
+const showGrid = computed(() => configStore.$state.editor.showGrid)
+const snapEnabled = computed(() => configStore.$state.editor.snapToGrid)
+const gridSize = computed(() => configStore.$state.editor.gridSize)
 
 // Theme-aware grid color (matches CSS variables in style.css)
 const gridColor = computed(() => configStore.isDarkMode ? '#2d3748' : '#e0e0e0')
@@ -50,10 +57,13 @@ const stageConfig = ref({
   height: 600,
 })
 
-// Grid settings from config
-const gridSize = computed(() => editorConfig.value.gridSize)
-const showGrid = computed(() => editorConfig.value.showGrid)
-const snapEnabled = computed(() => editorConfig.value.snapToGrid)
+// Grid layer visibility config
+// Note: Using Konva's native 'visible' property instead of Vue's v-if
+// ensures proper reactivity with vue-konva. The v-if directive doesn't
+// reliably trigger re-renders on Konva layers.
+const gridLayerConfig = computed(() => ({
+  visible: showGrid.value
+}))
 
 // Update canvas size on mount and resize
 const updateSize = () => {
@@ -271,7 +281,7 @@ defineExpose({
       @wheel="handleWheel"
     >
       <!-- Grid Layer -->
-      <v-layer v-if="showGrid">
+      <v-layer :config="gridLayerConfig">
         <v-line
           v-for="(line, index) in gridLines"
           :key="`grid-${index}`"

@@ -1,7 +1,15 @@
 import { nanoid } from 'nanoid'
-import type { PetriNet, Place, Transition, OperatorTransition, Arc, Position } from '@/types/petri-net'
+import type { PetriNet, Place, Transition, OperatorTransition, SubProcess, Arc, Position } from '@/types/petri-net'
 import { OperatorType } from '@/types/petri-net'
 import type { ImportResult, ImportError } from '@/types/file-formats'
+
+/**
+ * Result of parsing including hierarchical nets
+ */
+interface ParsedNets {
+  mainNet: PetriNet
+  subNets: Map<string, PetriNet>
+}
 
 /**
  * Parser for PNML (Petri Net Markup Language) files
@@ -38,27 +46,13 @@ export class PNMLParser {
         }
       }
 
-      // Parse places
-      const places = this.parsePlaces(netElement, errors, warnings)
-
-      // Parse transitions (including operators)
-      const { transitions, operators } = this.parseTransitions(netElement, errors, warnings)
-
-      // Parse arcs
-      const arcs = this.parseArcs(netElement, errors)
-
-      const net: PetriNet = {
-        id: netElement.getAttribute('id') || nanoid(),
-        name: this.getNetName(netElement) || 'Imported Net',
-        places,
-        transitions,
-        operators,
-        arcs,
-      }
+      // Parse the net and all subprocesses
+      const { mainNet, subNets } = this.parseNetHierarchy(netElement, errors, warnings)
 
       return {
         success: errors.length === 0,
-        net,
+        net: mainNet,
+        subNets,
         errors,
         warnings,
       }
@@ -69,6 +63,38 @@ export class PNMLParser {
         warnings: [],
       }
     }
+  }
+
+  /**
+   * Parse net hierarchy including subprocesses
+   */
+  private parseNetHierarchy(
+    netElement: Element,
+    errors: ImportError[],
+    warnings: string[]
+  ): ParsedNets {
+    const subNets = new Map<string, PetriNet>()
+
+    // Parse places
+    const places = this.parsePlaces(netElement, errors, warnings)
+
+    // Parse transitions, operators, and subprocesses
+    const { transitions, operators, subProcesses } = this.parseTransitions(netElement, errors, warnings, subNets)
+
+    // Parse arcs
+    const arcs = this.parseArcs(netElement, errors)
+
+    const mainNet: PetriNet = {
+      id: netElement.getAttribute('id') || nanoid(),
+      name: this.getNetName(netElement) || 'Imported Net',
+      places,
+      transitions,
+      operators,
+      subProcesses,
+      arcs,
+    }
+
+    return { mainNet, subNets }
   }
 
   /**
@@ -96,7 +122,7 @@ export class PNMLParser {
     warnings: string[]
   ): Place[] {
     const places: Place[] = []
-    const placeElements = netElement.querySelectorAll('place')
+    const placeElements = netElement.querySelectorAll(':scope > place')
 
     placeElements.forEach((placeEl, index) => {
       const id = placeEl.getAttribute('id')
@@ -127,16 +153,18 @@ export class PNMLParser {
   }
 
   /**
-   * Parse all transition elements (including WoPeD operators)
+   * Parse all transition elements (including WoPeD operators and subprocesses)
    */
   private parseTransitions(
     netElement: Element,
     errors: ImportError[],
-    warnings: string[]
-  ): { transitions: Transition[]; operators: OperatorTransition[] } {
+    warnings: string[],
+    subNets: Map<string, PetriNet>
+  ): { transitions: Transition[]; operators: OperatorTransition[]; subProcesses: SubProcess[] } {
     const transitions: Transition[] = []
     const operators: OperatorTransition[] = []
-    const transitionElements = netElement.querySelectorAll('transition')
+    const subProcesses: SubProcess[] = []
+    const transitionElements = netElement.querySelectorAll(':scope > transition')
 
     transitionElements.forEach((transEl, index) => {
       const id = transEl.getAttribute('id')
@@ -151,6 +179,25 @@ export class PNMLParser {
 
       if (!position) {
         warnings.push(`Transition "${name}" has no position, using default`)
+      }
+
+      // Check for WoPeD subprocess (page element inside transition)
+      const pageEl = transEl.querySelector('page')
+      if (pageEl) {
+        // This is a subprocess - parse the embedded net
+        const subNetId = pageEl.getAttribute('id') || nanoid()
+        const subNet = this.parseSubNet(pageEl, subNetId, id, errors, warnings, subNets)
+        subNets.set(subNetId, subNet)
+
+        subProcesses.push({
+          id,
+          name,
+          position: position || { x: 100 + index * 100, y: 100 },
+          label,
+          subNetId,
+          collapsed: true,
+        })
+        return
       }
 
       // Check for WoPeD operator toolspecific info
@@ -174,7 +221,34 @@ export class PNMLParser {
       }
     })
 
-    return { transitions, operators }
+    return { transitions, operators, subProcesses }
+  }
+
+  /**
+   * Parse a subprocess page element
+   */
+  private parseSubNet(
+    pageEl: Element,
+    subNetId: string,
+    parentSubProcessId: string,
+    errors: ImportError[],
+    warnings: string[],
+    subNets: Map<string, PetriNet>
+  ): PetriNet {
+    const places = this.parsePlaces(pageEl, errors, warnings)
+    const { transitions, operators, subProcesses } = this.parseTransitions(pageEl, errors, warnings, subNets)
+    const arcs = this.parseArcs(pageEl, errors)
+
+    return {
+      id: subNetId,
+      name: this.getTextContent(pageEl, 'name > text') || `Subnet`,
+      parentId: parentSubProcessId,
+      places,
+      transitions,
+      operators,
+      subProcesses,
+      arcs,
+    }
   }
 
   /**
@@ -182,7 +256,7 @@ export class PNMLParser {
    */
   private parseArcs(netElement: Element, errors: ImportError[]): Arc[] {
     const arcs: Arc[] = []
-    const arcElements = netElement.querySelectorAll('arc')
+    const arcElements = netElement.querySelectorAll(':scope > arc')
 
     arcElements.forEach((arcEl, index) => {
       const id = arcEl.getAttribute('id') || nanoid()

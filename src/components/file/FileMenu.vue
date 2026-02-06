@@ -9,7 +9,23 @@ import { FORMAT_NAMES, FILE_EXTENSIONS } from '@/types/file-formats'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
-const { net } = storeToRefs(store)
+const { net, nets, breadcrumb } = storeToRefs(store)
+
+// Get the main net (first in breadcrumb) and all subnets
+const getMainNetAndSubNets = () => {
+  const mainNetId = breadcrumb.value[0]
+  const mainNet = nets.value[mainNetId]
+  
+  // Collect all subnets
+  const subNets = new Map()
+  for (const [id, netDef] of Object.entries(nets.value)) {
+    if (id !== mainNetId) {
+      subNets.set(id, netDef)
+    }
+  }
+  
+  return { mainNet, subNets }
+}
 
 // Menu state
 const showMenu = ref(false)
@@ -47,7 +63,16 @@ const handleOpen = async () => {
     const result = await fileService.importFile(file)
     
     if (result.success && result.net) {
-      store.loadNet(result.net)
+      // If there are subNets, load them all together
+      if (result.subNets && result.subNets.size > 0) {
+        const allNets = { [result.net.id]: result.net }
+        result.subNets.forEach((subNet, id) => {
+          allNets[id] = subNet
+        })
+        store.loadNets(allNets, result.net.id)
+      } else {
+        store.loadNet(result.net)
+      }
       
       if (result.warnings.length > 0) {
         console.warn('Import warnings:', result.warnings)
@@ -69,12 +94,13 @@ const handleSavePNML = async () => {
   showMenu.value = false
   
   try {
-    await fileService.exportToFile(net.value, {
+    const { mainNet, subNets } = getMainNetAndSubNets()
+    await fileService.exportToFile(mainNet, {
       format: 'pnml',
       includeLayout: includeLayout.value,
       includeMetadata: true,
-      filename: `${net.value.name}.pnml`,
-    })
+      filename: `${mainNet.name}.pnml`,
+    }, subNets)
   } catch (e) {
     alert('Export error: ' + (e instanceof Error ? e.message : 'Unknown error'))
   }
@@ -85,12 +111,13 @@ const handleSaveJSON = async () => {
   showMenu.value = false
   
   try {
-    await fileService.exportToFile(net.value, {
+    const { mainNet, subNets } = getMainNetAndSubNets()
+    await fileService.exportToFile(mainNet, {
       format: 'json',
       includeLayout: includeLayout.value,
       includeMetadata: true,
-      filename: `${net.value.name}.json`,
-    })
+      filename: `${mainNet.name}.json`,
+    }, subNets)
   } catch (e) {
     alert('Export error: ' + (e instanceof Error ? e.message : 'Unknown error'))
   }

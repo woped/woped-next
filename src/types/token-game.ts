@@ -56,6 +56,54 @@ export interface SubprocessStackEntry {
 }
 
 /**
+ * Statistics for a single transition
+ */
+export interface TransitionStats {
+  transitionId: string
+  transitionName: string
+  fireCount: number
+}
+
+/**
+ * Token game statistics
+ */
+export interface TokenGameStatistics {
+  /** Total number of steps taken */
+  totalSteps: number
+  /** Total transitions fired */
+  transitionsFired: number
+  /** Number of conflicts encountered */
+  conflictsEncountered: number
+  /** Number of times auto-play was used */
+  autoPlayCount: number
+  /** Number of subprocess entries */
+  subprocessEntries: number
+  /** Number of deadlocks encountered */
+  deadlocksEncountered: number
+  /** Transitions fired by ID */
+  transitionStats: Record<string, TransitionStats>
+  /** Start time of the game */
+  startTime: number
+  /** Total elapsed time in ms */
+  elapsedTime: number
+}
+
+/**
+ * Default statistics
+ */
+export const DEFAULT_TOKEN_GAME_STATISTICS: TokenGameStatistics = {
+  totalSteps: 0,
+  transitionsFired: 0,
+  conflictsEncountered: 0,
+  autoPlayCount: 0,
+  subprocessEntries: 0,
+  deadlocksEncountered: 0,
+  transitionStats: {},
+  startTime: 0,
+  elapsedTime: 0,
+}
+
+/**
  * Token Game state interface
  */
 export interface TokenGameState {
@@ -81,6 +129,10 @@ export interface TokenGameState {
   isAnimating: boolean
   /** Stack of parent states when stepping into subprocesses */
   subprocessStack: SubprocessStackEntry[]
+  /** Game statistics */
+  statistics: TokenGameStatistics
+  /** Whether the conflict dialog is showing */
+  showConflictDialog: boolean
 }
 
 /**
@@ -98,6 +150,8 @@ export const DEFAULT_TOKEN_GAME_STATE: TokenGameState = {
   activeAnimations: [],
   isAnimating: false,
   subprocessStack: [],
+  statistics: { ...DEFAULT_TOKEN_GAME_STATISTICS },
+  showConflictDialog: false,
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { PetriNet, Place, Transition, OperatorTransition, Arc } from '@/types/petri-net'
+import type { PetriNet, Place, Transition, OperatorTransition, SubProcess, Arc } from '@/types/petri-net'
 import { OperatorType, isOperator } from '@/types/petri-net'
 import type { ExportOptions } from '@/types/file-formats'
 
@@ -8,8 +8,11 @@ import type { ExportOptions } from '@/types/file-formats'
 export class PNMLWriter {
   /**
    * Convert PetriNet to PNML XML string
+   * @param net The main net to export
+   * @param options Export options
+   * @param subNets Optional map of subnet IDs to their PetriNet definitions
    */
-  write(net: PetriNet, options: ExportOptions): string {
+  write(net: PetriNet, options: ExportOptions, subNets?: Map<string, PetriNet>): string {
     const doc = document.implementation.createDocument(null, 'pnml', null)
     const pnml = doc.documentElement
 
@@ -25,25 +28,8 @@ export class PNMLWriter {
     const nameEl = this.createNameElement(doc, net.name)
     netEl.appendChild(nameEl)
 
-    // Add places
-    for (const place of net.places) {
-      netEl.appendChild(this.createPlaceElement(doc, place, options))
-    }
-
-    // Add transitions
-    for (const transition of net.transitions) {
-      netEl.appendChild(this.createTransitionElement(doc, transition, options))
-    }
-
-    // Add operators (as transitions with WoPeD toolspecific)
-    for (const operator of net.operators) {
-      netEl.appendChild(this.createOperatorElement(doc, operator, options))
-    }
-
-    // Add arcs
-    for (const arc of net.arcs) {
-      netEl.appendChild(this.createArcElement(doc, arc, options))
-    }
+    // Add all elements
+    this.addNetElements(doc, netEl, net, options, subNets)
 
     pnml.appendChild(netEl)
 
@@ -53,6 +39,44 @@ export class PNMLWriter {
 
     // Format the XML nicely
     return declaration + this.formatXML(xmlString)
+  }
+
+  /**
+   * Add all elements to a net/page element
+   */
+  private addNetElements(
+    doc: Document,
+    parentEl: Element,
+    net: PetriNet,
+    options: ExportOptions,
+    subNets?: Map<string, PetriNet>
+  ): void {
+    // Add places
+    for (const place of net.places) {
+      parentEl.appendChild(this.createPlaceElement(doc, place, options))
+    }
+
+    // Add transitions
+    for (const transition of net.transitions) {
+      parentEl.appendChild(this.createTransitionElement(doc, transition, options))
+    }
+
+    // Add operators (as transitions with WoPeD toolspecific)
+    for (const operator of net.operators) {
+      parentEl.appendChild(this.createOperatorElement(doc, operator, options))
+    }
+
+    // Add subprocesses (as transitions with embedded page)
+    if (net.subProcesses) {
+      for (const subprocess of net.subProcesses) {
+        parentEl.appendChild(this.createSubProcessElement(doc, subprocess, options, subNets))
+      }
+    }
+
+    // Add arcs
+    for (const arc of net.arcs) {
+      parentEl.appendChild(this.createArcElement(doc, arc, options))
+    }
   }
 
   /**
@@ -152,6 +176,55 @@ export class PNMLWriter {
     const operatorEl = doc.createElement('operator')
     operatorEl.setAttribute('type', this.getWoPeDOperatorId(operator.operatorType))
     toolspecEl.appendChild(operatorEl)
+
+    transEl.appendChild(toolspecEl)
+
+    return transEl
+  }
+
+  /**
+   * Create subprocess element (transition with embedded page)
+   */
+  private createSubProcessElement(
+    doc: Document,
+    subprocess: SubProcess,
+    options: ExportOptions,
+    subNets?: Map<string, PetriNet>
+  ): Element {
+    const transEl = doc.createElement('transition')
+    transEl.setAttribute('id', subprocess.id)
+
+    // Name
+    transEl.appendChild(this.createNameElement(doc, subprocess.name))
+
+    // Graphics (position)
+    if (options.includeLayout) {
+      transEl.appendChild(this.createGraphicsElement(doc, subprocess.position))
+    }
+
+    // Embedded page with subnet content
+    const subNet = subNets?.get(subprocess.subNetId)
+    if (subNet) {
+      const pageEl = doc.createElement('page')
+      pageEl.setAttribute('id', subprocess.subNetId)
+      
+      // Add name to page
+      pageEl.appendChild(this.createNameElement(doc, subNet.name))
+      
+      // Add all subnet elements recursively
+      this.addNetElements(doc, pageEl, subNet, options, subNets)
+      
+      transEl.appendChild(pageEl)
+    }
+
+    // WoPeD toolspecific for subprocess
+    const toolspecEl = doc.createElement('toolspecific')
+    toolspecEl.setAttribute('tool', 'WoPeD')
+    toolspecEl.setAttribute('version', '1.0')
+
+    const subprocessEl = doc.createElement('subprocess')
+    subprocessEl.setAttribute('collapsed', subprocess.collapsed ? 'true' : 'false')
+    toolspecEl.appendChild(subprocessEl)
 
     transEl.appendChild(toolspecEl)
 

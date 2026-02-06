@@ -26,11 +26,12 @@ const { zoomPercent, fitToView } = useViewport()
 
 // Config store for grid settings
 const configStore = useConfigStore()
-const { editor: editorConfig } = storeToRefs(configStore)
 
-// Grid state from config
-const showGrid = computed(() => editorConfig.value.showGrid)
-const snapToGrid = computed(() => editorConfig.value.snapToGrid)
+// Grid state from config store
+// Note: Using $state explicitly ensures proper Vue reactivity tracking
+// for nested properties in Pinia stores.
+const showGrid = computed(() => configStore.$state.editor.showGrid)
+const snapToGrid = computed(() => configStore.$state.editor.snapToGrid)
 
 // Layout settings
 const showLayoutMenu = ref(false)
@@ -74,14 +75,15 @@ function applyLayout() {
   showLayoutMenu.value = false
 }
 
-// Toggle grid
+// Toggle grid visibility via store action
+// Using store action ensures proper reactivity and persistence
 function toggleGrid() {
-  configStore.updateEditor({ showGrid: !showGrid.value })
+  configStore.toggleShowGrid()
 }
 
-// Toggle snap
+// Toggle snap to grid via store action
 function toggleSnap() {
-  configStore.updateEditor({ snapToGrid: !snapToGrid.value })
+  configStore.toggleSnapToGrid()
 }
 
 // Handle fit to view

@@ -9,8 +9,9 @@ import type {
   TokenAnimation,
   ConflictResolutionMode,
   SubprocessStackEntry,
+  TokenGameStatistics,
 } from '@/types/token-game'
-import { DEFAULT_TOKEN_GAME_STATE, DEFAULT_TOKEN_GAME_SETTINGS } from '@/types/token-game'
+import { DEFAULT_TOKEN_GAME_STATE, DEFAULT_TOKEN_GAME_SETTINGS, DEFAULT_TOKEN_GAME_STATISTICS } from '@/types/token-game'
 import type { PetriNet, Arc, SubProcess } from '@/types/petri-net'
 
 export const useTokenGameStore = defineStore('tokenGame', {
@@ -109,6 +110,12 @@ export const useTokenGameStore = defineStore('tokenGame', {
      * Get subprocess stack depth
      */
     subprocessDepth: (state): number => state.subprocessStack.length,
+
+    /**
+     * Check if there's a conflict (multiple enabled transitions)
+     */
+    hasConflict: (state): boolean => 
+      state.enabledTransitions.length + state.enabledSubprocesses.length > 1,
   },
 
   actions: {
@@ -133,6 +140,13 @@ export const useTokenGameStore = defineStore('tokenGame', {
       this.activeAnimations = []
       this.isAnimating = false
 
+      // Reset statistics
+      this.statistics = {
+        ...DEFAULT_TOKEN_GAME_STATISTICS,
+        startTime: Date.now(),
+      }
+      this.showConflictDialog = false
+
       this.updateEnabledTransitions()
       this.status = 'paused'
     },
@@ -141,6 +155,11 @@ export const useTokenGameStore = defineStore('tokenGame', {
      * Stop the token game
      */
     stop() {
+      // Finalize statistics
+      if (this.statistics.startTime > 0) {
+        this.statistics.elapsedTime = Date.now() - this.statistics.startTime
+      }
+
       // If in subprocess, navigate back to root
       if (this.subprocessStack.length > 0) {
         const petriNetStore = usePetriNetStore()
@@ -293,6 +312,11 @@ export const useTokenGameStore = defineStore('tokenGame', {
       const petriNetStore = usePetriNetStore()
       const net = petriNetStore.net
 
+      // Track conflict if multiple transitions were enabled
+      if (this.enabledTransitions.length + this.enabledSubprocesses.length > 1) {
+        this.statistics.conflictsEncountered++
+      }
+
       // Start animation
       await this.animateTransition(transitionId, net)
 
@@ -310,8 +334,30 @@ export const useTokenGameStore = defineStore('tokenGame', {
       this.historyIndex++
       this.marking = newMarking
 
+      // Update statistics
+      this.statistics.totalSteps++
+      this.statistics.transitionsFired++
+      
+      // Track per-transition statistics
+      if (!this.statistics.transitionStats[transitionId]) {
+        // Get transition name from net
+        const transition = net.transitions.find(t => t.id === transitionId) ||
+                          net.operators.find(o => o.id === transitionId)
+        this.statistics.transitionStats[transitionId] = {
+          transitionId,
+          transitionName: transition?.name || transitionId,
+          fireCount: 0,
+        }
+      }
+      this.statistics.transitionStats[transitionId].fireCount++
+
       // Update enabled transitions
       this.updateEnabledTransitions()
+
+      // Track deadlock
+      if (this.enabledTransitions.length === 0 && this.enabledSubprocesses.length === 0) {
+        this.statistics.deadlocksEncountered++
+      }
     },
 
     /**
@@ -501,6 +547,7 @@ export const useTokenGameStore = defineStore('tokenGame', {
      */
     async autoPlay() {
       this.status = 'playing'
+      this.statistics.autoPlayCount++
 
       while (this.status === 'playing') {
         const totalEnabled = this.enabledTransitions.length + this.enabledSubprocesses.length
@@ -700,7 +747,18 @@ export const useTokenGameStore = defineStore('tokenGame', {
       this.history = [initialSubMarking]
       this.historyIndex = 0
 
+      // Track statistics
+      this.statistics.totalSteps++
+      this.statistics.subprocessEntries++
+
       this.updateEnabledTransitions()
+    },
+
+    /**
+     * Show/hide conflict dialog
+     */
+    setShowConflictDialog(show: boolean) {
+      this.showConflictDialog = show
     },
 
     /**

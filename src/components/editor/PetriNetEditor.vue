@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { useTokenGameStore } from '@/stores/tokenGame'
 import { OperatorType } from '@/types/petri-net'
@@ -12,10 +13,34 @@ import OverviewPanel from './OverviewPanel.vue'
 import BreadcrumbNav from './BreadcrumbNav.vue'
 import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
 import AnalysisPanel from '@/components/analysis/AnalysisPanel.vue'
+import SimulationPanel from '@/components/simulation/SimulationPanel.vue'
 
+const { t } = useI18n()
 const store = usePetriNetStore()
 const tokenGameStore = useTokenGameStore()
 const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
+
+// Right panel tab
+const rightPanelTab = ref('properties')
+
+// Right panel collapsed state (start collapsed for more canvas space)
+const rightPanelCollapsed = ref(true)
+
+const toggleRightPanel = () => {
+  rightPanelCollapsed.value = !rightPanelCollapsed.value
+  // Trigger canvas resize after panel animation
+  setTimeout(updateCanvasDimensions, 250)
+}
+
+// Auto-switch to token game tab and expand panel when token game starts
+watch(isTokenGameActive, (active) => {
+  if (active) {
+    rightPanelTab.value = 'tokenGame'
+    rightPanelCollapsed.value = false
+    setTimeout(updateCanvasDimensions, 250)
+  }
+})
+
 
 // Canvas dimensions for viewport calculations
 const canvasWidth = ref(800)
@@ -105,17 +130,54 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Token Game Controls (floating, bottom-right) -->
-        <div class="token-game-container">
-          <TokenGameControls />
-        </div>
-
-        <!-- Analysis Panel (floating, top-right) -->
-        <div v-if="!isTokenGameActive" class="analysis-container">
-          <AnalysisPanel />
-        </div>
       </div>
-      <PropertiesPanel v-if="!isTokenGameActive" />
+      
+      <!-- Right Side Panel -->
+      <div :class="['right-panel', { collapsed: rightPanelCollapsed }]">
+        <button class="collapse-toggle" @click="toggleRightPanel" :title="rightPanelCollapsed ? 'Expand' : 'Collapse'">
+          {{ rightPanelCollapsed ? '◀' : '▶' }}
+        </button>
+        <template v-if="!rightPanelCollapsed">
+          <div class="right-panel-tabs">
+            <button
+              :class="['tab-btn', { active: rightPanelTab === 'properties' }]"
+              @click="rightPanelTab = 'properties'"
+              :title="$t('properties.title')"
+            >
+              📋
+            </button>
+            <button
+              :class="['tab-btn', { active: rightPanelTab === 'tokenGame', highlight: isTokenGameActive }]"
+              @click="rightPanelTab = 'tokenGame'"
+              :title="$t('tokenGame.title')"
+            >
+              ▶
+            </button>
+            <button
+              :class="['tab-btn', { active: rightPanelTab === 'analysis' }]"
+              @click="rightPanelTab = 'analysis'"
+              :title="$t('analysis.title')"
+            >
+              🔍
+            </button>
+            <button
+              :class="['tab-btn', { active: rightPanelTab === 'simulation' }]"
+              @click="rightPanelTab = 'simulation'"
+              :title="$t('simulation.title')"
+            >
+              📊
+            </button>
+          </div>
+          <div class="right-panel-content">
+            <PropertiesPanel v-if="rightPanelTab === 'properties'" />
+            <div v-else-if="rightPanelTab === 'tokenGame'" class="token-game-panel">
+              <TokenGameControls />
+            </div>
+            <AnalysisPanel v-else-if="rightPanelTab === 'analysis'" />
+            <SimulationPanel v-else-if="rightPanelTab === 'simulation'" />
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -155,17 +217,114 @@ onMounted(() => {
   z-index: 10;
 }
 
-.token-game-container {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  z-index: 10;
+/* Right Panel */
+.right-panel {
+  position: relative;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  flex-shrink: 0;
+  transition: width 0.2s ease;
 }
 
-.analysis-container {
+.right-panel.collapsed {
+  width: 36px;
+}
+
+.collapse-toggle {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px 0 0 6px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  z-index: 20;
+  transition: all 0.15s;
+}
+
+.collapse-toggle:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.right-panel.collapsed .collapse-toggle {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.right-panel.collapsed .collapse-toggle:hover {
+  background: #2563eb;
+}
+
+.right-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-hover);
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.right-panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel-content > * {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-btn.highlight {
+  color: #22c55e;
+}
+
+.tab-btn.highlight.active {
+  color: #22c55e;
+  border-bottom-color: #22c55e;
+}
+
+.token-game-panel {
+  padding: 12px;
+}
+
+.token-game-panel :deep(.token-game-controls) {
+  min-width: unset;
+  box-shadow: none;
+  border: none;
+  background: transparent;
 }
 </style>

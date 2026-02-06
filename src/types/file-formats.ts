@@ -20,6 +20,7 @@ export interface ImportError {
 export interface ImportResult {
   success: boolean
   net?: PetriNet
+  subNets?: Map<string, PetriNet>
   errors: ImportError[]
   warnings: string[]
 }

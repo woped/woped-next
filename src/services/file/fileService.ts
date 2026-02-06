@@ -55,10 +55,13 @@ export class FileService {
 
   /**
    * Export a PetriNet to a file
+   * @param net The main net to export
+   * @param options Export options
+   * @param subNets Optional map of subnet IDs to their PetriNet definitions
    */
-  async exportToFile(net: PetriNet, options: Partial<ExportOptions> = {}): Promise<void> {
+  async exportToFile(net: PetriNet, options: Partial<ExportOptions> = {}, subNets?: Map<string, PetriNet>): Promise<void> {
     const opts: ExportOptions = { ...DEFAULT_EXPORT_OPTIONS, ...options }
-    const content = this.exportToString(net, opts)
+    const content = this.exportToString(net, opts, subNets)
     const mimeType = MIME_TYPES[opts.format]
     const extension = FILE_EXTENSIONS[opts.format]
     const filename = opts.filename || `${net.name}${extension}`
@@ -70,13 +73,16 @@ export class FileService {
 
   /**
    * Export a PetriNet to a string
+   * @param net The main net to export
+   * @param options Export options
+   * @param subNets Optional map of subnet IDs to their PetriNet definitions (for hierarchical nets)
    */
-  exportToString(net: PetriNet, options: ExportOptions): string {
+  exportToString(net: PetriNet, options: ExportOptions, subNets?: Map<string, PetriNet>): string {
     switch (options.format) {
       case 'pnml':
-        return this.pnmlWriter.write(net, options)
+        return this.pnmlWriter.write(net, options, subNets)
       case 'json':
-        return this.jsonWriter.write(net, options)
+        return this.jsonWriter.write(net, options, subNets)
       default:
         throw new Error(`Unsupported format for string export: ${options.format}`)
     }

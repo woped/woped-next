@@ -45,6 +45,30 @@ export const useConfigStore = defineStore('config', {
     sortedRecentFiles(): RecentFile[] {
       return [...this.recentFiles].sort((a, b) => b.lastOpened - a.lastOpened)
     },
+
+    /**
+     * Grid visibility state
+     * Note: Getter ensures proper reactivity for nested state access.
+     * Use with storeToRefs() in components for reactive binding.
+     */
+    showGrid(): boolean {
+      return this.editor.showGrid
+    },
+
+    /**
+     * Snap to grid state
+     * Note: Getter ensures proper reactivity for nested state access.
+     */
+    snapToGrid(): boolean {
+      return this.editor.snapToGrid
+    },
+
+    /**
+     * Grid size in pixels
+     */
+    gridSize(): number {
+      return this.editor.gridSize
+    },
   },
 
   actions: {
@@ -113,7 +137,32 @@ export const useConfigStore = defineStore('config', {
      * Update editor settings
      */
     updateEditor(config: Partial<EditorConfig>) {
-      this.editor = { ...this.editor, ...config }
+      // Directly assign each property for proper reactivity
+      for (const key in config) {
+        if (Object.prototype.hasOwnProperty.call(config, key)) {
+          (this.editor as Record<string, unknown>)[key] = (config as Record<string, unknown>)[key]
+        }
+      }
+      this.save()
+    },
+
+    /**
+     * Toggle grid visibility
+     * Direct mutation ensures proper Pinia reactivity for nested state.
+     * Automatically persists change to localStorage.
+     */
+    toggleShowGrid() {
+      this.editor.showGrid = !this.editor.showGrid
+      this.save()
+    },
+
+    /**
+     * Toggle snap to grid
+     * Direct mutation ensures proper Pinia reactivity for nested state.
+     * Automatically persists change to localStorage.
+     */
+    toggleSnapToGrid() {
+      this.editor.snapToGrid = !this.editor.snapToGrid
       this.save()
     },
 
