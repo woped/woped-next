@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { useTokenGameStore } from '@/stores/tokenGame'
 import { useConfigStore } from '@/stores/config'
+import { useViewport } from '@/composables/useViewport'
 import { VISUAL, DEFAULTS } from '@/types/petri-net'
 import { snapToGrid } from '@/utils/geometry'
 import PlaceNode from '@/components/canvas/PlaceNode.vue'
@@ -17,6 +18,9 @@ const emit = defineEmits(['resize'])
 
 const store = usePetriNetStore()
 const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcCreation, selectedIds } = storeToRefs(store)
+
+// Viewport composable for fit to view functionality
+const { fitToView } = useViewport()
 
 // Config store for editor settings
 const configStore = useConfigStore()
@@ -78,6 +82,14 @@ onMounted(() => {
   updateSize()
   window.addEventListener('resize', updateSize)
   store.initialize()
+  
+  // Fit to view after canvas is fully rendered
+  // Use nextTick to ensure DOM is updated, then slight delay for Konva rendering
+  nextTick(() => {
+    setTimeout(() => {
+      fitToView(stageConfig.value.width, stageConfig.value.height)
+    }, 100)
+  })
 })
 
 onUnmounted(() => {
