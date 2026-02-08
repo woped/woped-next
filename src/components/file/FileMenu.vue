@@ -6,6 +6,7 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { fileService } from '@/services/file/fileService'
 import { imageExporter } from '@/services/file/imageExporter'
 import { FORMAT_NAMES, FILE_EXTENSIONS } from '@/types/file-formats'
+import { templates, categories, getTemplatesByCategory } from '@/services/templates/petriNetTemplates'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
@@ -29,17 +30,37 @@ const getMainNetAndSubNets = () => {
 
 // Menu state
 const showMenu = ref(false)
+const showTemplates = ref(false)
 const isLoading = ref(false)
 const error = ref('')
 
 // Export options
 const includeLayout = ref(true)
 
+// Template categories with translated names
+const templateCategories = computed(() => [
+  { id: 'basic', label: t('templates.categoryBasic') },
+  { id: 'patterns', label: t('templates.categoryPatterns') },
+  { id: 'workflow', label: t('templates.categoryWorkflow') },
+])
+
 // Close menu when clicking outside
 const handleClickOutside = (e) => {
   if (!e.target.closest('.file-menu')) {
     showMenu.value = false
+    showTemplates.value = false
   }
+}
+
+// Load a template
+const loadTemplate = (templateId) => {
+  const template = templates.find(t => t.id === templateId)
+  if (template) {
+    const net = template.create()
+    store.loadNet(net)
+  }
+  showMenu.value = false
+  showTemplates.value = false
 }
 
 // New file
@@ -194,6 +215,30 @@ const toggleMenu = () => {
         <span class="item-shortcut">Ctrl+O</span>
       </button>
 
+      <!-- Templates Submenu -->
+      <div class="menu-item-with-submenu" @mouseenter="showTemplates = true" @mouseleave="showTemplates = false">
+        <button class="menu-item">
+          <span class="item-icon">📋</span>
+          <span class="item-label">{{ $t('menu.templates') }}</span>
+          <span class="submenu-arrow">▶</span>
+        </button>
+        
+        <div v-if="showTemplates" class="submenu">
+          <template v-for="category in templateCategories" :key="category.id">
+            <div class="submenu-category">{{ category.label }}</div>
+            <button 
+              v-for="tmpl in getTemplatesByCategory(category.id)" 
+              :key="tmpl.id"
+              class="menu-item"
+              @click="loadTemplate(tmpl.id)"
+              :title="$t(tmpl.descriptionKey)"
+            >
+              <span class="item-label">{{ $t(tmpl.nameKey) }}</span>
+            </button>
+          </template>
+        </div>
+      </div>
+
       <div class="menu-separator"></div>
 
       <button class="menu-item" @click="handleSavePNML">
@@ -333,5 +378,57 @@ const toggleMenu = () => {
 
 .menu-checkbox input {
   cursor: pointer;
+}
+
+/* Submenu styles */
+.menu-item-with-submenu {
+  position: relative;
+}
+
+.menu-item-with-submenu .menu-item {
+  width: 100%;
+}
+
+.submenu-arrow {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 2px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  padding: 4px 0;
+  z-index: 101;
+}
+
+.submenu-category {
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+}
+
+.submenu-category:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+.submenu .menu-item {
+  padding: 6px 12px;
+}
+
+.submenu .menu-item .item-label {
+  font-size: 12px;
 }
 </style>

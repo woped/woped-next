@@ -23,12 +23,43 @@ export default {
     file: 'File',
     new: 'New',
     open: 'Open',
+    templates: 'Templates',
     save: 'Save',
     saveAs: 'Save As',
     exportSvg: 'Export as SVG',
     exportPng: 'Export as PNG',
     settings: 'Settings',
     includeLayout: 'Include Layout',
+  },
+
+  // Templates
+  templates: {
+    categoryBasic: 'Basic Patterns',
+    categoryPatterns: 'Synchronization',
+    categoryWorkflow: 'Workflow',
+    // Basic
+    sequence: 'Sequence',
+    sequenceDesc: 'Simple sequential flow from start to end',
+    choice: 'Choice (Conflict)',
+    choiceDesc: 'Non-deterministic choice between multiple paths',
+    parallelism: 'Parallelism (AND)',
+    parallelismDesc: 'Concurrent execution with fork and join',
+    loop: 'Loop (Iteration)',
+    loopDesc: 'Cyclic behavior with repetition',
+    // Synchronization patterns
+    mutex: 'Mutual Exclusion',
+    mutexDesc: 'Shared resource access with critical section',
+    producerConsumer: 'Producer-Consumer',
+    producerConsumerDesc: 'Classic pattern with bounded buffer',
+    semaphore: 'Semaphore (k=2)',
+    semaphoreDesc: 'Counting semaphore for resource pool',
+    diningPhilosophers: 'Dining Philosophers',
+    diningPhilosophersDesc: 'Classic concurrency problem (simplified)',
+    // Workflow
+    workflow: 'Workflow (Operators)',
+    workflowDesc: 'Business process with AND/XOR operators',
+    stateMachine: 'Traffic Light',
+    stateMachineDesc: 'Simple state machine example',
   },
 
   // Toolbar

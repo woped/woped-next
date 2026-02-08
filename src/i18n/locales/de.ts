@@ -23,12 +23,43 @@ export default {
     file: 'Datei',
     new: 'Neu',
     open: 'Öffnen',
+    templates: 'Vorlagen',
     save: 'Speichern',
     saveAs: 'Speichern unter',
     exportSvg: 'Als SVG exportieren',
     exportPng: 'Als PNG exportieren',
     settings: 'Einstellungen',
     includeLayout: 'Layout einbeziehen',
+  },
+
+  // Templates (Vorlagen)
+  templates: {
+    categoryBasic: 'Grundmuster',
+    categoryPatterns: 'Synchronisation',
+    categoryWorkflow: 'Workflow',
+    // Basic
+    sequence: 'Sequenz',
+    sequenceDesc: 'Einfacher sequenzieller Ablauf von Start bis Ende',
+    choice: 'Auswahl (Konflikt)',
+    choiceDesc: 'Nicht-deterministische Auswahl zwischen mehreren Pfaden',
+    parallelism: 'Parallelität (AND)',
+    parallelismDesc: 'Nebenläufige Ausführung mit Verzweigung und Synchronisation',
+    loop: 'Schleife (Iteration)',
+    loopDesc: 'Zyklisches Verhalten mit Wiederholung',
+    // Synchronization patterns
+    mutex: 'Gegenseitiger Ausschluss',
+    mutexDesc: 'Gemeinsamer Ressourcenzugriff mit kritischem Abschnitt',
+    producerConsumer: 'Erzeuger-Verbraucher',
+    producerConsumerDesc: 'Klassisches Muster mit begrenztem Puffer',
+    semaphore: 'Semaphor (k=2)',
+    semaphoreDesc: 'Zählender Semaphor für Ressourcenpool',
+    diningPhilosophers: 'Speisende Philosophen',
+    diningPhilosophersDesc: 'Klassisches Nebenläufigkeitsproblem (vereinfacht)',
+    // Workflow
+    workflow: 'Workflow (Operatoren)',
+    workflowDesc: 'Geschäftsprozess mit AND/XOR-Operatoren',
+    stateMachine: 'Ampel',
+    stateMachineDesc: 'Einfaches Zustandsautomat-Beispiel',
   },
 
   // Toolbar
