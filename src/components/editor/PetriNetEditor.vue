@@ -23,8 +23,8 @@ const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
 // Right panel tab
 const rightPanelTab = ref('properties')
 
-// Right panel collapsed state (start collapsed for more canvas space)
-const rightPanelCollapsed = ref(true)
+// Right panel collapsed state (start expanded by default)
+const rightPanelCollapsed = ref(false)
 
 const toggleRightPanel = () => {
   rightPanelCollapsed.value = !rightPanelCollapsed.value

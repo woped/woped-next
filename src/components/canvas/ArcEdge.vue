@@ -201,20 +201,36 @@ const showWeight = computed(() => props.arc.weight > 1 && !props.isTemp)
 const weightLabelConfig = computed(() => {
   if (!showWeight.value) return null
 
-  // Use the middle of the line
-  const midIndex = Math.floor(linePoints.value.length / 2)
-  const midX = linePoints.value[midIndex - (midIndex % 2)]
-  const midY = linePoints.value[midIndex - (midIndex % 2) + 1]
+  // Calculate the true midpoint of the arc
+  // For simple lines [x1, y1, x2, y2], midpoint is ((x1+x2)/2, (y1+y2)/2)
+  // For multi-segment lines, find the middle segment
+  const points = linePoints.value
+  const pointCount = points.length
+  
+  let midX, midY
+  
+  if (pointCount === 4) {
+    // Simple line: calculate exact midpoint
+    midX = (points[0] + points[2]) / 2
+    midY = (points[1] + points[3]) / 2
+  } else {
+    // Multi-segment line: find middle point
+    const midIndex = Math.floor(pointCount / 4) * 2 // Round to even index (x coordinate)
+    const nextIndex = Math.min(midIndex + 2, pointCount - 2)
+    midX = (points[midIndex] + points[nextIndex]) / 2
+    midY = (points[midIndex + 1] + points[nextIndex + 1]) / 2
+  }
 
   return {
     x: midX,
-    y: midY - 10,
+    y: midY - 12, // Position slightly above the line
     text: String(props.arc.weight),
     fontSize: 12,
     fontFamily: 'system-ui, sans-serif',
+    fontStyle: 'bold',
     fill: colors.value.labelFill,
     align: 'center',
-    offsetX: 4,
+    offsetX: 4, // Center the text horizontally
   }
 })
 
