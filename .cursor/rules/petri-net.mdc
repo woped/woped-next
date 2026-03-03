@@ -1,0 +1,100 @@
+---
+description: Petri-Netz Datenmodell und Konventionen
+globs: "**/types/petri-net.ts,**/stores/petriNet.ts,**/components/canvas/**"
+alwaysApply: false
+---
+
+# Petri-Netz Modell
+
+## Datenstrukturen
+
+### PetriNet
+```typescript
+interface PetriNet {
+  id: string
+  name: string
+  places: Place[]
+  transitions: Transition[]
+  arcs: Arc[]
+  operators: Operator[]      // WoPeD-spezifische Workflow-Operatoren
+  subProcesses: SubProcess[] // Hierarchische Netze
+}
+```
+
+### Elemente
+```typescript
+interface Place {
+  id: string
+  name: string
+  position: { x: number, y: number }
+  tokens: number  // Initiale Markierung
+}
+
+interface Transition {
+  id: string
+  name: string
+  position: { x: number, y: number }
+  label?: string
+  triggers?: Trigger[]  // Zeit/Resource/Message Trigger
+}
+
+interface Arc {
+  id: string
+  sourceId: string   // Place, Transition, Operator oder SubProcess
+  targetId: string
+  weight: number     // Default: 1
+}
+
+interface Operator {
+  id: string
+  type: OperatorType  // AND_SPLIT, XOR_JOIN, etc.
+  position: { x: number, y: number }
+  label?: string
+}
+
+interface SubProcess {
+  id: string
+  name: string
+  position: { x: number, y: number }
+  subNetId: string   // Referenz auf verschachteltes PetriNet
+}
+```
+
+## Operator-Typen
+| Typ | Symbol | Beschreibung |
+|-----|--------|--------------|
+| AND_SPLIT | ◇→ | Parallele Verzweigung |
+| AND_JOIN | →◇ | Synchronisation |
+| XOR_SPLIT | ⊗→ | Exklusive Auswahl |
+| XOR_JOIN | →⊗ | Einfache Zusammenführung |
+| AND_SPLIT_JOIN | ◇◇ | Kombiniert |
+| XOR_SPLIT_JOIN | ⊗⊗ | Kombiniert |
+
+## Validierung
+- Arcs verbinden immer Place↔Transition (oder Operator/SubProcess)
+- Keine direkten Place→Place oder Transition→Transition Verbindungen
+- Arc-Gewichte müssen ≥ 1 sein
+- IDs müssen eindeutig sein (nanoid)
+
+## Canvas-Rendering
+- Places: Kreise (radius: 20)
+- Transitions: Rechtecke (40x30)
+- Operators: Rauten (30x30)
+- SubProcesses: Rechtecke mit doppeltem Rand
+- Tokens: Kleine schwarze Punkte in Places
+
+## Store-Aktionen
+```typescript
+// Elemente hinzufügen
+store.addPlace({ x, y })
+store.addTransition({ x, y })
+store.addArc(sourceId, targetId)
+
+// Selektion
+store.selectElement(id)
+store.clearSelection()
+
+// Navigation (Subprozesse)
+store.navigateToSubProcess(subProcessId)
+store.navigateUp()
+```

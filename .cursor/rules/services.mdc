@@ -1,0 +1,90 @@
+---
+description: Service-Konventionen für Business Logic
+globs: "**/services/**/*.ts"
+alwaysApply: false
+---
+
+# Services
+
+## Struktur
+Services enthalten wiederverwendbare Business Logic, getrennt von Vue-Komponenten.
+
+```
+src/services/
+├── analysis/           # Analyse-Algorithmen
+│   ├── index.ts        # Qualitative Analyse (Soundness, Struktur)
+│   └── metricsCalculator.ts  # Process Metrics
+├── file/               # Datei-Operationen
+│   ├── fileService.ts  # Import/Export Koordination
+│   ├── pnmlParser.ts   # PNML lesen
+│   ├── pnmlWriter.ts   # PNML schreiben
+│   ├── jsonParser.ts   # JSON Import/Export
+│   └── imageExporter.ts # SVG/PNG Export
+├── simulation/         # Simulation
+│   ├── SimulationEngine.ts  # Diskrete Ereignissimulation
+│   └── XESExporter.ts       # XES Log Export
+└── templates/          # Vorlagen
+    └── petriNetTemplates.ts  # Beispiel-Netze
+```
+
+## Service-Pattern
+```typescript
+// Singleton-Export für einfache Services
+export const fileService = {
+  async importFile(file: File): Promise<ImportResult> { /* ... */ },
+  async exportToFile(net: PetriNet, options: ExportOptions): Promise<void> { /* ... */ },
+}
+
+// Klasse für komplexe Services mit State
+export class SimulationEngine {
+  constructor(net: PetriNet, config: SimulationConfig) { /* ... */ }
+  run(): SimulationResult { /* ... */ }
+}
+```
+
+## File Service
+```typescript
+// Import
+const result = await fileService.importFile(file)
+if (result.success) {
+  store.loadNet(result.net)
+}
+
+// Export
+await fileService.exportToFile(net, {
+  format: 'pnml',  // oder 'json'
+  includeLayout: true,
+  filename: 'mynet.pnml'
+})
+```
+
+## Simulation Engine
+```typescript
+const engine = new SimulationEngine(net, {
+  cases: 100,
+  maxTime: 3600,
+  timeModel: { type: 'exponential', mean: 10 }
+})
+const result = engine.run()
+// result.statistics, result.eventLog, etc.
+```
+
+## Templates
+```typescript
+import { templates, getTemplatesByCategory } from '@/services/templates/petriNetTemplates'
+
+// Alle Templates
+templates.forEach(t => console.log(t.nameKey))
+
+// Nach Kategorie
+const basicTemplates = getTemplatesByCategory('basic')
+
+// Template laden
+const net = template.create()
+store.loadNet(net)
+```
+
+## Fehlerbehandlung
+- Services werfen Exceptions bei Fehlern
+- Komponenten fangen diese und zeigen User-Feedback
+- Import-Errors als `ImportResult.errors[]` zurückgeben

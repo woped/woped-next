@@ -6,7 +6,29 @@ alwaysApply: false
 
 # Docker Setup
 
-- Multi-Stage Build: Node.js (Build) → nginx (Produktion)
+## Architektur
+- Multi-Stage Build: Node.js 22 (Build) → nginx alpine (Produktion)
 - Port 80 intern, 8080 extern gemappt
-- nginx serviert statische Dateien aus `/dist`
-- SPA-Routing über `try_files` konfiguriert
+- nginx serviert statische Dateien aus `/usr/share/nginx/html`
+- SPA-Routing über `try_files $uri /index.html` konfiguriert
+
+## Befehle
+```bash
+# Build und Start
+docker compose up --build
+
+# Nur Build
+docker build -t woped-next .
+
+# Container starten
+docker run -p 8080:80 woped-next
+
+# Logs anzeigen
+docker compose logs -f
+```
+
+## Produktions-Optimierungen
+- Gzip-Kompression aktiviert
+- Cache-Header für statische Assets
+- Security-Header konfiguriert
+- Health-Check auf `/`

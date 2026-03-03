@@ -8,24 +8,47 @@ alwaysApply: false
 
 ## Struktur
 ```vue
-<script setup>
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { usePetriNetStore } from '@/stores/petriNet'
+
 const { t } = useI18n()
-// Imports, Props, Emits, Composables, Reactive State, Methods
+const store = usePetriNetStore()
+const { net, selectedIds } = storeToRefs(store)
+
+// Props & Emits
+const props = defineProps<{ id: string }>()
+const emit = defineEmits<{ (e: 'update', value: string): void }>()
+
+// Reactive State
+const localState = ref('')
+
+// Computed
+const derivedValue = computed(() => /* ... */)
+
+// Methods
+const handleClick = () => { /* ... */ }
 </script>
 
 <template>
-  <!-- HTML mit $t('key') für Übersetzungen -->
+  <div class="my-component">
+    {{ $t('key.path') }}
+  </div>
 </template>
 
 <style scoped>
-/* CSS-Variablen für Theming */
-/* :global(.dark) für Dark Mode */
+.my-component {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
 </style>
 ```
 
 ## Regeln
 - Composition API mit `<script setup>` verwenden
+- TypeScript mit `lang="ts"` bei Bedarf (für `import type`)
 - Props mit `defineProps()` definieren
 - Events mit `defineEmits()` definieren
 - `scoped` Styles bevorzugen
@@ -33,10 +56,30 @@ const { t } = useI18n()
 
 ## Internationalisierung
 - Alle UI-Texte mit `$t('key.path')` übersetzen
-- Übersetzungen in `src/i18n/locales/` pflegen
-- Computed Properties für dynamische Übersetzungen verwenden
+- Übersetzungen in `src/i18n/locales/en.ts` und `de.ts`
+- Neue Keys immer in beiden Dateien hinzufügen
+- Computed Properties für dynamische Übersetzungen:
+  ```typescript
+  const items = computed(() => [
+    { id: 'a', label: t('items.a') },
+    { id: 'b', label: t('items.b') },
+  ])
+  ```
 
 ## Theming
-- CSS-Variablen verwenden: `var(--color-bg)`, `var(--color-text)`
-- Dark Mode mit `:global(.dark)` Selektor
-- Keine hardcodierten Farben in Components
+- CSS-Variablen verwenden: `var(--color-bg)`, `var(--color-text)`, `var(--color-border)`
+- Primärfarbe: `var(--color-primary)`
+- Keine hardcodierten Farben!
+- Dark Mode wird automatisch über `data-theme` Attribut gehandhabt
+
+## Canvas-Komponenten (vue-konva)
+- In `src/components/canvas/` ablegen
+- Konva Config über computed Properties:
+  ```typescript
+  const config = computed(() => ({
+    x: props.position.x,
+    y: props.position.y,
+    fill: colors.value.fill,
+  }))
+  ```
+- Für Sichtbarkeit `visible` Property statt `v-if` verwenden

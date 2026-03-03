@@ -5,23 +5,60 @@ alwaysApply: true
 
 # WoPeD Next
 
-Vue.js 3 Frontend mit Vite. Kann als Docker-Container deployed werden.
+Petri-Netz Editor und Workflow-Analyse-Tool. Migriert von Java Swing zu Vue.js 3.
 
 ## Tech Stack
-- Vue.js 3 (Composition API)
+- Vue.js 3 (Composition API mit `<script setup>`)
 - Vite als Build-Tool
 - Pinia für State Management
 - vue-i18n für Internationalisierung (DE/EN)
 - vue-konva für Canvas-Rendering
+- TypeScript für Typdefinitionen
 - nginx für Produktion (Docker)
+- GitHub Pages für Deployment
+
+## Projektstruktur
+```
+src/
+├── components/     # Vue Komponenten nach Feature gruppiert
+│   ├── canvas/     # Konva Canvas-Elemente (Place, Transition, Arc, etc.)
+│   ├── editor/     # Editor-Hauptkomponenten
+│   ├── simulation/ # Quantitative Simulation
+│   ├── token-game/ # Token Game
+│   └── analysis/   # Analyse-Panels
+├── stores/         # Pinia Stores (petriNet, config, tokenGame, simulation)
+├── services/       # Business Logic (file, analysis, simulation, templates)
+├── types/          # TypeScript Interfaces
+├── utils/          # Hilfsfunktionen (geometry, layout, routing)
+└── i18n/           # Übersetzungen (en.ts, de.ts)
+```
 
 ## Befehle
-- `npm run dev` - Entwicklungsserver
+- `npm run dev` - Entwicklungsserver (http://localhost:5173)
 - `npm run build` - Produktions-Build
-- `npm run test` - Tests ausführen
 - `docker compose up --build` - Docker starten
+
+## Git Workflow
+- Commit und Push nur nach expliziter Erlaubnis durch den User
+- Bei Erlaubnis: Sinnvolle Commit-Message erstellen, dann committen und pushen
 
 ## Wichtige Konventionen
 - Alle UI-Texte müssen übersetzt werden (`$t('key')`)
-- CSS-Variablen für Theming verwenden (`var(--color-*)`)
-- Dark Mode via `:global(.dark)` Selektoren unterstützen
+- CSS-Variablen für Theming (`var(--color-bg)`, `var(--color-text)`)
+- Dark Mode via `data-theme="dark"` auf `<html>`
+- IDs mit `nanoid()` generieren
+- Petri-Netz Elemente: Place, Transition, Arc, Operator, SubProcess
+
+## Stores
+| Store | Zweck |
+|-------|-------|
+| `petriNet` | Netz-Daten, Viewport, Selection, History |
+| `config` | Theme, Sprache, Editor-Settings (persistiert) |
+| `tokenGame` | Marking, Enabled Transitions, Statistiken |
+| `simulation` | Simulation Config, Results, Resources |
+
+## Wichtige Services
+- `fileService` - PNML/JSON Import/Export
+- `SimulationEngine` - Diskrete Ereignissimulation
+- `petriNetTemplates` - Lehrreiche Beispiel-Netze
+- `metricsCalculator` - Process Metrics Berechnung
