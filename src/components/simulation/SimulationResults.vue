@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSimulationStore } from '@/stores/simulation'
@@ -8,8 +8,10 @@ import { xesExporter } from '@/services/simulation/XESExporter'
 import SimulationCharts from './SimulationCharts.vue'
 import BottleneckAnalysis from './BottleneckAnalysis.vue'
 import SimulationDashboard from './SimulationDashboard.vue'
+import SimulationTimeline from './SimulationTimeline.vue'
 
 const emit = defineEmits(['clear'])
+const timelineExpanded = ref(false)
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
@@ -171,6 +173,18 @@ const exportXES = () => {
 
     <!-- Bottleneck Analysis -->
     <BottleneckAnalysis />
+
+    <!-- Event Timeline -->
+    <div class="results-section">
+      <h4
+        class="collapsible-header"
+        @click="timelineExpanded = !timelineExpanded"
+      >
+        <span class="collapse-arrow" :class="{ expanded: timelineExpanded }">▶</span>
+        {{ $t('simulation.timeline') }}
+      </h4>
+      <SimulationTimeline v-if="timelineExpanded" />
+    </div>
 
     <!-- Execution Info -->
     <div class="results-section execution-info">
@@ -371,6 +385,28 @@ const exportXES = () => {
 
 .clear-btn:hover {
   background: var(--color-bg-hover);
+}
+
+.collapsible-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.collapsible-header:hover {
+  color: var(--color-primary);
+}
+
+.collapse-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.collapse-arrow.expanded {
+  transform: rotate(90deg);
 }
 
 .no-results {

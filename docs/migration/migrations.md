@@ -34,6 +34,36 @@ Legend: ✅ Complete | ⚠️ Partial | 🔜 Planned | ⏸️ Deferred
 
 ## Changelog
 
+### v3.0.0 - Full Feature Implementation (excl. NLP)
+
+#### Analysis Features
+- **CoverabilityGraphView.vue** — Interactive SVG visualization of the reachability graph with BFS-layered layout, zoom/pan, color-coded nodes (initial/final/deadlock), edge labels
+- **AnalysisWizard.vue** — Step-by-step wizard for running workflow/soundness/metrics analyses
+- **CustomMetricsBuilder.vue** — User-defined metrics with formula language (shunting-yard parser), variables (places, transitions, arcs, etc.), threshold support
+- **MassAnalysis.vue** — Batch analysis across all nets with results table, expandable details, CSV export
+
+#### Simulation Features
+- **ThroughputLineChart.vue** — SVG line chart showing throughput over time with area fill, tooltips
+- **ResourcePieChart.vue** — SVG donut chart for resource utilization visualization
+- **SimulationTimeline.vue** — Horizontal timeline of simulation events with per-case lanes, color-coded event types, zoom/scroll
+
+#### Resource Management
+- Extended `useResourceStore` with **Roles** (`ResourceRole`), **Groups** (`ResourceGroup`), **Allocations** (`ResourceAllocation`)
+- `addRole`, `updateRole`, `removeRole`, `addGroup`, `updateGroup`, `removeGroup`, `addAllocation`, `removeAllocation` actions
+- `getResourcesByGroup`, `getRoleById`, `getGroupById`, `getAllocationsForResource`, `getAllocationsForTransition` getters
+- **ResourceManager.vue** — Full tabbed UI (Resources, Roles & Groups, Allocations) with CRUD forms
+
+#### Editor Features
+- **ProcessTree.vue** — Tree view of subprocess hierarchy with navigation, collapsible nodes, active net highlighting
+- **SubProcessNode.vue** — Integrated `SubprocessPreview` component with hover popup for rich preview
+- `smartEditing` added to `EditorConfig` type and defaults
+
+#### Type Fixes
+- `TokenGameConfig.conflictResolution` type corrected from `'first'` to `'priority'`
+
+#### i18n
+- Added translation keys for all new features in English and German locales
+
 ### v2.3.0 - Quick Wins & Component Gaps
 
 #### Editor Enhancements

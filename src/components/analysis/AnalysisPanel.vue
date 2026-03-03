@@ -6,6 +6,9 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness, computeStatistics } from '@/services/analysis'
 import MetricsSection from './MetricsSection.vue'
 import AnalysisResults from './AnalysisResults.vue'
+import CoverabilityGraphView from './CoverabilityGraphView.vue'
+import CustomMetricsBuilder from './CustomMetricsBuilder.vue'
+import ProcessTree from '@/components/editor/ProcessTree.vue'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -20,6 +23,9 @@ const isAnalyzing = ref(false)
 const showWorkflow = ref(true)
 const showSoundness = ref(true)
 const showStatistics = ref(false)
+const showCoverability = ref(false)
+const showProcessTree = ref(false)
+const showCustomMetrics = ref(false)
 
 // Current statistics
 const statistics = computed(() => computeStatistics(net.value))
@@ -111,6 +117,17 @@ const formatDuration = (ms) => {
     <!-- Process Metrics Section -->
     <MetricsSection />
 
+    <!-- Process Structure -->
+    <div class="section">
+      <div class="section-header" @click="showProcessTree = !showProcessTree">
+        <span class="toggle">{{ showProcessTree ? '▼' : '▶' }}</span>
+        <span class="section-title">{{ $t('analysis.processTree') }}</span>
+      </div>
+      <div v-if="showProcessTree" class="section-content">
+        <ProcessTree />
+      </div>
+    </div>
+
     <!-- Statistics Section -->
     <div class="section">
       <div class="section-header" @click="showStatistics = !showStatistics">
@@ -166,6 +183,28 @@ const formatDuration = (ms) => {
       :is-analyzing="isAnalyzing"
       @run="runSoundnessAnalysis"
     />
+
+    <!-- Coverability Graph -->
+    <div class="section">
+      <div class="section-header" @click="showCoverability = !showCoverability">
+        <span class="toggle">{{ showCoverability ? '▼' : '▶' }}</span>
+        <span class="section-title">{{ $t('analysis.coverabilityGraph') }}</span>
+      </div>
+      <div v-if="showCoverability" class="section-content">
+        <CoverabilityGraphView />
+      </div>
+    </div>
+
+    <!-- Custom Metrics -->
+    <div class="section">
+      <div class="section-header" @click="showCustomMetrics = !showCustomMetrics">
+        <span class="toggle">{{ showCustomMetrics ? '▼' : '▶' }}</span>
+        <span class="section-title">{{ $t('analysis.customMetrics') }}</span>
+      </div>
+      <div v-if="showCustomMetrics" class="section-content">
+        <CustomMetricsBuilder />
+      </div>
+    </div>
   </div>
 </template>
 

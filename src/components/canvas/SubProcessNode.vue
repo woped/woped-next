@@ -1,14 +1,17 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { VISUAL } from '@/types/petri-net'
+import SubprocessPreview from '@/components/editor/SubprocessPreview.vue'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
 const { nets } = storeToRefs(petriNetStore)
+
+const showPreviewPopup = ref(false)
 
 const props = defineProps({
   subprocess: {
@@ -251,4 +254,31 @@ const handleDragEnd = (e) => {
     <!-- Hint (shown when selected) -->
     <v-text v-if="isSelected" :config="hintConfig" />
   </v-group>
+
+  <!-- Subprocess preview popup (rendered outside Konva) -->
+  <Teleport to="body">
+    <div
+      v-if="isSelected && hasSubNetContent"
+      class="subprocess-preview-popup"
+      :style="{
+        position: 'fixed',
+        zIndex: 9999,
+      }"
+    >
+      <SubprocessPreview
+        :subprocess-id="subprocess.subNetId"
+        :width="220"
+        :height="140"
+      />
+    </div>
+  </Teleport>
 </template>
+
+<style scoped>
+.subprocess-preview-popup {
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+</style>

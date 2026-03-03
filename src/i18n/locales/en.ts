@@ -172,6 +172,29 @@ export default {
     live: 'Live',
     reversible: 'Reversible',
     deadlockFree: 'Deadlock-free',
+    coverabilityGraph: 'Coverability Graph',
+    buildGraph: 'Build Graph',
+    resetView: 'Reset View',
+    states: 'States',
+    unbounded: 'Unbounded',
+    deadlocks: 'Deadlocks',
+    finalStates: 'Final States',
+    processTree: 'Process Structure',
+    wizard: {
+      title: 'Analysis Wizard',
+      selectAnalyses: 'Select Analyses',
+      running: 'Running',
+      results: 'Results',
+      selectDescription: 'Choose which analyses to run:',
+      start: 'Start Analysis',
+      restart: 'Run Again',
+    },
+    massAnalysis: 'Mass Analysis',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    runAnalysis: 'Run Analysis',
+    exportCSV: 'Export CSV',
+    customMetrics: 'Custom Metrics',
   },
 
   // Process Metrics
@@ -309,6 +332,12 @@ export default {
     minimap: 'Minimap',
   },
 
+  // Process Tree (subprocess hierarchy)
+  processTree: {
+    title: 'Process hierarchy',
+    empty: 'No processes',
+  },
+
   // Subprocess
   subprocess: {
     title: 'Subprocess',
@@ -398,6 +427,10 @@ export default {
     exportCSV: 'Export CSV',
     clearResults: 'Clear Results',
     noResults: 'Run a simulation to see results',
+    timeline: 'Event Timeline',
+    case: 'Case',
+    event: 'Event',
+    timeAxis: 'Time',
   },
 
   // Triggers
@@ -412,6 +445,36 @@ export default {
     noTriggers: 'No triggers configured',
     noResources: 'No resources defined — add them in the Simulation tab',
     selectResource: 'Select resource...',
+  },
+
+  // Resources
+  resources: {
+    title: 'Resource Manager',
+    tabs: {
+      resources: 'Resources',
+      roles: 'Roles & Groups',
+      allocations: 'Allocations',
+    },
+    namePlaceholder: 'Resource name',
+    typeHuman: 'Human',
+    typeMachine: 'Machine',
+    typeSystem: 'System',
+    capacity: 'Capacity',
+    cost: 'Cost/unit',
+    noRole: 'No role',
+    noGroup: 'No group',
+    add: 'Add Resource',
+    noResources: 'No resources defined',
+    rolesTitle: 'Roles',
+    groupsTitle: 'Groups',
+    roleName: 'Role name',
+    groupName: 'Group name',
+    description: 'Description',
+    members: 'members',
+    selectResource: 'Select resource...',
+    selectTransition: 'Select transition...',
+    units: 'units',
+    noAllocations: 'No allocations defined',
   },
 
   // Messages

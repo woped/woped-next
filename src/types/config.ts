@@ -29,6 +29,7 @@ export interface EditorConfig {
   animationDuration: number
   showLabels: boolean
   showTokenNumbers: boolean
+  smartEditing: boolean
 }
 
 /**
@@ -38,7 +39,7 @@ export interface TokenGameConfig {
   defaultSpeed: number
   showAnimations: boolean
   highlightEnabled: boolean
-  conflictResolution: 'manual' | 'random' | 'first'
+  conflictResolution: 'manual' | 'random' | 'priority'
 }
 
 /**
@@ -97,6 +98,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     animationDuration: 300,
     showLabels: true,
     showTokenNumbers: true,
+    smartEditing: true,
   },
   tokenGame: {
     defaultSpeed: 1000,

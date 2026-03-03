@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n'
 import { useSimulationStore } from '@/stores/simulation'
 import SimulationCharts from './SimulationCharts.vue'
 import BottleneckAnalysis from './BottleneckAnalysis.vue'
+import ThroughputLineChart from './ThroughputLineChart.vue'
+import SimulationTimeline from './SimulationTimeline.vue'
+import ResourcePieChart from './ResourcePieChart.vue'
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
@@ -59,6 +62,9 @@ const metricCards = computed(() => {
     </div>
 
     <SimulationCharts />
+    <ThroughputLineChart />
+    <ResourcePieChart />
+    <SimulationTimeline />
     <BottleneckAnalysis />
   </div>
 </template>

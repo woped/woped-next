@@ -172,6 +172,29 @@ export default {
     live: 'Lebendig',
     reversible: 'Reversibel',
     deadlockFree: 'Deadlock-frei',
+    coverabilityGraph: 'Erreichbarkeitsgraph',
+    buildGraph: 'Graph erstellen',
+    resetView: 'Ansicht zurücksetzen',
+    states: 'Zustände',
+    unbounded: 'Unbeschränkt',
+    deadlocks: 'Deadlocks',
+    finalStates: 'Endzustände',
+    processTree: 'Prozessstruktur',
+    wizard: {
+      title: 'Analyse-Assistent',
+      selectAnalyses: 'Analysen auswählen',
+      running: 'Läuft',
+      results: 'Ergebnisse',
+      selectDescription: 'Wähle die auszuführenden Analysen:',
+      start: 'Analyse starten',
+      restart: 'Erneut ausführen',
+    },
+    massAnalysis: 'Massenanalyse',
+    selectAll: 'Alle auswählen',
+    deselectAll: 'Alle abwählen',
+    runAnalysis: 'Analyse starten',
+    exportCSV: 'CSV exportieren',
+    customMetrics: 'Eigene Metriken',
   },
 
   // Process Metrics
@@ -309,6 +332,12 @@ export default {
     minimap: 'Minimap',
   },
 
+  // Process Tree (subprocess hierarchy)
+  processTree: {
+    title: 'Prozesshierarchie',
+    empty: 'Keine Prozesse',
+  },
+
   // Subprocess
   subprocess: {
     title: 'Subprozess',
@@ -398,6 +427,10 @@ export default {
     exportCSV: 'CSV exportieren',
     clearResults: 'Ergebnisse löschen',
     noResults: 'Starte eine Simulation um Ergebnisse zu sehen',
+    timeline: 'Ereigniszeitstrahl',
+    case: 'Fall',
+    event: 'Ereignis',
+    timeAxis: 'Zeit',
   },
 
   // Triggers
@@ -412,6 +445,36 @@ export default {
     noTriggers: 'Keine Trigger konfiguriert',
     noResources: 'Keine Ressourcen definiert — im Simulation-Tab anlegen',
     selectResource: 'Ressource auswählen...',
+  },
+
+  // Resources
+  resources: {
+    title: 'Ressourcen-Manager',
+    tabs: {
+      resources: 'Ressourcen',
+      roles: 'Rollen & Gruppen',
+      allocations: 'Zuweisungen',
+    },
+    namePlaceholder: 'Ressourcenname',
+    typeHuman: 'Mensch',
+    typeMachine: 'Maschine',
+    typeSystem: 'System',
+    capacity: 'Kapazität',
+    cost: 'Kosten/Einheit',
+    noRole: 'Keine Rolle',
+    noGroup: 'Keine Gruppe',
+    add: 'Ressource hinzufügen',
+    noResources: 'Keine Ressourcen definiert',
+    rolesTitle: 'Rollen',
+    groupsTitle: 'Gruppen',
+    roleName: 'Rollenname',
+    groupName: 'Gruppenname',
+    description: 'Beschreibung',
+    members: 'Mitglieder',
+    selectResource: 'Ressource auswählen...',
+    selectTransition: 'Transition auswählen...',
+    units: 'Einheiten',
+    noAllocations: 'Keine Zuweisungen definiert',
   },
 
   // Messages
