@@ -5,7 +5,6 @@
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.x-42b883?style=flat-square&logo=vue.js)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646cff?style=flat-square&logo=vite)](https://vitejs.dev/)
-[![License](https://img.shields.io/badge/License-LGPL--3.0-blue?style=flat-square)](LICENSE)
 
 > 🎓 **Built for Education** — WoPeD Next brings Petri net modeling to the browser, making workflow analysis accessible to students, researchers, and professionals alike.
 
@@ -125,12 +124,6 @@ docker compose up --build
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our contributing guidelines and submit pull requests.
-
----
-
-## 📄 License
-
-This project is licensed under the [LGPL-3.0 License](LICENSE).
 
 ---
 
