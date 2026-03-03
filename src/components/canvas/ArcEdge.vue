@@ -133,6 +133,11 @@ const linePoints = computed(() => {
   }
 
   switch (routingMode.value) {
+    case 'manual': {
+      const wp = props.arc.waypoints || []
+      if (wp.length === 0) return [start.x, start.y, end.x, end.y]
+      return pointsToArray([start, ...wp, end])
+    }
     case 'orthogonal': {
       const route = orthogonalRoute(
         start,
@@ -234,15 +239,59 @@ const weightLabelConfig = computed(() => {
   }
 })
 
+// Waypoint handle configs for manual mode
+const waypointHandles = computed(() => {
+  if (routingMode.value !== 'manual' || !props.isSelected || props.isTemp) return []
+  return (props.arc.waypoints || []).map((wp, i) => ({
+    x: wp.x,
+    y: wp.y,
+    radius: 5,
+    fill: colors.value.selectedStroke,
+    stroke: '#fff',
+    strokeWidth: 1.5,
+    draggable: true,
+    _index: i,
+  }))
+})
+
 const handleClick = (e) => {
   if (!props.isTemp) {
     emit('click', e)
   }
 }
+
+const handleDblClick = (e) => {
+  if (props.isTemp || routingMode.value !== 'manual') return
+  const stage = e.target.getStage()
+  if (!stage) return
+  const pos = stage.getPointerPosition()
+  if (!pos) return
+  const vp = store.viewport
+  const worldPos = {
+    x: (pos.x - vp.x) / vp.scale,
+    y: (pos.y - vp.y) / vp.scale,
+  }
+  const wp = [...(props.arc.waypoints || []), worldPos]
+  store.updateArc(props.arc.id, { waypoints: wp })
+}
+
+const handleWaypointDrag = (index, e) => {
+  const node = e.target
+  const wp = [...(props.arc.waypoints || [])]
+  wp[index] = { x: node.x(), y: node.y() }
+  store.updateArc(props.arc.id, { waypoints: wp })
+}
+
+const handleWaypointDblClick = (index, e) => {
+  e.cancelBubble = true
+  const wp = [...(props.arc.waypoints || [])]
+  wp.splice(index, 1)
+  store.updateArc(props.arc.id, { waypoints: wp })
+}
 </script>
 
 <template>
-  <v-group @click="handleClick">
+  <v-group @click="handleClick" @dblclick="handleDblClick">
     <!-- Line -->
     <v-line :config="lineConfig" />
 
@@ -256,6 +305,15 @@ const handleClick = (e) => {
     <v-text
       v-if="showWeight && weightLabelConfig"
       :config="weightLabelConfig"
+    />
+
+    <!-- Waypoint handles (manual mode, selected) -->
+    <v-circle
+      v-for="handle in waypointHandles"
+      :key="'wp-' + handle._index"
+      :config="handle"
+      @dragend="(e) => handleWaypointDrag(handle._index, e)"
+      @dblclick="(e) => handleWaypointDblClick(handle._index, e)"
     />
   </v-group>
 </template>

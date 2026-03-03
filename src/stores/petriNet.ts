@@ -64,6 +64,7 @@ export const usePetriNetStore = defineStore('petriNet', {
         x: 0,
         y: 0,
         scale: 1,
+        rotation: 0,
       },
       history: [],
       historyIndex: -1,
@@ -450,7 +451,7 @@ export const usePetriNetStore = defineStore('petriNet', {
         this.activeNetId = subprocess.subNetId
         this.clearSelection()
         // Reset viewport for new net
-        this.viewport = { x: 0, y: 0, scale: 1 }
+        this.viewport = { x: 0, y: 0, scale: 1, rotation: 0 }
       }
     },
 
@@ -781,6 +782,14 @@ export const usePetriNetStore = defineStore('petriNet', {
     zoomOut() {
       const newScale = Math.max(this.viewport.scale / 1.2, DEFAULTS.viewport.minScale)
       this.viewport.scale = newScale
+    },
+
+    rotateCW() {
+      this.viewport.rotation = (this.viewport.rotation + 90) % 360
+    },
+
+    rotateCCW() {
+      this.viewport.rotation = (this.viewport.rotation + 270) % 360
     },
 
     /**

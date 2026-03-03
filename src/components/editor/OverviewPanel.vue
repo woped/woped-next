@@ -21,6 +21,7 @@ const props = defineProps({
 
 const store = usePetriNetStore()
 const { places, transitions, operators, arcs, viewport } = storeToRefs(store)
+const subProcesses = computed(() => store.subProcesses)
 const { elementBounds, screenToWorld } = useViewport()
 
 // Canvas ref
@@ -85,16 +86,15 @@ function draw() {
   context.fillStyle = '#fafafa'
   context.fillRect(0, 0, OVERVIEW_WIDTH, OVERVIEW_HEIGHT)
   
+  // All positionable elements for arc lookups
+  const allElements = [...places.value, ...transitions.value, ...operators.value, ...subProcesses.value]
+
   // Draw arcs
   context.strokeStyle = '#999'
   context.lineWidth = 1
   for (const arc of arcs.value) {
-    const source = [...places.value, ...transitions.value, ...operators.value].find(
-      (el) => el.id === arc.sourceId
-    )
-    const target = [...places.value, ...transitions.value, ...operators.value].find(
-      (el) => el.id === arc.targetId
-    )
+    const source = allElements.find((el) => el.id === arc.sourceId)
+    const target = allElements.find((el) => el.id === arc.targetId)
     
     if (source && target) {
       context.beginPath()
@@ -165,6 +165,20 @@ function draw() {
     context.stroke()
   }
   
+  // Draw subprocesses (double-border rectangles)
+  context.fillStyle = '#eff6ff'
+  context.strokeStyle = '#3b82f6'
+  for (const sp of subProcesses.value) {
+    const x = sp.position.x * scale + offset.x
+    const y = sp.position.y * scale + offset.y
+    const w = Math.max(VISUAL.subprocess.width * scale, 6)
+    const h = Math.max(VISUAL.subprocess.height * scale, 4)
+    
+    context.fillRect(x - w / 2, y - h / 2, w, h)
+    context.strokeRect(x - w / 2, y - h / 2, w, h)
+    context.strokeRect(x - w / 2 + 2, y - h / 2 + 2, w - 4, h - 4)
+  }
+  
   // Draw viewport rectangle
   const vp = viewportRect.value
   context.strokeStyle = '#3b82f6'
@@ -225,7 +239,7 @@ onMounted(() => {
 
 // Redraw when data changes
 watch(
-  [places, transitions, operators, arcs, viewport],
+  [places, transitions, operators, subProcesses, arcs, viewport],
   () => {
     draw()
   },
@@ -250,7 +264,7 @@ watch(
       ref="canvasRef"
       :width="OVERVIEW_WIDTH"
       :height="OVERVIEW_HEIGHT"
-      class="overview-canvas"
+      :class="['overview-canvas', { dragging: isDragging }]"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
@@ -281,10 +295,14 @@ watch(
 
 .overview-canvas {
   display: block;
-  cursor: pointer;
+  cursor: grab;
 }
 
 .overview-canvas:active {
+  cursor: grabbing;
+}
+
+.overview-canvas.dragging {
   cursor: grabbing;
 }
 </style>

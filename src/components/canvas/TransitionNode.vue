@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import { VISUAL } from '@/types/petri-net'
+import { TRIGGER_COLORS } from '@/types/triggers'
 
 const props = defineProps({
   transition: {
@@ -30,7 +31,6 @@ const emit = defineEmits(['click', 'dragend'])
 
 const { width, height, strokeWidth } = VISUAL.transition
 
-// Theme colors
 const configStore = useConfigStore()
 
 const colors = computed(() => {
@@ -45,20 +45,17 @@ const colors = computed(() => {
   }
 })
 
-// Determine stroke color based on state
 const strokeColor = computed(() => {
   if (props.isSelected) return colors.value.selectedStroke
   if (props.isEnabled && props.isTokenGameActive) return colors.value.enabledStroke
   return colors.value.stroke
 })
 
-// Determine fill color based on state
 const fillColor = computed(() => {
   if (props.isEnabled && props.isTokenGameActive) return colors.value.enabledFill
   return colors.value.fill
 })
 
-// Rectangle config
 const rectConfig = computed(() => ({
   x: props.transition.position.x - width / 2,
   y: props.transition.position.y - height / 2,
@@ -69,14 +66,12 @@ const rectConfig = computed(() => ({
   strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
 }))
 
-// Group config for dragging
 const groupConfig = computed(() => ({
   x: 0,
   y: 0,
   draggable: props.draggable,
 }))
 
-// Label config
 const labelConfig = computed(() => ({
   x: props.transition.position.x,
   y: props.transition.position.y + height / 2 + 15,
@@ -88,18 +83,61 @@ const labelConfig = computed(() => ({
   offsetX: props.transition.name.length * 3,
 }))
 
+const TRIGGER_LABELS = { time: 'T', resource: 'R', message: 'M' }
+const ICON_RADIUS = 7
+const ICON_GAP = 18
+
+const triggerIcons = computed(() => {
+  const triggers = props.transition.triggers || []
+  if (triggers.length === 0) return []
+
+  const seen = new Set()
+  const unique = []
+  for (const t of triggers) {
+    if (!seen.has(t.type)) {
+      seen.add(t.type)
+      unique.push(t.type)
+    }
+  }
+
+  const baseX = props.transition.position.x + width / 2 + ICON_RADIUS + 4
+  const totalHeight = (unique.length - 1) * ICON_GAP
+  const startY = props.transition.position.y - totalHeight / 2
+
+  return unique.map((type, i) => ({
+    type,
+    circle: {
+      x: baseX,
+      y: startY + i * ICON_GAP,
+      radius: ICON_RADIUS,
+      fill: TRIGGER_COLORS[type],
+    },
+    text: {
+      x: baseX,
+      y: startY + i * ICON_GAP,
+      text: TRIGGER_LABELS[type],
+      fontSize: 10,
+      fontStyle: 'bold',
+      fontFamily: 'system-ui, sans-serif',
+      fill: '#ffffff',
+      align: 'center',
+      verticalAlign: 'middle',
+      offsetX: 3,
+      offsetY: 5,
+    },
+  }))
+})
+
 const handleClick = (e) => {
   emit('click', e)
 }
 
 const handleDragEnd = (e) => {
-  // Calculate new center position from group position
   const newX = e.target.x() + props.transition.position.x
   const newY = e.target.y() + props.transition.position.y
-  
-  // Reset group position and emit with calculated center
+
   e.target.position({ x: 0, y: 0 })
-  
+
   emit('dragend', {
     ...e,
     target: {
@@ -119,6 +157,12 @@ const handleDragEnd = (e) => {
   >
     <!-- Main rectangle -->
     <v-rect :config="rectConfig" />
+
+    <!-- Trigger icons -->
+    <template v-for="icon in triggerIcons" :key="icon.type">
+      <v-circle :config="icon.circle" />
+      <v-text :config="icon.text" />
+    </template>
 
     <!-- Label -->
     <v-text :config="labelConfig" />

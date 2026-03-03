@@ -6,7 +6,7 @@ export type TokenGameStatus = 'stopped' | 'playing' | 'paused'
 /**
  * Conflict resolution mode for multiple enabled transitions
  */
-export type ConflictResolutionMode = 'manual' | 'random' | 'first'
+export type ConflictResolutionMode = 'manual' | 'random' | 'priority'
 
 /**
  * A marking represents the token distribution at a point in time

@@ -66,8 +66,9 @@ gantt
         Quantitative Sim      :p8, after p7, 45d
     section Phase 4 - Integration
         File Operations       :p9, after p3, 30d
-        NLP Integration       :p10, after p8, 30d
-        Triggers/Resources    :p11, after p10, 20d
+        Triggers/Resources    :p11, after p8, 20d
+    section Phase 5 - NLP (Deferred)
+        NLP Integration (neues Konzept) :p10, after p11, 60d
 ```
 
 ## Feature Documents
@@ -83,7 +84,7 @@ gantt
 | [07](07-quantitative-simulation.md) | Quantitative Simulation | High | P3 |
 | [08](08-process-metrics.md) | Process Metrics | Medium | P3 |
 | [09](09-file-operations.md) | File Operations | Medium | P1 |
-| [10](10-nlp-integration.md) | NLP Integration | Medium | P4 |
+| [10](10-nlp-integration.md) | NLP Integration | Medium | P5 (Deferred — wird als letztes komplett neu konzipiert) |
 | [11](11-triggers-resources.md) | Triggers & Resources | Medium | P3 |
 | [12](12-configuration.md) | Configuration | Low | P2 |
 

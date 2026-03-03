@@ -19,15 +19,17 @@ export interface Bounds {
 export function useViewport() {
   const store = usePetriNetStore()
   const { viewport, places, transitions, operators } = storeToRefs(store)
+  const subProcesses = computed(() => store.subProcesses)
 
   /**
-   * Calculate bounds of all elements
+   * Calculate bounds of all elements including subprocesses
    */
   const elementBounds = computed((): Bounds | null => {
     const allPositions: Position[] = [
       ...places.value.map((p) => p.position),
       ...transitions.value.map((t) => t.position),
       ...operators.value.map((o) => o.position),
+      ...subProcesses.value.map((s) => s.position),
     ]
 
     if (allPositions.length === 0) return null

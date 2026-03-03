@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness, computeStatistics } from '@/services/analysis'
 import MetricsSection from './MetricsSection.vue'
+import AnalysisResults from './AnalysisResults.vue'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -150,115 +151,21 @@ const formatDuration = (ms) => {
       </div>
     </div>
 
-    <!-- Workflow Analysis Section -->
-    <div class="section">
-      <div class="section-header" @click="showWorkflow = !showWorkflow">
-        <span class="toggle">{{ showWorkflow ? '▼' : '▶' }}</span>
-        <span class="section-title">{{ $t('analysis.workflowCheck') }}</span>
-        <span
-          v-if="workflowResult"
-          :class="['badge', workflowResult.valid ? 'valid' : 'invalid']"
-        >
-          {{ workflowResult.valid ? '✓ ' + $t('analysis.valid') : '✗ ' + $t('analysis.invalid') }}
-        </span>
-        <button
-          class="btn-run-small"
-          :disabled="isAnalyzing"
-          @click.stop="runWorkflowAnalysis"
-        >
-          {{ $t('analysis.run') }}
-        </button>
-      </div>
-      <div v-if="showWorkflow && workflowResult" class="section-content">
-        <div class="result-meta">
-          <span>{{ $t('analysis.duration') }}: {{ formatDuration(workflowResult.duration) }}</span>
-        </div>
-        <div class="issues-list">
-          <div
-            v-for="(issue, index) in workflowResult.issues"
-            :key="index"
-            :class="['issue', `issue-${issue.severity}`]"
-          >
-            <span class="issue-icon">{{ getSeverityIcon(issue.severity) }}</span>
-            <div class="issue-content">
-              <span class="issue-message">{{ issue.message }}</span>
-              <span v-if="issue.details" class="issue-details">{{ issue.details }}</span>
-              <div v-if="issue.affectedElements.length > 0" class="affected-elements">
-                <button
-                  v-for="id in issue.affectedElements.slice(0, 3)"
-                  :key="id"
-                  class="element-btn"
-                  @click="highlightElement(id)"
-                >
-                  {{ id.substring(0, 8) }}...
-                </button>
-                <span v-if="issue.affectedElements.length > 3" class="more">
-                  +{{ issue.affectedElements.length - 3 }} {{ $t('common.more') }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div v-if="workflowResult.issues.length === 0" class="no-issues">
-            {{ $t('analysis.noIssues') }}
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Workflow Analysis -->
+    <AnalysisResults
+      :title="$t('analysis.workflowCheck')"
+      :result="workflowResult"
+      :is-analyzing="isAnalyzing"
+      @run="runWorkflowAnalysis"
+    />
 
-    <!-- Soundness Analysis Section -->
-    <div class="section">
-      <div class="section-header" @click="showSoundness = !showSoundness">
-        <span class="toggle">{{ showSoundness ? '▼' : '▶' }}</span>
-        <span class="section-title">{{ $t('analysis.soundnessCheck') }}</span>
-        <span
-          v-if="soundnessResult"
-          :class="['badge', soundnessResult.valid ? 'valid' : 'invalid']"
-        >
-          {{ soundnessResult.valid ? '✓ ' + $t('analysis.sound') : '✗ ' + $t('analysis.unsound') }}
-        </span>
-        <button
-          class="btn-run-small"
-          :disabled="isAnalyzing"
-          @click.stop="runSoundnessAnalysis"
-        >
-          {{ $t('analysis.run') }}
-        </button>
-      </div>
-      <div v-if="showSoundness && soundnessResult" class="section-content">
-        <div class="result-meta">
-          <span>{{ $t('analysis.duration') }}: {{ formatDuration(soundnessResult.duration) }}</span>
-        </div>
-        <div class="issues-list">
-          <div
-            v-for="(issue, index) in soundnessResult.issues"
-            :key="index"
-            :class="['issue', `issue-${issue.severity}`]"
-          >
-            <span class="issue-icon">{{ getSeverityIcon(issue.severity) }}</span>
-            <div class="issue-content">
-              <span class="issue-message">{{ issue.message }}</span>
-              <span v-if="issue.details" class="issue-details">{{ issue.details }}</span>
-              <div v-if="issue.affectedElements.length > 0" class="affected-elements">
-                <button
-                  v-for="id in issue.affectedElements.slice(0, 3)"
-                  :key="id"
-                  class="element-btn"
-                  @click="highlightElement(id)"
-                >
-                  {{ id.substring(0, 8) }}...
-                </button>
-                <span v-if="issue.affectedElements.length > 3" class="more">
-                  +{{ issue.affectedElements.length - 3 }} {{ $t('common.more') }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div v-if="soundnessResult.issues.length === 0" class="no-issues">
-            {{ $t('analysis.noIssues') }}
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Soundness Analysis -->
+    <AnalysisResults
+      :title="$t('analysis.soundnessCheck')"
+      :result="soundnessResult"
+      :is-analyzing="isAnalyzing"
+      @run="runSoundnessAnalysis"
+    />
   </div>
 </template>
 

@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import type { PetriNet, Place, Transition, OperatorTransition, SubProcess, Arc, Position } from '@/types/petri-net'
 import { OperatorType } from '@/types/petri-net'
 import type { ImportResult, ImportError } from '@/types/file-formats'
+import type { Trigger, TimeTrigger, ResourceTrigger, MessageTrigger } from '@/types/triggers'
 
 /**
  * Result of parsing including hierarchical nets
@@ -200,8 +201,8 @@ export class PNMLParser {
         return
       }
 
-      // Check for WoPeD operator toolspecific info
       const operatorType = this.getWoPeDOperatorType(transEl)
+      const triggers = this.parseTriggers(transEl)
 
       if (operatorType) {
         operators.push({
@@ -210,6 +211,7 @@ export class PNMLParser {
           position: position || { x: 100 + index * 100, y: 100 },
           label,
           operatorType,
+          ...(triggers.length > 0 ? { triggers } : {}),
         })
       } else {
         transitions.push({
@@ -217,6 +219,7 @@ export class PNMLParser {
           name,
           position: position || { x: 100 + index * 100, y: 100 },
           label,
+          ...(triggers.length > 0 ? { triggers } : {}),
         })
       }
     })
@@ -353,6 +356,47 @@ export class PNMLParser {
     })
 
     return waypoints
+  }
+
+  /**
+   * Parse trigger elements from WoPeD toolspecific data
+   */
+  private parseTriggers(transEl: Element): Trigger[] {
+    const triggers: Trigger[] = []
+    const toolspec = transEl.querySelector('toolspecific[tool="WoPeD"]')
+    if (!toolspec) return triggers
+
+    const triggerEls = toolspec.querySelectorAll('trigger')
+    triggerEls.forEach((triggerEl) => {
+      const type = triggerEl.getAttribute('type')
+      const id = triggerEl.getAttribute('id') || nanoid()
+
+      if (type === 'time') {
+        triggers.push({
+          id,
+          type: 'time',
+          delay: parseFloat(triggerEl.getAttribute('delay') || '0'),
+          timeUnit: (triggerEl.getAttribute('timeunit') || triggerEl.getAttribute('timeUnit') || 'minutes') as any,
+        } as TimeTrigger)
+      } else if (type === 'resource') {
+        triggers.push({
+          id,
+          type: 'resource',
+          resourceId: triggerEl.getAttribute('resourceid') || triggerEl.getAttribute('resourceId') || '',
+          quantity: parseInt(triggerEl.getAttribute('quantity') || '1', 10),
+          role: triggerEl.getAttribute('role') || undefined,
+        } as ResourceTrigger)
+      } else if (type === 'message') {
+        triggers.push({
+          id,
+          type: 'message',
+          messageType: triggerEl.getAttribute('messagetype') || triggerEl.getAttribute('messageType') || '',
+          source: triggerEl.getAttribute('source') || undefined,
+        } as MessageTrigger)
+      }
+    })
+
+    return triggers
   }
 
   /**

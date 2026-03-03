@@ -23,7 +23,8 @@ const { nets } = storeToRefs(store)
 
 // Get the subprocess net data
 const subNet = computed(() => {
-  return nets.value.get(props.subprocessId) || null
+  if (!props.subprocessId) return null
+  return nets.value[props.subprocessId] || null
 })
 
 // Calculate bounds of all elements

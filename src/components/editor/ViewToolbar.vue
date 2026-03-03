@@ -6,6 +6,7 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { useConfigStore } from '@/stores/config'
 import { useViewport } from '@/composables/useViewport'
 import { autoLayout } from '@/utils/layout'
+import LayoutSettings from './LayoutSettings.vue'
 
 const { t } = useI18n()
 
@@ -21,7 +22,7 @@ const props = defineProps({
 })
 
 const store = usePetriNetStore()
-const { net } = storeToRefs(store)
+const { net, viewport } = storeToRefs(store)
 const { zoomPercent, fitToView } = useViewport()
 
 // Config store for grid settings
@@ -118,6 +119,19 @@ function handleClickOutside(e) {
 
     <div class="toolbar-separator"></div>
 
+    <!-- Rotation controls -->
+    <div class="toolbar-group">
+      <button class="tool-btn small" :title="$t('toolbar.rotateCCW')" @click="store.rotateCCW()">
+        <span>↺</span>
+      </button>
+      <span class="zoom-display">{{ viewport.rotation || 0 }}°</span>
+      <button class="tool-btn small" :title="$t('toolbar.rotateCW')" @click="store.rotateCW()">
+        <span>↻</span>
+      </button>
+    </div>
+
+    <div class="toolbar-separator"></div>
+
     <!-- Grid controls -->
     <div class="toolbar-group">
       <button
@@ -151,41 +165,13 @@ function handleClickOutside(e) {
         <span class="dropdown-arrow">▾</span>
       </button>
 
-      <!-- Layout menu -->
+      <!-- Layout menu (extracted component) -->
       <div v-if="showLayoutMenu" class="layout-menu">
-        <div class="menu-header">{{ $t('layout.settings') }}</div>
-
-        <div class="menu-field">
-          <label>{{ $t('layout.algorithm') }}</label>
-          <select v-model="layoutAlgorithm">
-            <option v-for="algo in algorithms" :key="algo.id" :value="algo.id">
-              {{ algo.label }}
-            </option>
-          </select>
-        </div>
-
-        <div class="menu-field">
-          <label>{{ $t('layout.direction') }}</label>
-          <select v-model="layoutDirection">
-            <option v-for="dir in directions" :key="dir.id" :value="dir.id">
-              {{ dir.label }}
-            </option>
-          </select>
-        </div>
-
-        <div class="menu-field">
-          <label>{{ $t('layout.nodeSpacing') }}</label>
-          <input v-model.number="nodeSpacing" type="number" min="40" max="200" step="10" />
-        </div>
-
-        <div class="menu-field">
-          <label>{{ $t('layout.rankSpacing') }}</label>
-          <input v-model.number="rankSpacing" type="number" min="60" max="300" step="10" />
-        </div>
-
-        <div class="menu-actions">
-          <button class="apply-btn" @click="applyLayout">{{ $t('layout.apply') }}</button>
-        </div>
+        <LayoutSettings
+          :canvas-width="canvasWidth"
+          :canvas-height="canvasHeight"
+          @applied="showLayoutMenu = false"
+        />
       </div>
     </div>
   </div>

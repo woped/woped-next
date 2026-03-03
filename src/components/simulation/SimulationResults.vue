@@ -7,6 +7,7 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { xesExporter } from '@/services/simulation/XESExporter'
 import SimulationCharts from './SimulationCharts.vue'
 import BottleneckAnalysis from './BottleneckAnalysis.vue'
+import SimulationDashboard from './SimulationDashboard.vue'
 
 const emit = defineEmits(['clear'])
 
@@ -103,8 +104,8 @@ const exportXES = () => {
       </div>
     </div>
 
-    <!-- Dashboard Charts -->
-    <SimulationCharts />
+    <!-- Dashboard with MetricCards + Charts -->
+    <SimulationDashboard />
 
     <!-- Cycle Time Details -->
     <div class="results-section">

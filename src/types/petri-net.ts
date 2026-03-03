@@ -123,7 +123,7 @@ export function getOperatorOutputType(type: OperatorType): 'and' | 'xor' | null 
 /**
  * Arc routing mode
  */
-export type ArcRoutingMode = 'direct' | 'orthogonal' | 'bezier'
+export type ArcRoutingMode = 'direct' | 'orthogonal' | 'bezier' | 'manual'
 
 /**
  * Arc (Kante) connecting places and transitions
@@ -183,6 +183,7 @@ export interface ViewportState {
   x: number
   y: number
   scale: number
+  rotation: number
 }
 
 /**

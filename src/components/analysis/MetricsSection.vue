@@ -79,6 +79,30 @@ const getSummaryClass = (report) => {
   if (report.summary.warning > 0) return 'summary-warning'
   return 'summary-good'
 }
+
+const exportReport = () => {
+  if (!metricsReport.value) return
+  const lines = [`Metrics Report — ${net.value.name}`, `Date: ${new Date().toISOString()}`, '']
+  for (const category of ['size', 'complexity', 'density', 'quality']) {
+    const metrics = metricsByCategory.value[category]
+    if (!metrics?.length) continue
+    lines.push(`## ${formatCategoryLabel(category)}`)
+    for (const m of metrics) {
+      const def = getDefinitionForMetric(m)
+      lines.push(`  ${def?.shortName || m.metricId}: ${m.formattedValue}  [${m.rating}]`)
+    }
+    lines.push('')
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${net.value.name}-metrics.txt`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -93,13 +117,23 @@ const getSummaryClass = (report) => {
           <span class="count good">{{ metricsReport.summary.good }}</span>
         </span>
       </div>
-      <button
-        class="btn-calculate"
-        :disabled="isCalculating"
-        @click="calculateMetrics"
-      >
-        {{ isCalculating ? '...' : '▶' }}
-      </button>
+      <div class="header-actions">
+        <button
+          v-if="metricsReport"
+          class="btn-export"
+          @click="exportReport"
+          :title="$t('metrics.export')"
+        >
+          ↓
+        </button>
+        <button
+          class="btn-calculate"
+          :disabled="isCalculating"
+          @click="calculateMetrics"
+        >
+          {{ isCalculating ? '...' : '▶' }}
+        </button>
+      </div>
     </div>
 
     <!-- No Results -->
@@ -131,6 +165,13 @@ const getSummaryClass = (report) => {
               <span class="metric-tooltip" :title="getDefinitionForMetric(metric)?.description">ⓘ</span>
             </div>
             <div class="metric-value">
+              <div v-if="typeof metric.value === 'number' && metric.value >= 0 && metric.value <= 1" class="metric-bar-wrapper">
+                <div
+                  class="metric-bar"
+                  :class="getRatingClass(metric.rating)"
+                  :style="{ width: (metric.value * 100) + '%' }"
+                />
+              </div>
               <span :class="['value', getRatingClass(metric.rating)]">
                 {{ metric.formattedValue }}
               </span>
@@ -213,6 +254,25 @@ const getSummaryClass = (report) => {
 :global(.dark) .count.bad {
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-export {
+  padding: 3px 8px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.btn-export:hover {
+  background: var(--color-bg-tertiary);
 }
 
 .btn-calculate {
@@ -323,6 +383,36 @@ const getSummaryClass = (report) => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.metric-bar-wrapper {
+  width: 40px;
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.metric-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.metric-bar.rating-good {
+  background: #22c55e;
+}
+
+.metric-bar.rating-warning {
+  background: #f59e0b;
+}
+
+.metric-bar.rating-bad {
+  background: #ef4444;
+}
+
+.metric-bar.rating-neutral {
+  background: var(--color-text-muted);
 }
 
 .value {

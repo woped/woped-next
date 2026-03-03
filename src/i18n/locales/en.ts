@@ -30,6 +30,16 @@ export default {
     exportPng: 'Export as PNG',
     settings: 'Settings',
     includeLayout: 'Include Layout',
+    dropToOpen: 'Drop file to open (.pnml, .json)',
+    recentFiles: 'Recent Files',
+    noRecentFiles: 'No recent files',
+  },
+  contextMenu: {
+    select: 'Select',
+    duplicate: 'Duplicate',
+    delete: 'Delete',
+    properties: 'Properties',
+    openSubprocess: 'Open Subprocess',
   },
 
   // Templates
@@ -84,6 +94,8 @@ export default {
     toggleGrid: 'Toggle Grid',
     grid: 'Grid',
     snap: 'Snap',
+    rotateCW: 'Rotate 90° Clockwise',
+    rotateCCW: 'Rotate 90° Counter-Clockwise',
   },
 
   // Editor
@@ -110,10 +122,12 @@ export default {
     conflicts: 'Conflicts',
     manual: 'Manual',
     random: 'Random',
-    first: 'First',
+    priority: 'Priority',
     enabled: 'Enabled',
     deadlock: 'Deadlock!',
     deadlockMessage: 'No transitions enabled - the net is in a deadlock state.',
+    history: 'History',
+    initial: 'Initial',
     playing: 'Playing...',
     paused: 'Paused',
     stopped: 'Stopped',
@@ -164,6 +178,7 @@ export default {
   metrics: {
     title: 'Process Metrics',
     clickToCalculate: 'Click ▶ to calculate metrics',
+    export: 'Export Report',
     size: 'Size Metrics',
     complexity: 'Complexity Metrics',
     density: 'Density Metrics',
@@ -248,6 +263,7 @@ export default {
     nodeSpacing: 'Node Spacing',
     rankSpacing: 'Rank Spacing',
     apply: 'Apply Layout',
+    beautify: 'Beautify',
     hierarchical: 'Hierarchical',
     forceDirected: 'Force-Directed',
     grid: 'Grid',
@@ -282,6 +298,8 @@ export default {
     direct: 'Direct',
     orthogonal: 'Orthogonal',
     curved: 'Curved',
+    manual: 'Manual Waypoints',
+    manualHint: 'Double-click arc to add waypoints, double-click handle to remove',
     elementsSelected: '{count} elements selected',
   },
 
@@ -392,6 +410,8 @@ export default {
     resourceName: 'Resource name',
     messageType: 'Message type',
     noTriggers: 'No triggers configured',
+    noResources: 'No resources defined — add them in the Simulation tab',
+    selectResource: 'Select resource...',
   },
 
   // Messages

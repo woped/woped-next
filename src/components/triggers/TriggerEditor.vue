@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { nanoid } from 'nanoid'
-import type { Trigger, TimeTrigger, ResourceTrigger, MessageTrigger } from '@/types/triggers'
+import type { Trigger } from '@/types/triggers'
 import { TRIGGER_ICONS, TRIGGER_COLORS } from '@/types/triggers'
+import { useResourceStore } from '@/stores/resources'
 
 const props = defineProps({
   triggers: {
@@ -15,11 +16,10 @@ const props = defineProps({
 const emit = defineEmits(['update:triggers'])
 
 const { t } = useI18n()
+const resourceStore = useResourceStore()
 
-// Active tab
 const activeType = ref('time')
 
-// Form state
 const timeTrigger = ref({
   delay: 5,
   timeUnit: 'minutes',
@@ -35,7 +35,6 @@ const messageTrigger = ref({
   source: '',
 })
 
-// Time units
 const timeUnits = [
   { value: 'seconds', label: 'Seconds' },
   { value: 'minutes', label: 'Minutes' },
@@ -43,7 +42,6 @@ const timeUnits = [
   { value: 'days', label: 'Days' },
 ]
 
-// Add trigger
 const addTrigger = () => {
   let newTrigger
 
@@ -76,18 +74,21 @@ const addTrigger = () => {
   emit('update:triggers', newTriggers)
 }
 
-// Remove trigger
 const removeTrigger = (triggerId) => {
   const newTriggers = props.triggers.filter(t => t.id !== triggerId)
   emit('update:triggers', newTriggers)
 }
 
-// Format trigger for display
+const getResourceName = (resourceId: string) => {
+  return resourceStore.getById(resourceId)?.name || resourceId
+}
+
 const formatTrigger = (trigger) => {
   if (trigger.type === 'time') {
     return `${trigger.delay} ${trigger.timeUnit}`
   } else if (trigger.type === 'resource') {
-    return `×${trigger.quantity}`
+    const name = getResourceName(trigger.resourceId)
+    return `${name} ×${trigger.quantity}`
   } else {
     return trigger.messageType
   }
@@ -157,13 +158,23 @@ const formatTrigger = (trigger) => {
 
       <!-- Resource Trigger Form -->
       <div v-if="activeType === 'resource'" class="trigger-form">
-        <div class="form-row">
-          <input
+        <div v-if="resourceStore.resources.length === 0" class="empty-hint">
+          {{ $t('triggers.noResources') }}
+        </div>
+        <div v-else class="form-row">
+          <select
             v-model="resourceTrigger.resourceId"
-            type="text"
-            :placeholder="$t('triggers.resourceName')"
             class="resource-input"
-          />
+          >
+            <option value="">{{ $t('triggers.selectResource') }}</option>
+            <option
+              v-for="res in resourceStore.resources"
+              :key="res.id"
+              :value="res.id"
+            >
+              {{ res.name }} ({{ res.capacity }})
+            </option>
+          </select>
           <input
             v-model.number="resourceTrigger.quantity"
             type="number"
@@ -352,5 +363,12 @@ const formatTrigger = (trigger) => {
 .add-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.empty-hint {
+  padding: 12px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 </style>

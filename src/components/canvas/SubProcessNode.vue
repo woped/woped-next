@@ -1,10 +1,14 @@
 <script setup>
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
+import { usePetriNetStore } from '@/stores/petriNet'
 import { VISUAL } from '@/types/petri-net'
 
 const { t } = useI18n()
+const petriNetStore = usePetriNetStore()
+const { nets } = storeToRefs(petriNetStore)
 
 const props = defineProps({
   subprocess: {
@@ -107,7 +111,55 @@ const labelConfig = computed(() => ({
   offsetX: props.subprocess.name.length * 3,
 }))
 
-// Expand icon config (⊞ symbol for drill-down hint)
+// Subnet data for miniature preview
+const subNet = computed(() => {
+  const netId = props.subprocess.subNetId
+  if (!netId) return null
+  return nets.value[netId] || null
+})
+
+const hasSubNetContent = computed(() => {
+  const net = subNet.value
+  if (!net) return false
+  return net.places.length > 0 || net.transitions.length > 0
+})
+
+// Miniature preview shapes inside the node
+const miniPreviewShapes = computed(() => {
+  const net = subNet.value
+  if (!net || !hasSubNetContent.value) return []
+
+  const allElements = [
+    ...net.places.map((p) => ({ ...p, kind: 'place' })),
+    ...net.transitions.map((t) => ({ ...t, kind: 'transition' })),
+    ...net.operators.map((o) => ({ ...o, kind: 'operator' })),
+    ...(net.subProcesses || []).map((s) => ({ ...s, kind: 'subprocess' })),
+  ]
+
+  if (allElements.length === 0) return []
+
+  const xs = allElements.map((e) => e.position.x)
+  const ys = allElements.map((e) => e.position.y)
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
+  const rangeX = maxX - minX || 1
+  const rangeY = maxY - minY || 1
+
+  const areaW = width - 16
+  const areaH = 16
+  const baseY = props.subprocess.position.y + 6
+  const baseX = props.subprocess.position.x - areaW / 2
+
+  return allElements.map((el) => ({
+    kind: el.kind,
+    x: baseX + ((el.position.x - minX) / rangeX) * areaW,
+    y: baseY + ((el.position.y - minY) / rangeY) * areaH,
+  }))
+})
+
+// Expand icon config (⊞ symbol for drill-down hint) — shown only when no preview
 const expandIconConfig = computed(() => ({
   x: props.subprocess.position.x,
   y: props.subprocess.position.y + 12,
@@ -175,8 +227,26 @@ const handleDragEnd = (e) => {
     <!-- Name label -->
     <v-text :config="labelConfig" />
 
-    <!-- Expand icon -->
-    <v-text :config="expandIconConfig" />
+    <!-- Miniature preview when subnet has content -->
+    <template v-if="hasSubNetContent">
+      <template v-for="(shape, idx) in miniPreviewShapes" :key="'mini-' + idx">
+        <v-circle
+          v-if="shape.kind === 'place'"
+          :config="{ x: shape.x, y: shape.y, radius: 3, fill: 'white', stroke: colors.stroke, strokeWidth: 0.8 }"
+        />
+        <v-rect
+          v-else-if="shape.kind === 'transition'"
+          :config="{ x: shape.x - 3, y: shape.y - 2.5, width: 6, height: 5, fill: colors.stroke, stroke: colors.stroke, strokeWidth: 0.5 }"
+        />
+        <v-circle
+          v-else
+          :config="{ x: shape.x, y: shape.y, radius: 2.5, fill: '#f97316', stroke: '#ea580c', strokeWidth: 0.5 }"
+        />
+      </template>
+    </template>
+
+    <!-- Expand icon (when no preview content) -->
+    <v-text v-else :config="expandIconConfig" />
 
     <!-- Hint (shown when selected) -->
     <v-text v-if="isSelected" :config="hintConfig" />

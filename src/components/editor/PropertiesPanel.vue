@@ -19,6 +19,7 @@ const routingModes = computed(() => [
   { id: 'direct', label: t('properties.direct') },
   { id: 'orthogonal', label: t('properties.orthogonal') },
   { id: 'bezier', label: t('properties.curved') },
+  { id: 'manual', label: t('properties.manual') },
 ])
 
 // Get the selected element (only show properties for single selection)
@@ -315,6 +316,7 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
               {{ mode.label }}
             </option>
           </select>
+          <span v-if="localRoutingMode === 'manual'" class="hint">{{ $t('properties.manualHint') }}</span>
         </div>
       </div>
 
@@ -366,7 +368,7 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
         <!-- Subprocess Preview -->
         <div class="property-row preview-row">
           <SubprocessPreview
-            :subprocess-id="selectedIds[0]"
+            :subprocess-id="selectedElement?.subNetId"
             :width="220"
             :height="130"
           />

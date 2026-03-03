@@ -6,6 +6,7 @@ import { useTokenGameStore } from '@/stores/tokenGame'
 import { usePetriNetStore } from '@/stores/petriNet'
 import TokenGameStats from './TokenGameStats.vue'
 import ConflictDialog from './ConflictDialog.vue'
+import HistoryPanel from './HistoryPanel.vue'
 
 const { t } = useI18n()
 const tokenGameStore = useTokenGameStore()
@@ -48,7 +49,7 @@ watch(autoPlayDelay, (val) => {
 const conflictOptions = computed(() => [
   { id: 'manual', label: t('tokenGame.manual') },
   { id: 'random', label: t('tokenGame.random') },
-  { id: 'first', label: t('tokenGame.first') },
+  { id: 'priority', label: t('tokenGame.priority') },
 ])
 
 // Button handlers
@@ -320,6 +321,9 @@ const statusClass = computed(() => {
       <span v-if="canStepOutComputed">{{ $t('subprocess.canStepOut') }}</span>
       <span v-else>{{ $t('subprocess.noProgress') }}</span>
     </div>
+
+    <!-- History Panel -->
+    <HistoryPanel />
 
     <!-- Token Game Statistics -->
     <TokenGameStats v-if="isRunning" />

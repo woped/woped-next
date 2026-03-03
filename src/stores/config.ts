@@ -17,7 +17,7 @@ import {
 } from '@/types/config'
 
 export const useConfigStore = defineStore('config', {
-  state: (): AppConfig => ({ ...DEFAULT_CONFIG }),
+  state: (): AppConfig => JSON.parse(JSON.stringify(DEFAULT_CONFIG)),
 
   getters: {
     /**
@@ -116,7 +116,7 @@ export const useConfigStore = defineStore('config', {
      * Reset configuration to defaults
      */
     reset() {
-      this.$patch(DEFAULT_CONFIG)
+      this.$reset()
       this.save()
       this.applyTheme()
     },

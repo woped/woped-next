@@ -207,17 +207,16 @@ export class SimulationEngine {
 
     simCase.events.push(event)
 
-    // Get processing time for this transition
+    // Allocate resources
+    this.allocateResources(event.transitionId)
+
     const processingTime = this.getProcessingTime(event.transitionId)
 
-    // Track wait time (time from when tokens were available to start)
     const waitTimes = this.activityWaitTimes.get(event.transitionId)
     if (waitTimes) {
-      // Simplified: we don't track exact arrival time at input places
       waitTimes.push(0)
     }
 
-    // Schedule completion
     this.eventQueue.push({
       time: this.currentTime + processingTime,
       type: 'complete',
@@ -235,7 +234,6 @@ export class SimulationEngine {
 
     simCase.events.push(event)
 
-    // Record activity time
     const startEvent = simCase.events.find(
       (e) => e.type === 'start' && e.transitionId === event.transitionId
     )
@@ -246,12 +244,15 @@ export class SimulationEngine {
 
       const busyTime = this.activityBusyTime.get(event.transitionId) ?? 0
       this.activityBusyTime.set(event.transitionId, busyTime + duration)
+
+      this.trackResourceBusyTime(event.transitionId, duration)
     }
 
-    // Update marking: consume from input places, produce to output places
+    // Release resources
+    this.releaseResources(event.transitionId)
+
     this.fireTransition(simCase, event.transitionId)
 
-    // Check if case is complete (tokens on end places)
     if (this.isCaseComplete(simCase)) {
       simCase.completed = true
       simCase.endTime = this.currentTime
@@ -262,7 +263,6 @@ export class SimulationEngine {
         caseId: event.caseId,
       })
     } else {
-      // Try to start next transition
       this.tryStartNextTransition(event.caseId)
     }
   }
@@ -318,7 +318,7 @@ export class SimulationEngine {
   }
 
   /**
-   * Check if a transition is enabled for a case
+   * Check if a transition is enabled for a case (tokens + resource availability)
    */
   private isTransitionEnabled(simCase: SimCase, transitionId: string): boolean {
     const inputArcs = this.net.arcs.filter((arc) => arc.targetId === transitionId)
@@ -328,7 +328,17 @@ export class SimulationEngine {
       if (tokens < arc.weight) return false
     }
 
-    return inputArcs.length > 0
+    if (inputArcs.length === 0) return false
+
+    const requirements = this.resourceModel.transitionResources[transitionId]
+    if (requirements && requirements.length > 0) {
+      for (const req of requirements) {
+        const available = this.resourceAvailable.get(req.resourceId) ?? 0
+        if (available < req.units) return false
+      }
+    }
+
+    return true
   }
 
   /**
@@ -350,6 +360,50 @@ export class SimulationEngine {
     for (const arc of outputArcs) {
       const current = simCase.currentMarking[arc.targetId] ?? 0
       simCase.currentMarking[arc.targetId] = current + arc.weight
+    }
+  }
+
+  /**
+   * Allocate resources for a transition (decrement available counts)
+   */
+  private allocateResources(transitionId: string): void {
+    const requirements = this.resourceModel.transitionResources[transitionId]
+    if (!requirements) return
+
+    for (const req of requirements) {
+      const available = this.resourceAvailable.get(req.resourceId) ?? 0
+      this.resourceAvailable.set(req.resourceId, available - req.units)
+
+      const queueLengths = this.resourceQueueLengths.get(req.resourceId)
+      if (queueLengths) {
+        queueLengths.push(Math.max(0, -1 * (available - req.units)))
+      }
+    }
+  }
+
+  /**
+   * Release resources after transition completion
+   */
+  private releaseResources(transitionId: string): void {
+    const requirements = this.resourceModel.transitionResources[transitionId]
+    if (!requirements) return
+
+    for (const req of requirements) {
+      const available = this.resourceAvailable.get(req.resourceId) ?? 0
+      this.resourceAvailable.set(req.resourceId, available + req.units)
+    }
+  }
+
+  /**
+   * Track busy time for resources used by a transition
+   */
+  private trackResourceBusyTime(transitionId: string, duration: number): void {
+    const requirements = this.resourceModel.transitionResources[transitionId]
+    if (!requirements) return
+
+    for (const req of requirements) {
+      const busyTime = this.resourceBusyTime.get(req.resourceId) ?? 0
+      this.resourceBusyTime.set(req.resourceId, busyTime + duration * req.units)
     }
   }
 
@@ -382,12 +436,29 @@ export class SimulationEngine {
   }
 
   /**
-   * Get processing time for a transition
+   * Get processing time for a transition.
+   * Priority: explicit timeModel config > time trigger on transition > default
    */
   private getProcessingTime(transitionId: string): number {
-    const distribution =
-      this.timeModel.transitionTimes[transitionId] ?? this.timeModel.defaultTime
-    return Math.max(0, this.rng.sample(distribution))
+    if (this.timeModel.transitionTimes[transitionId]) {
+      return Math.max(0, this.rng.sample(this.timeModel.transitionTimes[transitionId]))
+    }
+
+    const transition = this.net.transitions.find((t) => t.id === transitionId)
+      || this.net.operators.find((o) => o.id === transitionId)
+
+    if (transition?.triggers) {
+      const timeTrigger = transition.triggers.find((t) => t.type === 'time')
+      if (timeTrigger) {
+        const delay = (timeTrigger as any).delay ?? 0
+        const unit = (timeTrigger as any).timeUnit ?? 'minutes'
+        const multiplier = unit === 'hours' ? 60 : unit === 'seconds' ? 1 / 60 : unit === 'days' ? 1440 : 1
+        const baseTime = delay * multiplier
+        return Math.max(0, this.rng.sample({ type: 'exponential', params: [baseTime] }))
+      }
+    }
+
+    return Math.max(0, this.rng.sample(this.timeModel.defaultTime))
   }
 
   /**

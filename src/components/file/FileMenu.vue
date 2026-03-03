@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
+import { useConfigStore } from '@/stores/config'
 import { fileService } from '@/services/file/fileService'
 import { imageExporter } from '@/services/file/imageExporter'
 import { FORMAT_NAMES, FILE_EXTENSIONS } from '@/types/file-formats'
@@ -10,7 +11,10 @@ import { templates, categories, getTemplatesByCategory } from '@/services/templa
 
 const { t } = useI18n()
 const store = usePetriNetStore()
+const configStore = useConfigStore()
 const { net, nets, breadcrumb } = storeToRefs(store)
+
+const recentFiles = computed(() => configStore.sortedRecentFiles)
 
 // Get the main net (first in breadcrumb) and all subnets
 const getMainNetAndSubNets = () => {
@@ -31,6 +35,7 @@ const getMainNetAndSubNets = () => {
 // Menu state
 const showMenu = ref(false)
 const showTemplates = ref(false)
+const showRecent = ref(false)
 const isLoading = ref(false)
 const error = ref('')
 
@@ -61,6 +66,14 @@ const loadTemplate = (templateId) => {
   }
   showMenu.value = false
   showTemplates.value = false
+}
+
+// Open a recent file (re-triggers file picker since we can't re-open from path in browser)
+const handleOpenRecent = (rf) => {
+  showMenu.value = false
+  showRecent.value = false
+  configStore.addRecentFile({ name: rf.name, path: rf.path, format: rf.format })
+  handleOpen()
 }
 
 // New file
@@ -95,6 +108,9 @@ const handleOpen = async () => {
         store.loadNet(result.net)
       }
       
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'pnml'
+      configStore.addRecentFile({ name: file.name, path: file.name, format: ext })
+
       if (result.warnings.length > 0) {
         console.warn('Import warnings:', result.warnings)
       }
@@ -214,6 +230,26 @@ const toggleMenu = () => {
         <span class="item-label">{{ $t('menu.open') }}...</span>
         <span class="item-shortcut">Ctrl+O</span>
       </button>
+
+      <!-- Recent Files -->
+      <div v-if="recentFiles.length > 0" class="menu-item-with-submenu" @mouseenter="showRecent = true" @mouseleave="showRecent = false">
+        <button class="menu-item">
+          <span class="item-icon">🕐</span>
+          <span class="item-label">{{ $t('menu.recentFiles') }}</span>
+          <span class="submenu-arrow">▶</span>
+        </button>
+        <div v-if="showRecent" class="submenu">
+          <button
+            v-for="rf in recentFiles.slice(0, 8)"
+            :key="rf.name"
+            class="menu-item"
+            :title="rf.path"
+            @click="handleOpenRecent(rf)"
+          >
+            <span class="item-label">{{ rf.name }}</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Templates Submenu -->
       <div class="menu-item-with-submenu" @mouseenter="showTemplates = true" @mouseleave="showTemplates = false">

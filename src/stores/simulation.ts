@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { usePetriNetStore } from './petriNet'
+import { useResourceStore } from './resources'
 import type {
   SimulationState,
   SimulationConfig,
@@ -178,9 +179,21 @@ export const useSimulationStore = defineStore('simulation', {
      */
     async runSimulation() {
       const petriNetStore = usePetriNetStore()
+      const resourceStore = useResourceStore()
       const net = petriNetStore.net
 
-      // Validate net has content
+      // Sync resource definitions from resource store into simulation model
+      for (const res of resourceStore.resources) {
+        if (!this.resourceModel.resources.find((r) => r.id === res.id)) {
+          this.resourceModel.resources.push({
+            id: res.id,
+            name: res.name,
+            capacity: res.capacity,
+            costPerTimeUnit: res.costPerTimeUnit,
+          })
+        }
+      }
+
       if (net.places.length === 0 || net.transitions.length === 0) {
         this.error = 'Petri net must have at least one place and one transition'
         this.status = 'error'

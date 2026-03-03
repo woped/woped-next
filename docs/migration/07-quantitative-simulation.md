@@ -443,14 +443,13 @@ flowchart TD
 
 ## Dependencies
 
-```json
-{
-  "dependencies": {
-    "chart.js": "^4.4.0",
-    "vue-chartjs": "^5.2.0"
-  }
-}
-```
+No additional charting dependencies. Charts are rendered using custom inline SVG
+in `SimulationCharts.vue` (utilization bars, cycle-time histogram, activity
+counts). This keeps the bundle lean and avoids the ≈200 kB overhead of chart.js.
+
+> **Note:** The original plan listed `chart.js` and `vue-chartjs`. These were
+> replaced by lightweight SVG-based charts that are sufficient for the
+> simulation result visualizations.
 
 ## Test Plan
 

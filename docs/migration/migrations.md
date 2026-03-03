@@ -28,11 +28,72 @@ timeline
 | **09 File Operations** | ✅ Complete | PNML/JSON import/export, image export |
 | **10 Configuration** | ✅ Complete | Theme, language, editor settings |
 | **11 Templates** | ✅ Complete | 10 educational example nets |
-| **12 NLP Integration** | 🔜 Planned | Not yet implemented |
+| **12 NLP Integration** | ⏸️ Deferred | Wird als letztes Feature komplett neu konzipiert — der bisherige Ansatz (10-nlp-integration.md) wird durch ein neues Konzept ersetzt |
 
-Legend: ✅ Complete | ⚠️ Partial | 🔜 Planned
+Legend: ✅ Complete | ⚠️ Partial | 🔜 Planned | ⏸️ Deferred
 
 ## Changelog
+
+### v2.3.0 - Quick Wins & Component Gaps
+
+#### Editor Enhancements
+- Context menu on right-click (Select, Duplicate, Delete, Properties, Open Subprocess)
+- Drag & Drop file opening (.pnml, .json) with drop overlay
+- Auto-save composable (`useAutoSave.ts`) with localStorage persistence
+- `GraphBeautifier.vue` one-click layout component
+
+#### Component Extraction
+- `OperatorBase.vue` — shared base component for all operator node types
+- `AnalysisResults.vue` + `IssueList.vue` — extracted from AnalysisPanel
+- `SimulationDashboard.vue` — MetricCard grid + charts wrapper
+- `ContextMenu.vue` — reusable context menu with Teleport
+
+#### File Operations
+- Recent Files submenu in FileMenu (integrated with config store)
+- Files tracked on open and displayed in dropdown
+
+#### Analysis & Metrics
+- Metrics report export (plaintext download)
+- Resource store: `getByType`, `getResourcesByRole`, `totalCapacity` getters
+
+#### UX Polish
+- Overview panel: grab cursor + drag feedback for viewport navigation
+- Conflict resolution renamed `first` → `priority` (i18n en/de)
+
+### v2.2.0 - Low-Complexity Gap Closure
+
+#### Architecture & Validation
+- Zod schemas for PetriNet data model (`utils/schemas.ts`) with JSON-parser integration
+- Command pattern abstraction for undo/redo (`utils/commands.ts`)
+
+#### Refactoring & Component Extraction
+- `SubProcessView.vue` — standalone subprocess navigation with breadcrumb
+- `HistoryPanel.vue` — extracted from TokenGameControls as reusable history list
+- `EditorGrid.vue` — grid rendering extracted from EditorCanvas
+- `LayoutSettings.vue` — layout settings extracted from ViewToolbar
+- `MetricsSidebar.vue` — standalone wrapper for MetricsSection
+
+#### Naming & Consistency
+- Conflict resolution mode renamed from `first` to `priority`
+
+#### Visualization Enhancements
+- Metric bar visualization for ratio-metrics (0–1) in MetricsSection
+- Resource utilization bar display in ResourceConfig (post-simulation)
+
+#### Documentation
+- Documented custom force-directed layout (replaces d3-force dependency)
+- Documented custom SVG charts (replaces chart.js / vue-chartjs dependency)
+
+### v2.1.0 - Triggers & Resources Complete
+
+#### Triggers & Resources
+- Resource Store (`stores/resources.ts`) for central resource management
+- TriggerEditor uses resource dropdown instead of freetext
+- Trigger icons (T/R/M) rendered on transitions in the canvas
+- SimulationEngine allocates/releases resources during simulation
+- SimulationEngine uses time trigger delay as processing time fallback
+- PNML import/export preserves trigger data in `<toolspecific>` elements
+- JSON import/export preserves trigger data
 
 ### v2.0.0 - Feature Complete
 

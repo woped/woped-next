@@ -320,11 +320,14 @@ flowchart TD
 ```json
 {
   "dependencies": {
-    "dagre": "^0.8.5",
-    "d3-force": "^3.0.0"
+    "dagre": "^0.8.5"
   }
 }
 ```
+
+> **Note:** `d3-force` was replaced by a custom spring-electric force-directed
+> layout in `src/utils/layout/force.ts`. This avoids the extra dependency while
+> providing equivalent functionality for Petri net graphs.
 
 ## Test Plan
 

@@ -30,6 +30,16 @@ export default {
     exportPng: 'Als PNG exportieren',
     settings: 'Einstellungen',
     includeLayout: 'Layout einbeziehen',
+    dropToOpen: 'Datei hier ablegen (.pnml, .json)',
+    recentFiles: 'Zuletzt geöffnet',
+    noRecentFiles: 'Keine zuletzt geöffneten Dateien',
+  },
+  contextMenu: {
+    select: 'Auswählen',
+    duplicate: 'Duplizieren',
+    delete: 'Löschen',
+    properties: 'Eigenschaften',
+    openSubprocess: 'Subprozess öffnen',
   },
 
   // Templates (Vorlagen)
@@ -84,6 +94,8 @@ export default {
     toggleGrid: 'Raster umschalten',
     grid: 'Raster',
     snap: 'Einrasten',
+    rotateCW: '90° im Uhrzeigersinn drehen',
+    rotateCCW: '90° gegen Uhrzeigersinn drehen',
   },
 
   // Editor
@@ -110,10 +122,12 @@ export default {
     conflicts: 'Konflikte',
     manual: 'Manuell',
     random: 'Zufällig',
-    first: 'Erste',
+    priority: 'Priorität',
     enabled: 'Aktiviert',
     deadlock: 'Deadlock!',
     deadlockMessage: 'Keine Transitionen aktiviert - das Netz ist in einem Deadlock-Zustand.',
+    history: 'Verlauf',
+    initial: 'Startzustand',
     playing: 'Läuft...',
     paused: 'Pausiert',
     stopped: 'Gestoppt',
@@ -164,6 +178,7 @@ export default {
   metrics: {
     title: 'Prozessmetriken',
     clickToCalculate: 'Klicke ▶ um Metriken zu berechnen',
+    export: 'Report exportieren',
     size: 'Größenmetriken',
     complexity: 'Komplexitätsmetriken',
     density: 'Dichtemetriken',
@@ -248,6 +263,7 @@ export default {
     nodeSpacing: 'Knotenabstand',
     rankSpacing: 'Ebenenabstand',
     apply: 'Layout anwenden',
+    beautify: 'Verschönern',
     hierarchical: 'Hierarchisch',
     forceDirected: 'Kräftebasiert',
     grid: 'Raster',
@@ -282,6 +298,8 @@ export default {
     direct: 'Direkt',
     orthogonal: 'Orthogonal',
     curved: 'Gebogen',
+    manual: 'Manuelle Wegpunkte',
+    manualHint: 'Doppelklick auf Kante: Wegpunkt hinzufügen, Doppelklick auf Punkt: entfernen',
     elementsSelected: '{count} Elemente ausgewählt',
   },
 
@@ -392,6 +410,8 @@ export default {
     resourceName: 'Ressourcenname',
     messageType: 'Nachrichtentyp',
     noTriggers: 'Keine Trigger konfiguriert',
+    noResources: 'Keine Ressourcen definiert — im Simulation-Tab anlegen',
+    selectResource: 'Ressource auswählen...',
   },
 
   // Messages

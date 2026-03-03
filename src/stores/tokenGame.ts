@@ -598,7 +598,7 @@ export const useTokenGameStore = defineStore('tokenGame', {
         case 'random':
           const randomIndex = Math.floor(Math.random() * allEnabled.length)
           return allEnabled[randomIndex]
-        case 'first':
+        case 'priority':
           return allEnabled[0]
         case 'manual':
         default:
@@ -620,11 +620,10 @@ export const useTokenGameStore = defineStore('tokenGame', {
         case 'random':
           const randomIndex = Math.floor(Math.random() * this.enabledTransitions.length)
           return this.enabledTransitions[randomIndex]
-        case 'first':
+        case 'priority':
           return this.enabledTransitions[0]
         case 'manual':
         default:
-          // In manual mode, pause and let user decide
           this.status = 'paused'
           return null
       }

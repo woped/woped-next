@@ -19,7 +19,9 @@ graph LR
 
 ## Status
 
-**🔜 Planned** - Not yet implemented
+**⏸️ Deferred** — Dieses Feature wird als letztes implementiert. Der hier dokumentierte Ansatz (Legacy T2P/P2T Services, LLM-basiert) wird **komplett überarbeitet und durch ein neues Konzept ersetzt**. Die unten stehende Spezifikation dient nur noch als Referenz für den Legacy-Stand und ist **nicht mehr die Ziel-Architektur**.
+
+> **Hinweis:** Alle anderen Features (01–11) müssen abgeschlossen sein, bevor die NLP-Integration begonnen wird. Der neue Ansatz wird in einem separaten Konzeptdokument erarbeitet.
 
 ## Legacy Implementation
 

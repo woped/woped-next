@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import type { PetriNet } from '@/types/petri-net'
 import type { ImportResult, ImportError, ExportOptions } from '@/types/file-formats'
+import { safeParsePetriNet } from '@/utils/schemas'
 
 /**
  * Parser for JSON format (native format for this application)
@@ -22,6 +23,14 @@ export class JSONParser {
           success: false,
           errors: [{ message: 'Invalid JSON: expected an object' }],
           warnings: [],
+        }
+      }
+
+      // Zod schema validation (non-blocking — collects warnings)
+      const zodResult = safeParsePetriNet(data)
+      if (!zodResult.success) {
+        for (const issue of zodResult.error.issues) {
+          warnings.push(`Schema: ${issue.path.join('.')} — ${issue.message}`)
         }
       }
 
@@ -138,6 +147,7 @@ export class JSONParser {
         name: trans.name || `T${index + 1}`,
         position: trans.position,
         label: trans.label,
+        ...(trans.triggers?.length > 0 ? { triggers: trans.triggers } : {}),
       }
     })
   }

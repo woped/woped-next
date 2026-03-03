@@ -13,8 +13,9 @@ import OperatorNode from '@/components/canvas/OperatorNode.vue'
 import SubProcessNode from '@/components/canvas/SubProcessNode.vue'
 import ArcEdge from '@/components/canvas/ArcEdge.vue'
 import TokenAnimation from '@/components/canvas/TokenAnimation.vue'
+import EditorGrid from '@/components/canvas/EditorGrid.vue'
 
-const emit = defineEmits(['resize'])
+const emit = defineEmits(['resize', 'contextmenu'])
 
 const store = usePetriNetStore()
 const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcCreation, selectedIds } = storeToRefs(store)
@@ -61,13 +62,24 @@ const stageConfig = ref({
   height: 600,
 })
 
-// Grid layer visibility config
-// Note: Using Konva's native 'visible' property instead of Vue's v-if
-// ensures proper reactivity with vue-konva. The v-if directive doesn't
-// reliably trigger re-renders on Konva layers.
-const gridLayerConfig = computed(() => ({
-  visible: showGrid.value
-}))
+// Content layer config — rotates around the visible canvas center
+const contentLayerConfig = computed(() => {
+  const { x, y, scale, rotation } = viewport.value
+  if (!rotation) {
+    return { x, y, scaleX: scale, scaleY: scale }
+  }
+  const cx = stageConfig.value.width / 2
+  const cy = stageConfig.value.height / 2
+  return {
+    x: cx,
+    y: cy,
+    offsetX: (cx - x) / scale,
+    offsetY: (cy - y) / scale,
+    scaleX: scale,
+    scaleY: scale,
+    rotation,
+  }
+})
 
 // Update canvas size on mount and resize
 const updateSize = () => {
@@ -94,35 +106,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateSize)
-})
-
-// Generate grid lines
-const gridLines = computed(() => {
-  const lines = []
-  const { width, height } = stageConfig.value
-  const size = gridSize.value
-  const offsetX = viewport.value.x % size
-  const offsetY = viewport.value.y % size
-
-  // Vertical lines
-  for (let x = offsetX; x < width; x += size) {
-    lines.push({
-      points: [x, 0, x, height],
-      stroke: gridColor.value,
-      strokeWidth: 0.5,
-    })
-  }
-
-  // Horizontal lines
-  for (let y = offsetY; y < height; y += size) {
-    lines.push({
-      points: [0, y, width, y],
-      stroke: gridColor.value,
-      strokeWidth: 0.5,
-    })
-  }
-
-  return lines
 })
 
 // Handle stage click
@@ -215,6 +198,18 @@ const handleWheel = (e) => {
   })
 }
 
+// Handle right-click context menu
+const handleContextMenu = (id, type, e) => {
+  const nativeEvt = e.evt || e
+  nativeEvt.preventDefault?.()
+  emit('contextmenu', {
+    x: nativeEvt.clientX || nativeEvt.pageX || 0,
+    y: nativeEvt.clientY || nativeEvt.pageY || 0,
+    elementId: id,
+    elementType: type,
+  })
+}
+
 // Handle element click
 const handleElementClick = (id, type, e) => {
   e.cancelBubble = true
@@ -293,21 +288,18 @@ defineExpose({
       @wheel="handleWheel"
     >
       <!-- Grid Layer -->
-      <v-layer :config="gridLayerConfig">
-        <v-line
-          v-for="(line, index) in gridLines"
-          :key="`grid-${index}`"
-          :config="line"
-        />
-      </v-layer>
+      <EditorGrid
+        :width="stageConfig.width"
+        :height="stageConfig.height"
+        :grid-size="gridSize"
+        :offset-x="viewport.x"
+        :offset-y="viewport.y"
+        :grid-color="gridColor"
+        :visible="showGrid"
+      />
 
-      <!-- Main Content Layer -->
-      <v-layer :config="{ 
-        x: viewport.x, 
-        y: viewport.y, 
-        scaleX: viewport.scale, 
-        scaleY: viewport.scale 
-      }">
+      <!-- Main Content Layer (supports rotation around canvas center) -->
+      <v-layer :config="contentLayerConfig">
         <!-- Arcs (render first so they appear behind nodes) -->
         <ArcEdge
           v-for="arc in arcs"
@@ -341,6 +333,7 @@ defineExpose({
           :token-override="getTokenCount(place.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(place.id, 'place', e)"
+          @contextmenu="(e) => handleContextMenu(place.id, 'place', e)"
           @dragend="(e) => handleElementDragEnd(place.id, e)"
         />
 
@@ -354,6 +347,7 @@ defineExpose({
           :is-enabled="isTransitionEnabled(transition.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(transition.id, 'transition', e)"
+          @contextmenu="(e) => handleContextMenu(transition.id, 'transition', e)"
           @dragend="(e) => handleElementDragEnd(transition.id, e)"
         />
 
@@ -367,6 +361,7 @@ defineExpose({
           :is-enabled="isTransitionEnabled(operator.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(operator.id, 'operator', e)"
+          @contextmenu="(e) => handleContextMenu(operator.id, 'operator', e)"
           @dragend="(e) => handleElementDragEnd(operator.id, e)"
         />
 
@@ -380,6 +375,7 @@ defineExpose({
           :is-enabled="tokenGameStore.isSubprocessEnabled(subprocess.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(subprocess.id, 'subprocess', e)"
+          @contextmenu="(e) => handleContextMenu(subprocess.id, 'subprocess', e)"
           @dblclick="(e) => handleSubProcessDblClick(subprocess.id, e)"
           @dragend="(e) => handleElementDragEnd(subprocess.id, e)"
         />

@@ -14,11 +14,65 @@ import BreadcrumbNav from './BreadcrumbNav.vue'
 import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
 import AnalysisPanel from '@/components/analysis/AnalysisPanel.vue'
 import SimulationPanel from '@/components/simulation/SimulationPanel.vue'
+import ContextMenu from './ContextMenu.vue'
+import { fileService } from '@/services/file/fileService'
+import { useConfigStore } from '@/stores/config'
+import { useAutoSave } from '@/composables/useAutoSave'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
 const tokenGameStore = useTokenGameStore()
+const configStore = useConfigStore()
 const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
+
+// Auto-save
+const { lastSaved } = useAutoSave()
+
+// Context menu
+const contextMenuRef = ref(null)
+
+const handleContextMenu = (event) => {
+  contextMenuRef.value?.show(event.x, event.y, event.elementId, event.elementType)
+}
+
+// Drag & Drop file opening
+const isDragOver = ref(false)
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  isDragOver.value = true
+}
+
+const handleDragLeave = () => {
+  isDragOver.value = false
+}
+
+const handleDrop = async (e) => {
+  e.preventDefault()
+  isDragOver.value = false
+
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  if (ext !== 'pnml' && ext !== 'json') return
+
+  try {
+    const result = await fileService.importFile(file)
+    if (result.success && result.net) {
+      if (result.subNets && result.subNets.size > 0) {
+        const allNets = { [result.net.id]: result.net }
+        result.subNets.forEach((subNet, id) => { allNets[id] = subNet })
+        store.loadNets(allNets, result.net.id)
+      } else {
+        store.loadNet(result.net)
+      }
+      configStore.addRecentFile({ name: file.name, path: file.name, format: ext })
+    }
+  } catch (err) {
+    console.error('Drop import failed:', err)
+  }
+}
 
 // Right panel tab
 const rightPanelTab = ref('properties')
@@ -104,7 +158,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="petri-net-editor">
+  <div
+    class="petri-net-editor"
+    :class="{ 'drag-over': isDragOver }"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
     <EditorToolbar />
     <BreadcrumbNav />
     <div class="editor-main">
@@ -112,6 +172,7 @@ onMounted(() => {
         <EditorCanvas 
           ref="canvasRef"
           @resize="updateCanvasDimensions"
+          @contextmenu="handleContextMenu"
         />
         
         <!-- Floating View Toolbar -->
@@ -178,6 +239,12 @@ onMounted(() => {
           </div>
         </template>
       </div>
+    </div>
+    <ContextMenu ref="contextMenuRef" />
+
+    <!-- Drop overlay -->
+    <div v-if="isDragOver" class="drop-overlay">
+      <div class="drop-message">{{ $t('menu.dropToOpen') }}</div>
     </div>
   </div>
 </template>
@@ -326,5 +393,33 @@ onMounted(() => {
   box-shadow: none;
   border: none;
   background: transparent;
+}
+
+/* Drag & drop overlay */
+.petri-net-editor.drag-over {
+  outline: 3px dashed var(--color-primary);
+  outline-offset: -3px;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(59, 130, 246, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.drop-message {
+  padding: 16px 32px;
+  background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-primary);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-primary);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 </style>

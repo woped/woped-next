@@ -2,13 +2,14 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { nanoid } from 'nanoid'
 import { useSimulationStore } from '@/stores/simulation'
 import { usePetriNetStore } from '@/stores/petriNet'
+import { useResourceStore } from '@/stores/resources'
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
 const petriNetStore = usePetriNetStore()
+const resourceStore = useResourceStore()
 const { resourceModel } = storeToRefs(simulationStore)
 const { net } = storeToRefs(petriNetStore)
 
@@ -31,29 +32,35 @@ const transitions = computed(() => [
   ...net.value.operators,
 ])
 
-// Add a new resource
 const addResource = () => {
   if (!newResourceName.value.trim()) return
-  
-  simulationStore.addResource({
-    id: nanoid(),
+
+  const resource = resourceStore.addResource({
     name: newResourceName.value.trim(),
+    type: 'human',
     capacity: Math.max(1, newResourceCapacity.value),
   })
-  
+
+  simulationStore.addResource({
+    id: resource.id,
+    name: resource.name,
+    capacity: resource.capacity,
+  })
+
   newResourceName.value = ''
   newResourceCapacity.value = 1
   showAddResource.value = false
 }
 
-// Remove a resource
 const removeResource = (resourceId) => {
+  resourceStore.removeResource(resourceId)
   simulationStore.removeResource(resourceId)
 }
 
-// Update resource capacity
 const updateCapacity = (resourceId, capacity) => {
-  simulationStore.updateResource(resourceId, { capacity: Math.max(1, parseInt(capacity) || 1) })
+  const cap = Math.max(1, parseInt(capacity) || 1)
+  resourceStore.updateResource(resourceId, { capacity: cap })
+  simulationStore.updateResource(resourceId, { capacity: cap })
 }
 
 // Assign resource to transition
@@ -95,6 +102,14 @@ const availableResources = computed(() => {
   
   return resourceModel.value.resources.filter(r => !assignedIds.has(r.id))
 })
+
+// Get utilization for a resource from last simulation result
+const getUtilization = (resourceId) => {
+  const result = simulationStore.result
+  if (!result?.statistics?.resourceStats) return null
+  const stats = result.statistics.resourceStats.find(r => r.resourceId === resourceId)
+  return stats ? stats.utilization : null
+}
 
 // Count total assignments
 const totalAssignments = computed(() => {
@@ -152,23 +167,31 @@ const totalAssignments = computed(() => {
           :key="resource.id"
           class="resource-item"
         >
-          <span class="resource-name">{{ resource.name }}</span>
-          <div class="resource-controls">
-            <label>{{ $t('simulation.capacity') }}:</label>
-            <input
-              type="number"
-              min="1"
-              :value="resource.capacity"
-              class="capacity-input"
-              @change="updateCapacity(resource.id, $event.target.value)"
-            />
-            <button
-              class="remove-btn"
-              @click="removeResource(resource.id)"
-              :title="$t('common.delete')"
-            >
-              ×
-            </button>
+          <div class="resource-row">
+            <span class="resource-name">{{ resource.name }}</span>
+            <div class="resource-controls">
+              <label>{{ $t('simulation.capacity') }}:</label>
+              <input
+                type="number"
+                min="1"
+                :value="resource.capacity"
+                class="capacity-input"
+                @change="updateCapacity(resource.id, $event.target.value)"
+              />
+              <button
+                class="remove-btn"
+                @click="removeResource(resource.id)"
+                :title="$t('common.delete')"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          <div v-if="getUtilization(resource.id) !== null" class="resource-utilization">
+            <div class="util-bar-bg">
+              <div class="util-bar-fill" :style="{ width: Math.round(getUtilization(resource.id) * 100) + '%' }" />
+            </div>
+            <span class="util-label">{{ Math.round(getUtilization(resource.id) * 100) }}%</span>
           </div>
         </div>
       </div>
@@ -390,11 +413,45 @@ const totalAssignments = computed(() => {
 
 .resource-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
   padding: 8px;
   background: var(--color-bg-secondary);
   border-radius: 4px;
+}
+
+.resource-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resource-utilization {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.util-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.util-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.util-label {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  min-width: 30px;
+  text-align: right;
 }
 
 .resource-name {

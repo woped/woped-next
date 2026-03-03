@@ -301,7 +301,7 @@ flowchart TD
     S4 --> S5[5. Resource Manager UI ✅]
     S5 --> S6[6. Visual Indicators ✅]
     S6 --> S7[7. Simulation Integration ✅]
-    S7 --> S8[8. PNML Extension]
+    S7 --> S8[8. PNML Extension ✅]
 ```
 
 ## UI Mockup

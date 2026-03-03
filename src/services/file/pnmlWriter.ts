@@ -133,10 +133,8 @@ export class PNMLWriter {
     const transEl = doc.createElement('transition')
     transEl.setAttribute('id', transition.id)
 
-    // Name
     transEl.appendChild(this.createNameElement(doc, transition.name))
 
-    // Label (if different from name)
     if (transition.label) {
       const labelEl = doc.createElement('label')
       const textEl = doc.createElement('text')
@@ -145,9 +143,12 @@ export class PNMLWriter {
       transEl.appendChild(labelEl)
     }
 
-    // Graphics (position)
     if (options.includeLayout) {
       transEl.appendChild(this.createGraphicsElement(doc, transition.position))
+    }
+
+    if (transition.triggers && transition.triggers.length > 0) {
+      this.appendTriggerElements(doc, transEl, transition.triggers)
     }
 
     return transEl
@@ -229,6 +230,40 @@ export class PNMLWriter {
     transEl.appendChild(toolspecEl)
 
     return transEl
+  }
+
+  /**
+   * Append trigger elements inside a WoPeD toolspecific block.
+   * Reuses an existing toolspecific[tool="WoPeD"] if present.
+   */
+  private appendTriggerElements(doc: Document, transEl: Element, triggers: any[]): void {
+    let toolspecEl = transEl.querySelector('toolspecific[tool="WoPeD"]')
+    if (!toolspecEl) {
+      toolspecEl = doc.createElement('toolspecific')
+      toolspecEl.setAttribute('tool', 'WoPeD')
+      toolspecEl.setAttribute('version', '1.0')
+      transEl.appendChild(toolspecEl)
+    }
+
+    for (const trigger of triggers) {
+      const triggerEl = doc.createElement('trigger')
+      triggerEl.setAttribute('id', trigger.id)
+      triggerEl.setAttribute('type', trigger.type)
+
+      if (trigger.type === 'time') {
+        triggerEl.setAttribute('delay', String(trigger.delay ?? 0))
+        triggerEl.setAttribute('timeunit', trigger.timeUnit ?? 'minutes')
+      } else if (trigger.type === 'resource') {
+        triggerEl.setAttribute('resourceid', trigger.resourceId ?? '')
+        triggerEl.setAttribute('quantity', String(trigger.quantity ?? 1))
+        if (trigger.role) triggerEl.setAttribute('role', trigger.role)
+      } else if (trigger.type === 'message') {
+        triggerEl.setAttribute('messagetype', trigger.messageType ?? '')
+        if (trigger.source) triggerEl.setAttribute('source', trigger.source)
+      }
+
+      toolspecEl.appendChild(triggerEl)
+    }
   }
 
   /**
