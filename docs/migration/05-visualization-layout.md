@@ -1,15 +1,15 @@
-# Feature: Visualisierung & Layout
+# Feature: Visualization & Layout
 
-## Übersicht
+## Overview
 
-Funktionen zur Darstellung und automatischen Anordnung von Petri-Netzen.
+Features for displaying and automatically arranging Petri nets.
 
 ```mermaid
 graph TD
     subgraph Visualization Features
         ZOOM[Zoom In/Out]
         PAN[Pan/Scroll]
-        GRID[Grid Anzeige]
+        GRID[Grid Display]
         OVERVIEW[Overview Panel]
         ROTATE[View Rotation]
     end
@@ -23,7 +23,7 @@ graph TD
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Editor/
@@ -37,7 +37,7 @@ WoPeD-Editor/
     └── ViewRotation.java
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
 ### Zoom & Pan
 
@@ -81,7 +81,7 @@ export function useViewport() {
   }
   
   const fitToView = (bounds: Rect) => {
-    // Berechne optimalen Zoom und Position
+    // Calculate optimal zoom and position
   }
   
   const pan = (dx: number, dy: number) => {
@@ -102,7 +102,7 @@ graph LR
     end
     
     subgraph Overview
-        MINI[Miniatur-Ansicht]
+        MINI[Miniature View]
         RECT[Viewport Rectangle]
     end
     
@@ -133,17 +133,17 @@ graph LR
 
 ```mermaid
 flowchart TD
-    INPUT[Petri-Netz] --> ALGO{Layout<br/>Algorithmus}
+    INPUT[Petri Net] --> ALGO{Layout<br/>Algorithm}
     ALGO --> HIERARCHICAL[Hierarchical<br/>Sugiyama]
     ALGO --> FORCE[Force-Directed]
     ALGO --> GRID[Grid-Based]
     
-    HIERARCHICAL --> OUTPUT[Optimierte Positionen]
+    HIERARCHICAL --> OUTPUT[Optimized Positions]
     FORCE --> OUTPUT
     GRID --> OUTPUT
 ```
 
-#### Layout-Algorithmen
+#### Layout Algorithms
 
 ```typescript
 // utils/layout/index.ts
@@ -183,16 +183,16 @@ graph TD
 ```typescript
 // utils/layout/sugiyama.ts
 function sugiyamaLayout(net: PetriNet, options: LayoutOptions): PetriNet {
-  // 1. Zyklen temporär entfernen
+  // 1. Temporarily remove cycles
   const acyclic = removeCycles(net)
   
-  // 2. Layer zuweisen (Longest Path)
+  // 2. Assign layers (longest path)
   const layers = assignLayers(acyclic)
   
-  // 3. Kreuzungen minimieren (Barycenter)
+  // 3. Minimize crossings (barycenter)
   const ordered = minimizeCrossings(layers)
   
-  // 4. X/Y Positionen berechnen
+  // 4. Calculate X/Y positions
   return assignPositions(ordered, options)
 }
 ```
@@ -258,7 +258,7 @@ function routeArc(
 </template>
 ```
 
-## Komponenten-Übersicht
+## Component Overview
 
 ```mermaid
 graph TD
@@ -280,7 +280,7 @@ graph TD
     BEAUTIFIER --> SETTINGS
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
@@ -293,7 +293,7 @@ flowchart TD
     S7 --> S8[8. View Rotation]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -315,7 +315,7 @@ flowchart TD
 └────────────────────────────────────┴────────────────────────┘
 ```
 
-## Abhängigkeiten
+## Dependencies
 
 ```json
 {
@@ -326,11 +326,11 @@ flowchart TD
 }
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Viewport-Berechnungen, Layout-Algorithmen |
-| Visual | Grid-Rendering, Zoom-Levels |
-| Integration | Overview-Sync, Auto-Layout |
-| Performance | Große Netze (1000+ Elemente) |
+| Test | Description |
+|------|-------------|
+| Unit | Viewport calculations, layout algorithms |
+| Visual | Grid rendering, zoom levels |
+| Integration | Overview sync, auto-layout |
+| Performance | Large nets (1000+ elements) |

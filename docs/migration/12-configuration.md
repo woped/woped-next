@@ -1,16 +1,16 @@
-# Feature: Konfiguration
+# Feature: Configuration
 
-## Übersicht
+## Overview
 
-Anwendungseinstellungen, Internationalisierung und Benutzereinstellungen.
+Application settings, internationalization and user preferences.
 
 ```mermaid
 graph TD
     subgraph Configuration
-        GENERAL[Allgemeine Settings]
+        GENERAL[General Settings]
         EDITOR[Editor Settings]
-        LANG[Sprache/i18n]
-        METRICS[Metriken Config]
+        LANG[Language/i18n]
+        METRICS[Metrics Config]
         RECENT[Recent Files]
     end
     
@@ -25,7 +25,7 @@ graph TD
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Configuration/
@@ -41,9 +41,9 @@ WoPeD-GUI/
     └── ConfMetricsPanel.java
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/config.ts
@@ -132,40 +132,49 @@ export const i18n = createI18n({
 })
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. Config Store] --> S2[2. Settings UI]
-    S2 --> S3[3. i18n Setup]
-    S3 --> S4[4. Theme Support]
-    S4 --> S5[5. Recent Files]
+    S1[1. Config Store ✅] --> S2[2. Settings UI ✅]
+    S2 --> S3[3. i18n Setup ✅]
+    S3 --> S4[4. Theme Support ✅]
+    S4 --> S5[5. Recent Files ✅]
     S5 --> S6[6. Auto-Save]
 ```
 
-## UI-Mockup
+### Implemented Features
+
+- **Config Store** ✅ - Pinia store with persistence
+- **Settings Dialog** ✅ - Theme, language, editor settings
+- **i18n** ✅ - English and German translations
+- **Theme Support** ✅ - Dark/light mode with system detection
+- **Recent Files** ✅ - Track recently opened files
+- **Grid Settings** ✅ - Show/hide grid, snap-to-grid, grid size
+
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────┐
-│ Einstellungen                    [X]    │
+│ Settings                         [X]    │
 ├─────────────────────────────────────────┤
-│ [Allgemein] [Editor] [Sprache]          │
+│ [General] [Editor] [Language]           │
 ├─────────────────────────────────────────┤
 │ Theme:        [System ▼]                │
-│ Auto-Save:    [✓] alle [60] Sekunden   │
+│ Auto-Save:    [✓] every [60] seconds   │
 │                                         │
-│ Grid:         [✓] Anzeigen             │
+│ Grid:         [✓] Show                 │
 │ Snap to Grid: [✓]                      │
-│ Grid-Größe:   [20] px                  │
+│ Grid Size:    [20] px                  │
 │                                         │
-│                   [Abbrechen] [Speichern]│
+│                     [Cancel] [Save]     │
 └─────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
+| Test | Description |
+|------|-------------|
 | Unit | Config persistence |
-| i18n | Alle Texte übersetzt |
-| UI | Settings Dialog |
+| i18n | All texts translated |
+| UI | Settings dialog |

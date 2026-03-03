@@ -1,8 +1,8 @@
 # WoPeD Migration Overview
 
-## Projektüberblick
+## Project Overview
 
-Migration von WoPeD (Workflow Petri Net Designer) von einer Java Swing Desktop-Anwendung zu einer modernen Vue.js Web-Anwendung.
+Migration of WoPeD (Workflow Petri Net Designer) from a Java Swing desktop application to a modern Vue.js web application.
 
 ```mermaid
 graph LR
@@ -23,45 +23,45 @@ graph LR
     Legacy -->|Migration| Modern
 ```
 
-## Feature-Kategorien
+## Feature Categories
 
 ```mermaid
 mindmap
   root((WoPeD))
     Editor
-      Petri-Netz Editor
-      Workflow Operatoren
-      Subprozesse
+      Petri Net Editor
+      Workflow Operators
+      Subprocesses
     Simulation
       Token Game
       Quantitative Simulation
-    Analyse
-      Qualitative Analyse
+    Analysis
+      Qualitative Analysis
       Process Metrics
     Integration
       File Import/Export
       NLP Integration
       Apromore
     UI/UX
-      Visualisierung
-      Konfiguration
+      Visualization
+      Configuration
 ```
 
-## Migrationsstrategie
+## Migration Strategy
 
 ```mermaid
 gantt
     title Migration Roadmap
     dateFormat YYYY-MM-DD
     section Phase 1 - Core
-        Petri-Netz Editor     :p1, 2024-01-01, 60d
-        Workflow Operatoren   :p2, after p1, 30d
-        Visualisierung        :p3, after p1, 30d
+        Petri Net Editor      :p1, 2024-01-01, 60d
+        Workflow Operators    :p2, after p1, 30d
+        Visualization         :p3, after p1, 30d
     section Phase 2 - Simulation
         Token Game            :p4, after p2, 45d
-        Subprozesse           :p5, after p4, 30d
-    section Phase 3 - Analyse
-        Qualitative Analyse   :p6, after p5, 45d
+        Subprocesses          :p5, after p4, 30d
+    section Phase 3 - Analysis
+        Qualitative Analysis  :p6, after p5, 45d
         Process Metrics       :p7, after p6, 30d
         Quantitative Sim      :p8, after p7, 45d
     section Phase 4 - Integration
@@ -70,47 +70,47 @@ gantt
         Triggers/Resources    :p11, after p10, 20d
 ```
 
-## Feature-Dokumente
+## Feature Documents
 
-| # | Feature | Komplexität | Priorität |
-|---|---------|-------------|-----------|
-| [01](01-petri-net-editor.md) | Petri-Netz Editor | Hoch | P1 |
-| [02](02-workflow-operators.md) | Workflow Operatoren | Mittel | P1 |
-| [03](03-subprocess-support.md) | Subprozesse | Hoch | P2 |
-| [04](04-token-game.md) | Token Game | Hoch | P2 |
-| [05](05-visualization-layout.md) | Visualisierung & Layout | Mittel | P1 |
-| [06](06-qualitative-analysis.md) | Qualitative Analyse | Hoch | P3 |
-| [07](07-quantitative-simulation.md) | Quantitative Simulation | Hoch | P3 |
-| [08](08-process-metrics.md) | Process Metrics | Mittel | P3 |
-| [09](09-file-operations.md) | File Operations | Mittel | P1 |
-| [10](10-nlp-integration.md) | NLP Integration | Mittel | P4 |
-| [11](11-triggers-resources.md) | Triggers & Resources | Mittel | P3 |
-| [12](12-configuration.md) | Konfiguration | Niedrig | P2 |
+| # | Feature | Complexity | Priority |
+|---|---------|------------|----------|
+| [01](01-petri-net-editor.md) | Petri Net Editor | High | P1 |
+| [02](02-workflow-operators.md) | Workflow Operators | Medium | P1 |
+| [03](03-subprocess-support.md) | Subprocesses | High | P2 |
+| [04](04-token-game.md) | Token Game | High | P2 |
+| [05](05-visualization-layout.md) | Visualization & Layout | Medium | P1 |
+| [06](06-qualitative-analysis.md) | Qualitative Analysis | High | P3 |
+| [07](07-quantitative-simulation.md) | Quantitative Simulation | High | P3 |
+| [08](08-process-metrics.md) | Process Metrics | Medium | P3 |
+| [09](09-file-operations.md) | File Operations | Medium | P1 |
+| [10](10-nlp-integration.md) | NLP Integration | Medium | P4 |
+| [11](11-triggers-resources.md) | Triggers & Resources | Medium | P3 |
+| [12](12-configuration.md) | Configuration | Low | P2 |
 
-## Technologie-Mapping
+## Technology Mapping
 
-| Legacy | Modern | Anmerkung |
-|--------|--------|-----------|
+| Legacy | Modern | Notes |
+|--------|--------|-------|
 | Java Swing | Vue.js 3 | UI Framework |
-| JGraph | Canvas/SVG + D3.js | Graph-Rendering |
-| JAXB | Native JSON | Datenserialisierung |
+| JGraph | Canvas/SVG + D3.js | Graph Rendering |
+| JAXB | Native JSON | Data Serialization |
 | Maven | npm/Vite | Build System |
-| Properties Files | i18n (vue-i18n) | Internationalisierung |
-| Swing Dialogs | Vue Components | Modale Dialoge |
-| Desktop Storage | IndexedDB/LocalStorage | Persistenz |
+| Properties Files | i18n (vue-i18n) | Internationalization |
+| Swing Dialogs | Vue Components | Modal Dialogs |
+| Desktop Storage | IndexedDB/LocalStorage | Persistence |
 
-## Architektur-Vergleich
+## Architecture Comparison
 
 ```mermaid
 graph TB
-    subgraph Legacy["Legacy Architektur"]
+    subgraph Legacy["Legacy Architecture"]
         LM[Model] --> LV[View]
         LV --> LC[Controller]
         LC --> LM
         LM --> LFILE[File System]
     end
     
-    subgraph Modern["Moderne Architektur"]
+    subgraph Modern["Modern Architecture"]
         STORE[Pinia Store] --> COMP[Vue Components]
         COMP --> STORE
         STORE --> API[REST API / IndexedDB]
@@ -118,11 +118,11 @@ graph TB
     end
 ```
 
-## Risiken & Mitigationen
+## Risks & Mitigations
 
-| Risiko | Impact | Mitigation |
-|--------|--------|------------|
-| Komplexe Algorithmen | Hoch | Schrittweise portieren, Unit Tests |
-| Performance Canvas | Mittel | WebGL für große Netze |
-| Browser-Kompatibilität | Niedrig | Moderne Browser targeten |
-| Offline-Fähigkeit | Mittel | Service Worker + IndexedDB |
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Complex Algorithms | High | Incremental porting, unit tests |
+| Canvas Performance | Medium | WebGL for large nets |
+| Browser Compatibility | Low | Target modern browsers |
+| Offline Capability | Medium | Service Worker + IndexedDB |

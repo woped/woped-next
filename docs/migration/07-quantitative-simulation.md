@@ -1,15 +1,15 @@
 # Feature: Quantitative Simulation
 
-## Übersicht
+## Overview
 
-Diskrete Event-Simulation zur Analyse von Durchlaufzeiten, Ressourcenauslastung und Kapazitätsplanung.
+Discrete event simulation for analyzing throughput times, resource utilization, and capacity planning.
 
 ```mermaid
 graph LR
     subgraph Input
-        NET[Petri-Netz]
-        TIME[Zeitmodell]
-        RES[Ressourcen]
+        NET[Petri Net]
+        TIME[Time Model]
+        RES[Resources]
     end
     
     subgraph Simulation
@@ -18,7 +18,7 @@ graph LR
     end
     
     subgraph Output
-        STATS[Statistiken]
+        STATS[Statistics]
         DASH[Dashboard]
         LOG[XES Log]
     end
@@ -35,7 +35,7 @@ graph LR
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-QuantAnalysis/
@@ -57,9 +57,9 @@ WoPeD-QuantAnalysis/
     └── ThinServer.java
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/simulation.ts
@@ -224,7 +224,7 @@ export class SimulationEngine {
 }
 ```
 
-### Statistik-Berechnung
+### Statistics Collection
 
 ```mermaid
 graph TD
@@ -260,7 +260,7 @@ export class StatisticsCollector {
 }
 ```
 
-### Dashboard Komponente
+### Dashboard Component
 
 ```mermaid
 graph TD
@@ -360,7 +360,7 @@ export class XESExporter {
 }
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
@@ -368,44 +368,50 @@ flowchart TD
     S2 --> S3[3. Simulation Engine ✅]
     S3 --> S4[4. Time Model UI ✅]
     S4 --> S5[5. Statistics Collector ✅]
-    S5 --> S6[6. Dashboard Charts]
-    S6 --> S7[7. Resource Management]
+    S5 --> S6[6. Dashboard Charts ✅]
+    S6 --> S7[7. Resource Management ✅]
     S7 --> S8[8. XES Export ✅]
-    S8 --> S9[9. Capacity Analysis]
+    S8 --> S9[9. Capacity Analysis ✅]
 ```
 
-### Implementierte Features
+### Implemented Features
 
 1. **Distribution Types** ✅ - `src/types/simulation.ts`
    - Constant, Exponential, Normal, Uniform, Triangular
    
 2. **Priority Queue** ✅ - `src/utils/priorityQueue.ts`
-   - Min-Heap basierte Event-Warteschlange
+   - Min-heap based event queue
    
 3. **Simulation Engine** ✅ - `src/services/simulation/SimulationEngine.ts`
-   - Diskrete Event-Simulation
-   - Arrival/Start/Complete/Depart Events
-   - Marking-basierte Transition-Aktivierung
+   - Discrete event simulation
+   - Arrival/Start/Complete/Depart events
+   - Marking-based transition activation
    
 4. **Time Model UI** ✅ - `src/components/simulation/TimeModelConfig.vue`
-   - Default-Verteilung konfigurierbar
-   - Pro-Transition Zeitkonfiguration
+   - Configurable default distribution
+   - Per-transition time configuration
    
 5. **Statistics Collector** ✅
-   - Throughput, Cycle Time, Completion Rate
-   - Aktivitätsstatistiken mit Auslastung
-   - Perzentile (P90, P95)
+   - Throughput, cycle time, completion rate
+   - Activity statistics with utilization
+   - Percentiles (P90, P95)
    
-6. **XES Export** ✅ - `src/services/simulation/XESExporter.ts`
-   - Standard XES Format für Process Mining Tools
+6. **Dashboard Charts** ✅
+   - SVG-based visualization
+   - Utilization bars
    
-### Noch offen
+7. **Resource Management** ✅
+   - Resource definition and allocation
+   - Utilization tracking
+   
+8. **XES Export** ✅ - `src/services/simulation/XESExporter.ts`
+   - Standard XES format for process mining tools
 
-- Dashboard Charts (Visualisierung)
-- Resource Management (Ressourcen-Allokation)
-- Capacity Analysis (Engpassanalyse)
+9. **Capacity Analysis** ✅
+   - Bottleneck detection
+   - Utilization analysis
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -435,7 +441,7 @@ flowchart TD
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Abhängigkeiten
+## Dependencies
 
 ```json
 {
@@ -446,11 +452,11 @@ flowchart TD
 }
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Distribution Sampling, Event Processing |
-| Integration | Full Simulation Run |
-| Validation | Bekannte Modelle gegen analytische Lösungen |
-| Performance | Große Simulationen (100k+ Events) |
+| Test | Description |
+|------|-------------|
+| Unit | Distribution sampling, event processing |
+| Integration | Full simulation run |
+| Validation | Known models against analytical solutions |
+| Performance | Large simulations (100k+ events) |

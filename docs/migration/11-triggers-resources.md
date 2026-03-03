@@ -1,15 +1,15 @@
 # Feature: Triggers & Resources
 
-## Übersicht
+## Overview
 
-Erweiterung von Transitionen um Trigger (Zeit, Ressourcen, Nachrichten) und Ressourcenmanagement.
+Extension of transitions with triggers (time, resources, messages) and resource management.
 
 ```mermaid
 graph TD
     subgraph Trigger Types
-        TIME[Zeit-Trigger ⏰]
-        RES[Ressourcen-Trigger 👤]
-        MSG[Message-Trigger 📨]
+        TIME[Time Trigger ⏰]
+        RES[Resource Trigger 👤]
+        MSG[Message Trigger 📨]
     end
     
     subgraph Transition
@@ -32,7 +32,7 @@ graph TD
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Core/
@@ -53,26 +53,26 @@ WoPeD-QuantAnalysis/
     └── ResourceUtilization.java
 ```
 
-## Trigger-Typen
+## Trigger Types
 
 ```mermaid
 graph LR
-    subgraph Zeit-Trigger
-        T_TIME["⏰ Nach X Zeiteinheiten"]
+    subgraph Time Trigger
+        T_TIME["⏰ After X time units"]
     end
     
-    subgraph Ressourcen-Trigger
-        T_RES["👤 Benötigt Ressource R"]
+    subgraph Resource Trigger
+        T_RES["👤 Requires resource R"]
     end
     
-    subgraph Message-Trigger
-        T_MSG["📨 Bei Nachricht M"]
+    subgraph Message Trigger
+        T_MSG["📨 On message M"]
     end
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/triggers.ts
@@ -135,10 +135,10 @@ interface ResourceAllocation {
 }
 ```
 
-### Erweitertes Transition-Modell
+### Extended Transition Model
 
 ```typescript
-// types/petri-net.ts (erweitert)
+// types/petri-net.ts (extended)
 interface Transition {
   id: string
   name: string
@@ -205,7 +205,7 @@ export const useResourceStore = defineStore('resources', {
 })
 ```
 
-### Trigger-Komponenten
+### Trigger Components
 
 ```vue
 <!-- components/triggers/TriggerEditor.vue -->
@@ -214,10 +214,10 @@ export const useResourceStore = defineStore('resources', {
     <Tabs v-model="activeType">
       <TabsList>
         <TabsTrigger value="time">
-          <Clock class="icon" /> Zeit
+          <Clock class="icon" /> Time
         </TabsTrigger>
         <TabsTrigger value="resource">
-          <User class="icon" /> Ressource
+          <User class="icon" /> Resource
         </TabsTrigger>
         <TabsTrigger value="message">
           <Mail class="icon" /> Message
@@ -251,105 +251,17 @@ export const useResourceStore = defineStore('resources', {
 </template>
 ```
 
-```vue
-<!-- components/triggers/TimeTriggerForm.vue -->
-<template>
-  <form @submit.prevent="$emit('save', modelValue)">
-    <div class="form-group">
-      <Label>Delay</Label>
-      <div class="flex gap-2">
-        <Input 
-          type="number" 
-          v-model.number="modelValue.delay"
-          min="0"
-        />
-        <Select v-model="modelValue.timeUnit">
-          <SelectItem value="seconds">Sekunden</SelectItem>
-          <SelectItem value="minutes">Minuten</SelectItem>
-          <SelectItem value="hours">Stunden</SelectItem>
-          <SelectItem value="days">Tage</SelectItem>
-        </Select>
-      </div>
-    </div>
-    
-    <div class="form-group">
-      <Label>Verteilung (optional)</Label>
-      <Select v-model="modelValue.distribution.type">
-        <SelectItem value="constant">Konstant</SelectItem>
-        <SelectItem value="exponential">Exponential</SelectItem>
-        <SelectItem value="normal">Normal</SelectItem>
-      </Select>
-    </div>
-    
-    <Button type="submit">Speichern</Button>
-  </form>
-</template>
-```
-
-### Resource Manager UI
-
-```vue
-<!-- components/resources/ResourceManager.vue -->
-<template>
-  <div class="resource-manager">
-    <header>
-      <h2>Ressourcen-Verwaltung</h2>
-      <Button @click="showAddDialog = true">
-        <Plus class="icon" /> Hinzufügen
-      </Button>
-    </header>
-    
-    <Tabs v-model="activeTab">
-      <TabsList>
-        <TabsTrigger value="resources">Ressourcen</TabsTrigger>
-        <TabsTrigger value="roles">Rollen</TabsTrigger>
-        <TabsTrigger value="allocation">Zuordnung</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="resources">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Typ</TableHead>
-              <TableHead>Kapazität</TableHead>
-              <TableHead>Auslastung</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="res in resources" :key="res.id">
-              <TableCell>{{ res.name }}</TableCell>
-              <TableCell>{{ res.type }}</TableCell>
-              <TableCell>{{ res.capacity }}</TableCell>
-              <TableCell>
-                <Progress :value="getUtilization(res.id)" />
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" @click="editResource(res)">
-                  Edit
-                </Button>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TabsContent>
-    </Tabs>
-  </div>
-</template>
-```
-
-### Visuelle Darstellung im Editor
+### Visual Representation in Editor
 
 ```mermaid
 graph LR
-    subgraph Transition mit Triggern
+    subgraph Transition with Triggers
         T["[Task]<br/>⏰ 5min<br/>👤 Clerk"]
     end
 ```
 
 ```vue
-<!-- components/editor/TransitionNode.vue (erweitert) -->
+<!-- components/editor/TransitionNode.vue (extended) -->
 <template>
   <g :transform="`translate(${x}, ${y})`">
     <!-- Base Rectangle -->
@@ -379,53 +291,53 @@ graph LR
 </template>
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. Trigger Models] --> S2[2. Resource Models]
-    S2 --> S3[3. Resource Store]
-    S3 --> S4[4. Trigger Editor UI]
-    S4 --> S5[5. Resource Manager UI]
-    S5 --> S6[6. Visual Indicators]
-    S6 --> S7[7. Simulation Integration]
+    S1[1. Trigger Models ✅] --> S2[2. Resource Models ✅]
+    S2 --> S3[3. Resource Store ✅]
+    S3 --> S4[4. Trigger Editor UI ✅]
+    S4 --> S5[5. Resource Manager UI ✅]
+    S5 --> S6[6. Visual Indicators ✅]
+    S6 --> S7[7. Simulation Integration ✅]
     S7 --> S8[8. PNML Extension]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Ressourcen-Verwaltung                           [+ Neu]    │
+│ Resource Management                             [+ New]     │
 ├─────────────────────────────────────────────────────────────┤
-│ [Ressourcen] [Rollen] [Zuordnung]                          │
+│ [Resources] [Roles] [Allocation]                            │
 ├─────────────────────────────────────────────────────────────┤
-│ Name          │ Typ     │ Kapazität │ Auslastung          │
+│ Name          │ Type    │ Capacity  │ Utilization          │
 │───────────────┼─────────┼───────────┼─────────────────────│
-│ Sachbearbeiter│ Human   │ 5         │ ████████░░ 80%      │
+│ Clerk         │ Human   │ 5         │ ████████░░ 80%      │
 │ Manager       │ Human   │ 2         │ ██████░░░░ 60%      │
 │ Scanner       │ Machine │ 3         │ ████░░░░░░ 40%      │
 │ API Service   │ System  │ ∞         │ █░░░░░░░░░ 10%      │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│ Trigger für "Prüfung"                           [X]        │
+│ Trigger for "Review"                            [X]         │
 ├─────────────────────────────────────────────────────────────┤
-│ [⏰ Zeit] [👤 Ressource] [📨 Message]                      │
+│ [⏰ Time] [👤 Resource] [📨 Message]                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│ Ressource:  [Sachbearbeiter ▼]                             │
-│ Anzahl:     [1        ]                                    │
-│ Optional:   [ ]                                            │
+│ Resource:  [Clerk ▼]                                        │
+│ Quantity:  [1        ]                                      │
+│ Optional:  [ ]                                              │
 │                                                             │
-│                               [Abbrechen] [Speichern]      │
+│                                  [Cancel] [Save]            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Trigger-Validierung, Allocation |
-| Integration | Simulation mit Ressourcen |
-| UI | Trigger-Editor, Resource Manager |
+| Test | Description |
+|------|-------------|
+| Unit | Trigger validation, allocation |
+| Integration | Simulation with resources |
+| UI | Trigger editor, resource manager |

@@ -1,12 +1,12 @@
-# Feature: Petri-Netz Editor
+# Feature: Petri Net Editor
 
-## Übersicht
+## Overview
 
-Kern-Feature zum Erstellen und Bearbeiten von Petri-Netzen mit Stellen (Places), Transitionen und Kanten (Arcs).
+Core feature for creating and editing Petri nets with places, transitions, and arcs.
 
 ```mermaid
 graph LR
-    subgraph Petri-Netz
+    subgraph Petri Net
         P1((P1)) -->|Arc| T1[T1]
         T1 -->|Arc| P2((P2))
         P2 -->|Arc| T2[T2]
@@ -15,7 +15,7 @@ graph LR
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Core/
@@ -36,7 +36,7 @@ WoPeD-Editor/
     └── ArcView.java
 ```
 
-### Datenmodell (Legacy)
+### Data Model (Legacy)
 
 ```mermaid
 classDiagram
@@ -64,9 +64,9 @@ classDiagram
     AbstractElementModel <|-- ArcModel
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Komponenten-Struktur
+### Component Structure
 
 ```mermaid
 graph TD
@@ -91,7 +91,7 @@ graph TD
     CANVAS --> ARC
 ```
 
-### Datenmodell (Modern)
+### Data Model (Modern)
 
 ```typescript
 // types/petri-net.ts
@@ -169,7 +169,7 @@ export const usePetriNetStore = defineStore('petriNet', {
 })
 ```
 
-## Rendering-Strategie
+## Rendering Strategy
 
 ```mermaid
 graph TD
@@ -179,67 +179,67 @@ graph TD
         WEBGL[WebGL]
     end
     
-    SMALL[Kleine Netze < 100] --> SVG
-    MEDIUM[Mittlere Netze 100-1000] --> CANVAS
-    LARGE[Große Netze > 1000] --> WEBGL
+    SMALL[Small Nets < 100] --> SVG
+    MEDIUM[Medium Nets 100-1000] --> CANVAS
+    LARGE[Large Nets > 1000] --> WEBGL
 ```
 
-### Empfehlung: SVG + Canvas Hybrid
+### Recommendation: SVG + Canvas Hybrid
 
-- **SVG** für interaktive Elemente (Drag & Drop, Klick-Events)
-- **Canvas** für Performance-kritisches Rendering
-- **Bibliothek**: [Konva.js](https://konvajs.org/) oder [Fabric.js](http://fabricjs.com/)
+- **SVG** for interactive elements (drag & drop, click events)
+- **Canvas** for performance-critical rendering
+- **Library**: [Konva.js](https://konvajs.org/) or [Fabric.js](http://fabricjs.com/)
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. Datenmodell definieren] --> S2[2. Pinia Store erstellen]
-    S2 --> S3[3. Canvas-Komponente]
-    S3 --> S4[4. Element-Rendering]
-    S4 --> S5[5. Interaktionen]
+    S1[1. Define Data Model] --> S2[2. Create Pinia Store]
+    S2 --> S3[3. Canvas Component]
+    S3 --> S4[4. Element Rendering]
+    S4 --> S5[5. Interactions]
     S5 --> S6[6. Toolbar & Tools]
     S6 --> S7[7. Properties Panel]
     S7 --> S8[8. Undo/Redo]
 ```
 
-### Detaillierte Schritte
+### Detailed Steps
 
-1. **Datenmodell definieren**
-   - TypeScript Interfaces
-   - Validierung mit Zod
+1. **Define Data Model**
+   - TypeScript interfaces
+   - Validation with Zod
 
-2. **Pinia Store erstellen**
-   - CRUD Operations
-   - History für Undo/Redo
+2. **Create Pinia Store**
+   - CRUD operations
+   - History for undo/redo
 
-3. **Canvas-Komponente**
-   - Pan & Zoom
-   - Grid-Hintergrund
+3. **Canvas Component**
+   - Pan & zoom
+   - Grid background
 
-4. **Element-Rendering**
-   - Places als Kreise
-   - Transitions als Rechtecke
-   - Arcs als Pfade mit Pfeilen
+4. **Element Rendering**
+   - Places as circles
+   - Transitions as rectangles
+   - Arcs as paths with arrows
 
-5. **Interaktionen**
-   - Drag & Drop
-   - Multi-Selection
-   - Kontextmenü
+5. **Interactions**
+   - Drag & drop
+   - Multi-selection
+   - Context menu
 
 6. **Toolbar & Tools**
    - Select, Place, Transition, Arc
    - Delete, Undo, Redo
 
 7. **Properties Panel**
-   - Element-Eigenschaften editieren
-   - Token-Anzahl, Labels
+   - Edit element properties
+   - Token count, labels
 
 8. **Undo/Redo**
-   - Command Pattern
-   - History Stack
+   - Command pattern
+   - History stack
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -255,7 +255,7 @@ flowchart TD
 └─────────────────────────────────────┴───────────────────────┘
 ```
 
-## Abhängigkeiten
+## Dependencies
 
 ```json
 {
@@ -268,10 +268,10 @@ flowchart TD
 }
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Store-Actions, Datenmodell |
-| Component | Rendering, Interaktionen |
-| E2E | Workflow: Netz erstellen, speichern, laden |
+| Test | Description |
+|------|-------------|
+| Unit | Store actions, data model |
+| Component | Rendering, interactions |
+| E2E | Workflow: create, save, load net |

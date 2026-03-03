@@ -1,8 +1,8 @@
 # Feature: Token Game
 
-## Übersicht
+## Overview
 
-Interaktive Simulation der Token-Bewegung durch das Petri-Netz zur Visualisierung der Prozessausführung.
+Interactive simulation of token movement through the Petri net to visualize process execution.
 
 ```mermaid
 stateDiagram-v2
@@ -18,7 +18,7 @@ stateDiagram-v2
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Editor/
@@ -35,12 +35,12 @@ WoPeD-Core/
 ### Features (Legacy)
 
 - Step Forward / Backward
-- Auto-Play mit konfigurierbarem Delay
-- History Navigation
-- Subprocess Step-Into / Step-Out
-- Konflikt-Auflösung bei XOR
+- Auto-play with configurable delay
+- History navigation
+- Subprocess step-into / step-out
+- Conflict resolution for XOR
 
-## Moderne Implementation
+## Modern Implementation
 
 ### State Machine
 
@@ -62,7 +62,7 @@ stateDiagram-v2
     }
 ```
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/tokenGame.ts
@@ -90,7 +90,7 @@ interface TokenAnimation {
 }
 ```
 
-### Komponenten-Architektur
+### Component Architecture
 
 ```mermaid
 graph TD
@@ -156,13 +156,13 @@ export const useTokenGameStore = defineStore('tokenGame', {
     async fireTransition(transitionId: string) {
       if (!this.enabledTransitions.includes(transitionId)) return
       
-      // Animation starten
+      // Start animation
       await this.animateTokens(transitionId)
       
-      // Marking aktualisieren
+      // Update marking
       this.marking = this.computeNewMarking(transitionId)
       
-      // History erweitern
+      // Extend history
       this.history = this.history.slice(0, this.historyIndex + 1)
       this.history.push(this.marking)
       this.historyIndex++
@@ -238,27 +238,27 @@ const interpolate = (from, to, t) => from + (to - from) * easeInOut(t)
 </script>
 ```
 
-### Konflikt-Auflösung
+### Conflict Resolution
 
 ```mermaid
 flowchart TD
-    CHECK{Mehrere Transitionen<br/>aktiviert?}
-    CHECK -->|Nein| FIRE[Transition feuern]
-    CHECK -->|Ja| MODE{Auflösungs-<br/>Modus}
-    MODE -->|Manual| DIALOG[Dialog anzeigen]
-    MODE -->|Random| RANDOM[Zufällig wählen]
-    MODE -->|Priority| PRIO[Nach Priorität]
+    CHECK{Multiple transitions<br/>enabled?}
+    CHECK -->|No| FIRE[Fire transition]
+    CHECK -->|Yes| MODE{Resolution<br/>mode}
+    MODE -->|Manual| DIALOG[Show dialog]
+    MODE -->|Random| RANDOM[Random selection]
+    MODE -->|Priority| PRIO[By priority]
     DIALOG --> FIRE
     RANDOM --> FIRE
     PRIO --> FIRE
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. TokenGame Store] --> S2[2. Marking-Berechnung]
-    S2 --> S3[3. Enabled-Detection]
+    S1[1. TokenGame Store] --> S2[2. Marking Calculation]
+    S2 --> S3[3. Enabled Detection]
     S3 --> S4[4. Controls UI]
     S4 --> S5[5. Token Rendering]
     S5 --> S6[6. Animation System]
@@ -268,7 +268,7 @@ flowchart TD
     S9 --> S10[10. Subprocess Support]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -281,7 +281,7 @@ flowchart TD
 │                                                             │
 │      (●)───────►[T1]───────►( )                            │
 │       ↑          ↓↓          ↓                              │
-│       │    (animiertes Token)│                              │
+│       │    (animated token)  │                              │
 │       │          ↓↓          ↓                              │
 │      ( )◄───────[T2]◄───────(●)                            │
 │                                                             │
@@ -290,11 +290,11 @@ flowchart TD
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Marking-Berechnung, Enabled-Detection |
-| Animation | Smooth Token-Bewegung |
-| Integration | History, Undo/Redo |
-| E2E | Komplette Simulation durchspielen |
+| Test | Description |
+|------|-------------|
+| Unit | Marking calculation, enabled detection |
+| Animation | Smooth token movement |
+| Integration | History, undo/redo |
+| E2E | Complete simulation playthrough |

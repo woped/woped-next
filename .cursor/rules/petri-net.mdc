@@ -1,12 +1,12 @@
 ---
-description: Petri-Netz Datenmodell und Konventionen
+description: Petri Net Data Model and Conventions
 globs: "**/types/petri-net.ts,**/stores/petriNet.ts,**/components/canvas/**"
 alwaysApply: false
 ---
 
-# Petri-Netz Modell
+# Petri Net Model
 
-## Datenstrukturen
+## Data Structures
 
 ### PetriNet
 ```typescript
@@ -16,18 +16,18 @@ interface PetriNet {
   places: Place[]
   transitions: Transition[]
   arcs: Arc[]
-  operators: Operator[]      // WoPeD-spezifische Workflow-Operatoren
-  subProcesses: SubProcess[] // Hierarchische Netze
+  operators: Operator[]      // WoPeD-specific workflow operators
+  subProcesses: SubProcess[] // Hierarchical nets
 }
 ```
 
-### Elemente
+### Elements
 ```typescript
 interface Place {
   id: string
   name: string
   position: { x: number, y: number }
-  tokens: number  // Initiale Markierung
+  tokens: number  // Initial marking
 }
 
 interface Transition {
@@ -35,12 +35,12 @@ interface Transition {
   name: string
   position: { x: number, y: number }
   label?: string
-  triggers?: Trigger[]  // Zeit/Resource/Message Trigger
+  triggers?: Trigger[]  // Time/Resource/Message triggers
 }
 
 interface Arc {
   id: string
-  sourceId: string   // Place, Transition, Operator oder SubProcess
+  sourceId: string   // Place, Transition, Operator or SubProcess
   targetId: string
   weight: number     // Default: 1
 }
@@ -56,45 +56,45 @@ interface SubProcess {
   id: string
   name: string
   position: { x: number, y: number }
-  subNetId: string   // Referenz auf verschachteltes PetriNet
+  subNetId: string   // Reference to nested PetriNet
 }
 ```
 
-## Operator-Typen
-| Typ | Symbol | Beschreibung |
-|-----|--------|--------------|
-| AND_SPLIT | ◇→ | Parallele Verzweigung |
-| AND_JOIN | →◇ | Synchronisation |
-| XOR_SPLIT | ⊗→ | Exklusive Auswahl |
-| XOR_JOIN | →⊗ | Einfache Zusammenführung |
-| AND_SPLIT_JOIN | ◇◇ | Kombiniert |
-| XOR_SPLIT_JOIN | ⊗⊗ | Kombiniert |
+## Operator Types
+| Type | Symbol | Description |
+|------|--------|-------------|
+| AND_SPLIT | ◇→ | Parallel branching |
+| AND_JOIN | →◇ | Synchronization |
+| XOR_SPLIT | ⊗→ | Exclusive choice |
+| XOR_JOIN | →⊗ | Simple merge |
+| AND_SPLIT_JOIN | ◇◇ | Combined |
+| XOR_SPLIT_JOIN | ⊗⊗ | Combined |
 
-## Validierung
-- Arcs verbinden immer Place↔Transition (oder Operator/SubProcess)
-- Keine direkten Place→Place oder Transition→Transition Verbindungen
-- Arc-Gewichte müssen ≥ 1 sein
-- IDs müssen eindeutig sein (nanoid)
+## Validation
+- Arcs always connect Place↔Transition (or Operator/SubProcess)
+- No direct Place→Place or Transition→Transition connections
+- Arc weights must be ≥ 1
+- IDs must be unique (nanoid)
 
-## Canvas-Rendering
-- Places: Kreise (radius: 20)
-- Transitions: Rechtecke (40x30)
-- Operators: Rauten (30x30)
-- SubProcesses: Rechtecke mit doppeltem Rand
-- Tokens: Kleine schwarze Punkte in Places
+## Canvas Rendering
+- Places: Circles (radius: 20)
+- Transitions: Rectangles (40x30)
+- Operators: Diamonds (30x30)
+- SubProcesses: Rectangles with double border
+- Tokens: Small black dots inside places
 
-## Store-Aktionen
+## Store Actions
 ```typescript
-// Elemente hinzufügen
+// Add elements
 store.addPlace({ x, y })
 store.addTransition({ x, y })
 store.addArc(sourceId, targetId)
 
-// Selektion
+// Selection
 store.selectElement(id)
 store.clearSelection()
 
-// Navigation (Subprozesse)
+// Navigation (subprocesses)
 store.navigateToSubProcess(subProcessId)
 store.navigateUp()
 ```

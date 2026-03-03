@@ -1,19 +1,19 @@
-# Feature: Qualitative Analyse
+# Feature: Qualitative Analysis
 
-## Übersicht
+## Overview
 
-Strukturelle und semantische Analyse von Workflow-Netzen zur Überprüfung von Korrektheit und Soundness.
+Structural and semantic analysis of workflow nets to verify correctness and soundness.
 
 ```mermaid
 graph TD
     subgraph Qualitative Analysis
-        STRUCT[Strukturanalyse]
-        WORKFLOW[Workflow-Check]
-        SOUND[Soundness-Check]
+        STRUCT[Structural Analysis]
+        WORKFLOW[Workflow Check]
+        SOUND[Soundness Check]
         COVER[Coverability Graph]
     end
     
-    NET[Petri-Netz] --> STRUCT
+    NET[Petri Net] --> STRUCT
     NET --> WORKFLOW
     WORKFLOW --> SOUND
     NET --> COVER
@@ -21,7 +21,7 @@ graph TD
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-QualAnalysis/
@@ -44,31 +44,31 @@ WoPeD-QualAnalysis/
     └── CoverabilityGraphModel.java
 ```
 
-## Analyse-Typen
+## Analysis Types
 
-### 1. Workflow-Net Validierung
+### 1. Workflow-Net Validation
 
 ```mermaid
 flowchart TD
-    NET[Petri-Netz] --> CHECK{Workflow-Net?}
+    NET[Petri Net] --> CHECK{Workflow-Net?}
     
-    CHECK --> C1{Eine Source<br/>Place?}
-    CHECK --> C2{Eine Sink<br/>Place?}
-    CHECK --> C3{Stark<br/>zusammenhängend?}
-    CHECK --> C4{Keine isolierten<br/>Elemente?}
+    CHECK --> C1{One Source<br/>Place?}
+    CHECK --> C2{One Sink<br/>Place?}
+    CHECK --> C3{Strongly<br/>Connected?}
+    CHECK --> C4{No Isolated<br/>Elements?}
     
     C1 -->|✓| VALID
     C2 -->|✓| VALID
     C3 -->|✓| VALID
     C4 -->|✓| VALID
     
-    C1 -->|✗| INVALID[Kein Workflow-Net]
+    C1 -->|✗| INVALID[Not a Workflow-Net]
     C2 -->|✗| INVALID
     C3 -->|✗| INVALID
     C4 -->|✗| INVALID
 ```
 
-### 2. Soundness-Check
+### 2. Soundness Check
 
 ```mermaid
 graph TD
@@ -104,9 +104,9 @@ graph LR
     style M2 fill:#FFB6C1
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/analysis.ts
@@ -151,7 +151,7 @@ interface CoverabilityGraph {
 }
 ```
 
-### Service-Architektur
+### Service Architecture
 
 ```mermaid
 graph TD
@@ -253,7 +253,7 @@ export class CoverabilityBuilder {
       for (const transition of enabled) {
         const newMarking = this.fire(net, current.marking, transition)
         
-        // Omega-Check für Unbeschränktheit
+        // Omega check for unboundedness
         this.checkOmega(newMarking, nodes, current)
         
         const key = this.markingKey(newMarking)
@@ -289,7 +289,7 @@ export class CoverabilityBuilder {
 }
 ```
 
-### UI-Komponenten
+### UI Components
 
 ```mermaid
 graph TD
@@ -329,7 +329,7 @@ graph TD
 </template>
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
@@ -342,7 +342,7 @@ flowchart TD
     S7 --> S8[8. Graph Visualization]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -371,10 +371,10 @@ flowchart TD
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Algorithmen (SCC, Reachability) |
-| Integration | Vollständige Analyse-Pipeline |
-| Regression | Bekannte Testnetze validieren |
+| Test | Description |
+|------|-------------|
+| Unit | Algorithms (SCC, reachability) |
+| Integration | Complete analysis pipeline |
+| Regression | Validate known test nets |

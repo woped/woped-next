@@ -1,14 +1,14 @@
 # Feature: Process Metrics
 
-## Übersicht
+## Overview
 
-Berechnung und Anzeige von Prozessmetriken zur Bewertung der Modellqualität und Komplexität.
+Calculation and display of process metrics for evaluating model quality and complexity.
 
 ```mermaid
 graph LR
     subgraph Input
-        NET[Petri-Netz]
-        CONFIG[Metriken-Config]
+        NET[Petri Net]
+        CONFIG[Metrics Config]
     end
     
     subgraph Calculation
@@ -28,7 +28,7 @@ graph LR
     CALC --> REPORT
 ```
 
-## Standard-Metriken
+## Standard Metrics
 
 ```mermaid
 mindmap
@@ -53,7 +53,7 @@ mindmap
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-ProcessMetrics/
@@ -71,9 +71,9 @@ WoPeD-ProcessMetrics/
     └── RPSTHandler.java
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/metrics.ts
@@ -110,7 +110,7 @@ interface MetricsReport {
 }
 ```
 
-### Standard-Metriken Definitionen
+### Standard Metrics Definitions
 
 ```typescript
 // constants/metrics.ts
@@ -302,7 +302,7 @@ export class CustomMetricsBuilder {
       andJoins: this.countOperators(net, 'and-join'),
       xorSplits: this.countOperators(net, 'xor-split'),
       xorJoins: this.countOperators(net, 'xor-join'),
-      // ... mehr Variablen
+      // ... more variables
     }
   }
 }
@@ -372,7 +372,7 @@ const categoryLabels = {
 </template>
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
@@ -386,7 +386,7 @@ flowchart TD
     S8 --> S9[9. Mass Analysis]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌────────────────────────┐
@@ -413,11 +413,11 @@ flowchart TD
 └────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Metriken-Berechnungen |
-| Parser | Formula Parsing & Evaluation |
-| Integration | Real-time Updates |
-| Validation | Gegen Legacy-Werte prüfen |
+| Test | Description |
+|------|-------------|
+| Unit | Metrics calculations |
+| Parser | Formula parsing & evaluation |
+| Integration | Real-time updates |
+| Validation | Compare against legacy values |

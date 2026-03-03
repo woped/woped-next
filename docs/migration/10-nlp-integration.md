@@ -1,25 +1,29 @@
 # Feature: NLP Integration
 
-## Übersicht
+## Overview
 
-Natural Language Processing zur Konvertierung zwischen Petri-Netzen und natürlicher Sprache.
+Natural Language Processing for converting between Petri nets and natural language.
 
 ```mermaid
 graph LR
     subgraph Text2Process
-        TEXT[Natürlicher Text] --> NLP1[NLP Service]
-        NLP1 --> NET1[Petri-Netz]
+        TEXT[Natural Text] --> NLP1[NLP Service]
+        NLP1 --> NET1[Petri Net]
     end
     
     subgraph Process2Text
-        NET2[Petri-Netz] --> NLP2[NLP Service]
-        NLP2 --> DESC[Textbeschreibung]
+        NET2[Petri Net] --> NLP2[NLP Service]
+        NLP2 --> DESC[Text Description]
     end
 ```
 
+## Status
+
+**🔜 Planned** - Not yet implemented
+
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-FileInterface/
@@ -29,14 +33,14 @@ WoPeD-FileInterface/
     └── P2TUI.java
 ```
 
-### Externe Services
+### External Services
 
-- Text2Process (T2P): Konvertiert Text zu BPMN/Petri-Netz
-- Process2Text (P2T): Generiert natürlichsprachliche Beschreibung
+- Text2Process (T2P): Converts text to BPMN/Petri net
+- Process2Text (P2T): Generates natural language description
 
-## Moderne Implementation
+## Modern Implementation
 
-### Architektur
+### Architecture
 
 ```mermaid
 graph TD
@@ -64,7 +68,7 @@ graph TD
     UI -->|Net| EDITOR
 ```
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/nlp.ts
@@ -206,174 +210,10 @@ export class Process2TextService {
       sections: this.extractSections(response)
     }
   }
-  
-  private generateFromTemplates(
-    analysis: NetAnalysis, 
-    request: P2TRequest
-  ): P2TResponse {
-    const templates = this.loadTemplates(request.language)
-    const sections: TextSection[] = []
-    
-    // Introduction
-    sections.push({
-      title: templates.intro.title,
-      content: templates.intro.format(analysis.startPlace.name),
-      relatedElements: [analysis.startPlace.id]
-    })
-    
-    // Main flow
-    for (const path of analysis.paths) {
-      sections.push(this.generatePathDescription(path, templates))
-    }
-    
-    // Parallel blocks
-    for (const block of analysis.parallelBlocks) {
-      sections.push({
-        title: templates.parallel.title,
-        content: templates.parallel.format(block.branches),
-        relatedElements: block.elements
-      })
-    }
-    
-    return {
-      success: true,
-      text: sections.map(s => s.content).join('\n\n'),
-      sections
-    }
-  }
 }
 ```
 
-### UI-Komponenten
-
-```vue
-<!-- components/nlp/Text2ProcessDialog.vue -->
-<template>
-  <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-3xl">
-      <DialogHeader>
-        <DialogTitle>Text to Process</DialogTitle>
-      </DialogHeader>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <!-- Input -->
-        <div>
-          <Label>Process Description</Label>
-          <Textarea 
-            v-model="inputText"
-            rows="10"
-            placeholder="Describe your process..."
-          />
-          
-          <div class="options">
-            <Select v-model="language">
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="de">Deutsch</SelectItem>
-            </Select>
-            
-            <Checkbox v-model="autoLayout">
-              Auto-Layout
-            </Checkbox>
-          </div>
-        </div>
-        
-        <!-- Preview -->
-        <div>
-          <Label>Preview</Label>
-          <div class="preview-container">
-            <MiniPetriNetView 
-              v-if="result?.net" 
-              :net="result.net" 
-            />
-            <div v-else class="placeholder">
-              Preview will appear here
-            </div>
-          </div>
-          
-          <div v-if="result?.warnings.length" class="warnings">
-            <Alert v-for="w in result.warnings" variant="warning">
-              {{ w }}
-            </Alert>
-          </div>
-        </div>
-      </div>
-      
-      <DialogFooter>
-        <Button variant="outline" @click="isOpen = false">
-          Cancel
-        </Button>
-        <Button @click="convert" :disabled="!inputText">
-          Convert
-        </Button>
-        <Button 
-          v-if="result?.net" 
-          @click="insertNet"
-        >
-          Insert into Editor
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-</template>
-```
-
-```vue
-<!-- components/nlp/Process2TextDialog.vue -->
-<template>
-  <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-3xl">
-      <DialogHeader>
-        <DialogTitle>Process to Text</DialogTitle>
-      </DialogHeader>
-      
-      <div class="options-bar">
-        <Select v-model="language">
-          <SelectItem value="en">English</SelectItem>
-          <SelectItem value="de">Deutsch</SelectItem>
-        </Select>
-        
-        <Select v-model="style">
-          <SelectItem value="formal">Formal</SelectItem>
-          <SelectItem value="informal">Informal</SelectItem>
-          <SelectItem value="technical">Technical</SelectItem>
-        </Select>
-        
-        <Select v-model="detail">
-          <SelectItem value="brief">Brief</SelectItem>
-          <SelectItem value="normal">Normal</SelectItem>
-          <SelectItem value="detailed">Detailed</SelectItem>
-        </Select>
-      </div>
-      
-      <div class="result">
-        <div v-if="loading" class="loading">
-          <Spinner /> Generating...
-        </div>
-        
-        <div v-else-if="result" class="text-output">
-          <section v-for="section in result.sections">
-            <h4>{{ section.title }}</h4>
-            <p 
-              @mouseenter="highlightElements(section.relatedElements)"
-              @mouseleave="clearHighlight"
-            >
-              {{ section.content }}
-            </p>
-          </section>
-        </div>
-      </div>
-      
-      <DialogFooter>
-        <Button @click="generate">Generate</Button>
-        <Button @click="copyToClipboard">Copy</Button>
-        <Button @click="exportAsDoc">Export</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-</template>
-```
-
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
@@ -386,7 +226,7 @@ flowchart TD
     S7 --> S8[8. Highlighting]
 ```
 
-## UI-Mockup
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -414,11 +254,11 @@ flowchart TD
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Template Engine, Parser |
+| Test | Description |
+|------|-------------|
+| Unit | Template engine, parser |
 | Integration | Roundtrip T2P → P2T |
-| Quality | Verständlichkeit der generierten Texte |
-| Multi-Lang | Deutsche und englische Ausgabe |
+| Quality | Comprehensibility of generated texts |
+| Multi-Lang | German and English output |

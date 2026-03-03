@@ -1,41 +1,41 @@
 ---
-description: Service-Konventionen für Business Logic
+description: Service Conventions for Business Logic
 globs: "**/services/**/*.ts"
 alwaysApply: false
 ---
 
 # Services
 
-## Struktur
-Services enthalten wiederverwendbare Business Logic, getrennt von Vue-Komponenten.
+## Structure
+Services contain reusable business logic, separated from Vue components.
 
 ```
 src/services/
-├── analysis/           # Analyse-Algorithmen
-│   ├── index.ts        # Qualitative Analyse (Soundness, Struktur)
-│   └── metricsCalculator.ts  # Process Metrics
-├── file/               # Datei-Operationen
-│   ├── fileService.ts  # Import/Export Koordination
-│   ├── pnmlParser.ts   # PNML lesen
-│   ├── pnmlWriter.ts   # PNML schreiben
-│   ├── jsonParser.ts   # JSON Import/Export
-│   └── imageExporter.ts # SVG/PNG Export
+├── analysis/           # Analysis algorithms
+│   ├── index.ts        # Qualitative analysis (soundness, structure)
+│   └── metricsCalculator.ts  # Process metrics
+├── file/               # File operations
+│   ├── fileService.ts  # Import/export coordination
+│   ├── pnmlParser.ts   # Read PNML
+│   ├── pnmlWriter.ts   # Write PNML
+│   ├── jsonParser.ts   # JSON import/export
+│   └── imageExporter.ts # SVG/PNG export
 ├── simulation/         # Simulation
-│   ├── SimulationEngine.ts  # Diskrete Ereignissimulation
-│   └── XESExporter.ts       # XES Log Export
-└── templates/          # Vorlagen
-    └── petriNetTemplates.ts  # Beispiel-Netze
+│   ├── SimulationEngine.ts  # Discrete event simulation
+│   └── XESExporter.ts       # XES log export
+└── templates/          # Templates
+    └── petriNetTemplates.ts  # Example nets
 ```
 
-## Service-Pattern
+## Service Patterns
 ```typescript
-// Singleton-Export für einfache Services
+// Singleton export for simple services
 export const fileService = {
   async importFile(file: File): Promise<ImportResult> { /* ... */ },
   async exportToFile(net: PetriNet, options: ExportOptions): Promise<void> { /* ... */ },
 }
 
-// Klasse für komplexe Services mit State
+// Class for complex services with state
 export class SimulationEngine {
   constructor(net: PetriNet, config: SimulationConfig) { /* ... */ }
   run(): SimulationResult { /* ... */ }
@@ -52,7 +52,7 @@ if (result.success) {
 
 // Export
 await fileService.exportToFile(net, {
-  format: 'pnml',  // oder 'json'
+  format: 'pnml',  // or 'json'
   includeLayout: true,
   filename: 'mynet.pnml'
 })
@@ -73,18 +73,18 @@ const result = engine.run()
 ```typescript
 import { templates, getTemplatesByCategory } from '@/services/templates/petriNetTemplates'
 
-// Alle Templates
+// All templates
 templates.forEach(t => console.log(t.nameKey))
 
-// Nach Kategorie
+// By category
 const basicTemplates = getTemplatesByCategory('basic')
 
-// Template laden
+// Load template
 const net = template.create()
 store.loadNet(net)
 ```
 
-## Fehlerbehandlung
-- Services werfen Exceptions bei Fehlern
-- Komponenten fangen diese und zeigen User-Feedback
-- Import-Errors als `ImportResult.errors[]` zurückgeben
+## Error Handling
+- Services throw exceptions on errors
+- Components catch these and show user feedback
+- Return import errors as `ImportResult.errors[]`

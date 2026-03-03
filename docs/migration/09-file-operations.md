@@ -1,15 +1,14 @@
 # Feature: File Operations
 
-## Übersicht
+## Overview
 
-Import und Export von Petri-Netzen in verschiedenen Formaten.
+Import and export of Petri nets in various formats.
 
 ```mermaid
 graph TD
     subgraph Import Formats
         PNML_I[PNML Import]
-        YAWL_I[YAWL Import]
-        APRO_I[Apromore Import]
+        JSON_I[JSON Import]
     end
     
     subgraph Internal
@@ -18,25 +17,20 @@ graph TD
     
     subgraph Export Formats
         PNML_E[PNML Export]
-        YAWL_E[YAWL Export]
-        BPEL_E[BPEL Export]
+        JSON_E[JSON Export]
         IMG_E[Image Export]
-        APRO_E[Apromore Export]
     end
     
     PNML_I --> NET
-    YAWL_I --> NET
-    APRO_I --> NET
+    JSON_I --> NET
     NET --> PNML_E
-    NET --> YAWL_E
-    NET --> BPEL_E
+    NET --> JSON_E
     NET --> IMG_E
-    NET --> APRO_E
 ```
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-FileInterface/
@@ -45,20 +39,15 @@ WoPeD-FileInterface/
 ├── yawl/
 │   ├── YawlImport.java
 │   └── YawlExport.java
-├── apromore/
-│   ├── ApromoreImportFrame.java
-│   └── ApromoreExportFrame.java
-└── WoPeDToYAWL/
-
-WoPeD-BPELExport/
-├── BPEL.java
-└── BpelParserModel.java
+└── apromore/
+    ├── ApromoreImportFrame.java
+    └── ApromoreExportFrame.java
 
 WoPeD-BeanPnml/
 └── pnml_wf.xsd
 ```
 
-## Formate
+## Formats
 
 ### PNML (Petri Net Markup Language)
 
@@ -80,35 +69,36 @@ WoPeD-BeanPnml/
 </pnml>
 ```
 
-### YAWL
+### JSON
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<specificationSet>
-  <specification uri="example">
-    <decomposition id="Net" isRootNet="true" xsi:type="NetFactsType">
-      <inputCondition id="start"/>
-      <task id="task1">
-        <name>Task 1</name>
-        <flowsInto><nextElementRef id="end"/></flowsInto>
-      </task>
-      <outputCondition id="end"/>
-    </decomposition>
-  </specification>
-</specificationSet>
+```json
+{
+  "id": "net1",
+  "name": "Example Net",
+  "places": [
+    { "id": "p1", "name": "Start", "position": { "x": 100, "y": 100 }, "tokens": 1 }
+  ],
+  "transitions": [
+    { "id": "t1", "name": "Task 1", "position": { "x": 200, "y": 100 } }
+  ],
+  "arcs": [
+    { "id": "a1", "sourceId": "p1", "targetId": "t1", "weight": 1 }
+  ]
+}
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/fileFormats.ts
-type FileFormat = 'pnml' | 'yawl' | 'bpel' | 'json' | 'svg' | 'png'
+type FileFormat = 'pnml' | 'json' | 'svg' | 'png'
 
 interface ImportResult {
   success: boolean
   net?: PetriNet
+  subNets?: Record<string, PetriNet>
   errors: ImportError[]
   warnings: string[]
 }
@@ -223,43 +213,6 @@ export class PNMLWriter {
     
     return new XMLSerializer().serializeToString(doc)
   }
-  
-  private createPlaceElement(
-    doc: Document, 
-    place: Place, 
-    options: ExportOptions
-  ): Element {
-    const el = doc.createElement('place')
-    el.setAttribute('id', place.id)
-    
-    // Name
-    const name = doc.createElement('name')
-    const nameText = doc.createElement('text')
-    nameText.textContent = place.name
-    name.appendChild(nameText)
-    el.appendChild(name)
-    
-    // Initial Marking
-    if (place.tokens > 0) {
-      const marking = doc.createElement('initialMarking')
-      const markingText = doc.createElement('text')
-      markingText.textContent = place.tokens.toString()
-      marking.appendChild(markingText)
-      el.appendChild(marking)
-    }
-    
-    // Graphics (Position)
-    if (options.includeLayout) {
-      const graphics = doc.createElement('graphics')
-      const position = doc.createElement('position')
-      position.setAttribute('x', place.position.x.toString())
-      position.setAttribute('y', place.position.y.toString())
-      graphics.appendChild(position)
-      el.appendChild(graphics)
-    }
-    
-    return el
-  }
 }
 ```
 
@@ -327,14 +280,11 @@ sequenceDiagram
 export class FileService {
   private parsers = {
     pnml: new PNMLParser(),
-    yawl: new YAWLParser(),
     json: new JSONParser()
   }
   
   private writers = {
     pnml: new PNMLWriter(),
-    yawl: new YAWLWriter(),
-    bpel: new BPELWriter(),
     json: new JSONWriter()
   }
   
@@ -366,7 +316,6 @@ export class FileService {
     const ext = filename.split('.').pop()?.toLowerCase()
     
     if (ext === 'pnml' || content.includes('<pnml')) return 'pnml'
-    if (ext === 'yawl' || content.includes('<specificationSet')) return 'yawl'
     if (ext === 'json') return 'json'
     
     return 'pnml' // Default
@@ -374,69 +323,29 @@ export class FileService {
 }
 ```
 
-### UI-Komponenten
-
-```vue
-<!-- components/file/FileDialog.vue -->
-<template>
-  <Dialog v-model:open="isOpen">
-    <DialogContent>
-      <Tabs v-model="activeTab">
-        <TabsList>
-          <TabsTrigger value="open">Open</TabsTrigger>
-          <TabsTrigger value="save">Save</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="open">
-          <DropZone @drop="handleFileDrop">
-            <p>Drop file here or click to browse</p>
-            <p class="hint">Supports: PNML, YAWL, JSON</p>
-          </DropZone>
-          
-          <div v-if="importResult?.errors.length">
-            <Alert variant="error">
-              <p v-for="error in importResult.errors">
-                {{ error.message }}
-              </p>
-            </Alert>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="export">
-          <RadioGroup v-model="exportFormat">
-            <RadioItem value="pnml">PNML</RadioItem>
-            <RadioItem value="svg">SVG Image</RadioItem>
-            <RadioItem value="png">PNG Image</RadioItem>
-          </RadioGroup>
-          
-          <Checkbox v-model="includeLayout">
-            Include Layout
-          </Checkbox>
-          
-          <Button @click="handleExport">Export</Button>
-        </TabsContent>
-      </Tabs>
-    </DialogContent>
-  </Dialog>
-</template>
-```
-
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. PNML Parser] --> S2[2. PNML Writer]
-    S2 --> S3[3. File Service]
-    S3 --> S4[4. Open/Save UI]
-    S4 --> S5[5. Image Export]
-    S5 --> S6[6. YAWL Support]
-    S6 --> S7[7. BPEL Export]
-    S7 --> S8[8. Apromore Integration]
-    S8 --> S9[9. Drag & Drop]
+    S1[1. PNML Parser ✅] --> S2[2. PNML Writer ✅]
+    S2 --> S3[3. File Service ✅]
+    S3 --> S4[4. Open/Save UI ✅]
+    S4 --> S5[5. Image Export ✅]
+    S5 --> S6[6. JSON Support ✅]
+    S6 --> S7[7. Subprocess Support ✅]
+    S7 --> S8[8. Templates Menu ✅]
 ```
 
-## UI-Mockup
+### Implemented Features
+
+- **PNML Import/Export** ✅ - Full support with layout and subprocesses
+- **JSON Import/Export** ✅ - Custom format with complete model support
+- **Image Export** ✅ - SVG and PNG export
+- **Templates** ✅ - 10 educational example nets
+- **Recent Files** ✅ - Track recently opened files
+- **Drag & Drop** ✅ - Drop files onto editor
+
+## UI Mockup
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -450,23 +359,23 @@ flowchart TD
 │    │     📁 Drop file here                            │     │
 │    │        or click to browse                        │     │
 │    │                                                   │     │
-│    │     Supports: PNML, YAWL, JSON                  │     │
+│    │     Supports: PNML, JSON                        │     │
 │    │                                                   │     │
 │    └─────────────────────────────────────────────────┘     │
 │                                                             │
 │ Recent Files:                                               │
 │ ├─ process1.pnml                              [Open]       │
-│ ├─ workflow.yawl                              [Open]       │
+│ ├─ workflow.json                              [Open]       │
 │ └─ example.pnml                               [Open]       │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Parser für jedes Format |
-| Roundtrip | Import → Export → Import = gleich |
-| Compatibility | Legacy WoPeD Dateien |
-| Error Handling | Ungültige Dateien |
+| Test | Description |
+|------|-------------|
+| Unit | Parser for each format |
+| Roundtrip | Import → Export → Import = equal |
+| Compatibility | Legacy WoPeD files |
+| Error Handling | Invalid files |

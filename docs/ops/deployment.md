@@ -1,6 +1,6 @@
 # Deployment
 
-## Deployment-Prozess
+## Deployment Process
 
 ```mermaid
 flowchart LR
@@ -20,42 +20,56 @@ flowchart LR
     end
 ```
 
+## GitHub Pages
+
+The application is automatically deployed to GitHub Pages via GitHub Actions.
+
+```mermaid
+flowchart LR
+    PUSH[Push to main] --> ACTION[GitHub Action]
+    ACTION --> BUILD[npm run build]
+    BUILD --> DEPLOY[Deploy to gh-pages]
+    DEPLOY --> LIVE[Live on GitHub Pages]
+```
+
+**URL**: https://taminofischer.github.io/woped-next/
+
 ## Docker
 
-### Image bauen
+### Build Image
 
 ```bash
-# Lokal bauen
+# Build locally
 docker build -t woped-next .
 
-# Mit Tag
+# With tag
 docker build -t woped-next:v1.0.0 .
 ```
 
-### Container starten
+### Start Container
 
 ```bash
-# Mit Docker Compose (empfohlen)
+# With Docker Compose (recommended)
 docker compose up -d
 
-# Direkt mit Docker
+# Directly with Docker
 docker run -d -p 8080:80 --name woped-next woped-next
 ```
 
 ### Container Management
 
 ```bash
-# Logs anzeigen
+# Show logs
 docker compose logs -f
 
-# Container stoppen
+# Stop container
 docker compose down
 
-# Neustart mit Rebuild
+# Restart with rebuild
 docker compose up -d --build
 ```
 
-## Build-Prozess
+## Build Process
 
 ```mermaid
 sequenceDiagram
@@ -67,20 +81,20 @@ sequenceDiagram
     D->>N: npm run build
     N->>V: vite build
     V->>V: Bundle & Optimize
-    V->>N: /dist erstellt
-    N->>D: Build fertig
+    V->>N: /dist created
+    N->>D: Build complete
     D->>NG: Docker build
     NG->>NG: Copy /dist
     NG->>D: Image ready
 ```
 
-## Produktions-Build
+## Production Build
 
 ```bash
-# Build erstellen
+# Create build
 npm run build
 
-# Build lokal testen
+# Test build locally
 npm run preview
 ```
 
@@ -97,15 +111,15 @@ dist/
 
 ## Health Checks
 
-| Endpoint | Erwartung | Beschreibung |
-|----------|-----------|--------------|
-| `/` | 200 OK | Hauptseite |
-| `/assets/*` | 200 OK | Statische Assets |
+| Endpoint | Expected | Description |
+|----------|----------|-------------|
+| `/` | 200 OK | Main page |
+| `/assets/*` | 200 OK | Static assets |
 
 ## Rollback
 
 ```bash
-# Vorherige Version deployen
+# Deploy previous version
 docker compose down
 docker tag woped-next:previous woped-next:latest
 docker compose up -d

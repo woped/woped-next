@@ -1,46 +1,46 @@
 ---
-description: Pinia Store Konventionen und Reaktivitätsmuster
+description: Pinia Store Conventions and Reactivity Patterns
 globs: "**/stores/**/*.ts"
 alwaysApply: false
 ---
 
 # Pinia Stores
 
-## Struktur
+## Structure
 ```typescript
 import { defineStore } from 'pinia'
 
 export const useExampleStore = defineStore('example', {
   state: () => ({
-    // Flache Strukturen bevorzugen für einfache Reaktivität
-    // Bei verschachtelten Objekten: Getters und explizite Actions verwenden
+    // Prefer flat structures for simple reactivity
+    // For nested objects: use getters and explicit actions
   }),
 
   getters: {
-    // Getters für abgeleitete Werte und Reaktivität bei verschachtelten Daten
+    // Getters for derived values and reactivity with nested data
     myValue(): Type {
       return this.nested.property
     }
   },
 
   actions: {
-    // Explizite Actions für Mutationen
+    // Explicit actions for mutations
     updateValue(value: Type) {
       this.nested.property = value
-      this.save() // Falls Persistierung gewünscht
+      this.save() // If persistence is needed
     }
   }
 })
 ```
 
-## Reaktivität bei verschachtelten Objekten
+## Reactivity with Nested Objects
 
 ### Problem
-Verschachtelte Objekte (z.B. `state.editor.showGrid`) können Reaktivitätsprobleme verursachen, wenn:
-- `storeToRefs()` auf verschachtelte Properties angewendet wird
-- Computed Properties nicht korrekt tracken
+Nested objects (e.g., `state.editor.showGrid`) can cause reactivity issues when:
+- `storeToRefs()` is applied to nested properties
+- Computed properties don't track correctly
 
-### Lösung 1: Getters verwenden
+### Solution 1: Use Getters
 ```typescript
 // In Store
 getters: {
@@ -49,17 +49,17 @@ getters: {
   }
 }
 
-// In Component mit storeToRefs
+// In Component with storeToRefs
 const { showGrid } = storeToRefs(store)
 ```
 
-### Lösung 2: $state explizit referenzieren
+### Solution 2: Reference $state explicitly
 ```typescript
 // In Component
 const showGrid = computed(() => store.$state.editor.showGrid)
 ```
 
-### Lösung 3: Explizite Toggle-Actions
+### Solution 3: Explicit Toggle Actions
 ```typescript
 // In Store
 actions: {
@@ -73,15 +73,15 @@ actions: {
 store.toggleShowGrid()
 ```
 
-## Vue-Konva Spezifika
+## Vue-Konva Specifics
 
-Bei vue-konva `v-if` vermeiden, stattdessen Konva's native `visible` Property nutzen:
+Avoid `v-if` with vue-konva, use Konva's native `visible` property instead:
 
 ```vue
-<!-- Nicht reaktiv mit v-if -->
+<!-- Not reactive with v-if -->
 <v-layer v-if="showGrid">
 
-<!-- Besser: visible Property über computed -->
+<!-- Better: visible property via computed -->
 <v-layer :config="gridLayerConfig">
 
 <script setup>
@@ -91,7 +91,7 @@ const gridLayerConfig = computed(() => ({
 </script>
 ```
 
-## Persistierung
+## Persistence
 ```typescript
 actions: {
   save() {

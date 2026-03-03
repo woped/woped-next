@@ -1,64 +1,65 @@
 ---
-description: WoPeD Next - Vue.js Projektkonventionen
+description: WoPeD Next - Vue.js Project Conventions
 alwaysApply: true
 ---
 
 # WoPeD Next
 
-Petri-Netz Editor und Workflow-Analyse-Tool. Migriert von Java Swing zu Vue.js 3.
+Petri net editor and workflow analysis tool. Migrated from Java Swing to Vue.js 3.
 
 ## Tech Stack
-- Vue.js 3 (Composition API mit `<script setup>`)
-- Vite als Build-Tool
-- Pinia für State Management
-- vue-i18n für Internationalisierung (DE/EN)
-- vue-konva für Canvas-Rendering
-- TypeScript für Typdefinitionen
-- nginx für Produktion (Docker)
-- GitHub Pages für Deployment
+- Vue.js 3 (Composition API with `<script setup>`)
+- Vite as build tool
+- Pinia for state management
+- vue-i18n for internationalization (DE/EN)
+- vue-konva for canvas rendering
+- TypeScript for type definitions
+- nginx for production (Docker)
+- GitHub Pages for deployment
 
-## Projektstruktur
+## Project Structure
 ```
 src/
-├── components/     # Vue Komponenten nach Feature gruppiert
-│   ├── canvas/     # Konva Canvas-Elemente (Place, Transition, Arc, etc.)
-│   ├── editor/     # Editor-Hauptkomponenten
-│   ├── simulation/ # Quantitative Simulation
-│   ├── token-game/ # Token Game
-│   └── analysis/   # Analyse-Panels
-├── stores/         # Pinia Stores (petriNet, config, tokenGame, simulation)
-├── services/       # Business Logic (file, analysis, simulation, templates)
-├── types/          # TypeScript Interfaces
-├── utils/          # Hilfsfunktionen (geometry, layout, routing)
-└── i18n/           # Übersetzungen (en.ts, de.ts)
+├── components/     # Vue components grouped by feature
+│   ├── canvas/     # Konva canvas elements (Place, Transition, Arc, etc.)
+│   ├── editor/     # Main editor components
+│   ├── simulation/ # Quantitative simulation
+│   ├── token-game/ # Token game
+│   └── analysis/   # Analysis panels
+├── stores/         # Pinia stores (petriNet, config, tokenGame, simulation)
+├── services/       # Business logic (file, analysis, simulation, templates)
+├── types/          # TypeScript interfaces
+├── utils/          # Helper functions (geometry, layout, routing)
+└── i18n/           # Translations (en.ts, de.ts)
 ```
 
-## Befehle
-- `npm run dev` - Entwicklungsserver (http://localhost:5173)
-- `npm run build` - Produktions-Build
-- `docker compose up --build` - Docker starten
+## Commands
+- `npm run dev` - Development server (http://localhost:5173)
+- `npm run build` - Production build
+- `docker compose up --build` - Start Docker
 
 ## Git Workflow
-- Commit und Push nur nach expliziter Erlaubnis durch den User
-- Bei Erlaubnis: Sinnvolle Commit-Message erstellen, dann committen und pushen
+- Commit and push only with explicit user permission
+- When permitted: Create meaningful commit message, then commit and push
 
-## Wichtige Konventionen
-- Alle UI-Texte müssen übersetzt werden (`$t('key')`)
-- CSS-Variablen für Theming (`var(--color-bg)`, `var(--color-text)`)
-- Dark Mode via `data-theme="dark"` auf `<html>`
-- IDs mit `nanoid()` generieren
-- Petri-Netz Elemente: Place, Transition, Arc, Operator, SubProcess
+## Important Conventions
+- All UI texts must be translated (`$t('key')`)
+- Use CSS variables for theming (`var(--color-bg)`, `var(--color-text)`)
+- Dark mode via `data-theme="dark"` on `<html>`
+- Generate IDs with `nanoid()`
+- Petri net elements: Place, Transition, Arc, Operator, SubProcess
+- All rules, skills, comments and docs must be in English
 
 ## Stores
-| Store | Zweck |
-|-------|-------|
-| `petriNet` | Netz-Daten, Viewport, Selection, History |
-| `config` | Theme, Sprache, Editor-Settings (persistiert) |
-| `tokenGame` | Marking, Enabled Transitions, Statistiken |
-| `simulation` | Simulation Config, Results, Resources |
+| Store | Purpose |
+|-------|---------|
+| `petriNet` | Net data, viewport, selection, history |
+| `config` | Theme, language, editor settings (persisted) |
+| `tokenGame` | Marking, enabled transitions, statistics |
+| `simulation` | Simulation config, results, resources |
 
-## Wichtige Services
-- `fileService` - PNML/JSON Import/Export
-- `SimulationEngine` - Diskrete Ereignissimulation
-- `petriNetTemplates` - Lehrreiche Beispiel-Netze
-- `metricsCalculator` - Process Metrics Berechnung
+## Important Services
+- `fileService` - PNML/JSON import/export
+- `SimulationEngine` - Discrete event simulation
+- `petriNetTemplates` - Educational example nets
+- `metricsCalculator` - Process metrics calculation

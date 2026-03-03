@@ -1,6 +1,6 @@
-# Architektur
+# Architecture
 
-## Systemübersicht
+## System Overview
 
 ```mermaid
 graph TB
@@ -30,7 +30,7 @@ graph TB
     NGINX --> DOCKER
 ```
 
-## Komponentenstruktur
+## Component Structure
 
 ```mermaid
 graph TD
@@ -59,23 +59,23 @@ graph TD
     style CANVAS fill:#3eaf7c,color:#fff
 ```
 
-## Verzeichnisstruktur
+## Directory Structure
 
 ```
 src/
-├── assets/              # Statische Assets
+├── assets/              # Static assets
 ├── components/
-│   ├── analysis/        # Analyse-Komponenten
+│   ├── analysis/        # Analysis components
 │   │   ├── AnalysisPanel.vue
 │   │   └── MetricsSection.vue
-│   ├── canvas/          # Konva Canvas-Elemente
+│   ├── canvas/          # Konva canvas elements
 │   │   ├── PlaceNode.vue
 │   │   ├── TransitionNode.vue
 │   │   ├── OperatorNode.vue
 │   │   ├── SubProcessNode.vue
 │   │   ├── ArcEdge.vue
 │   │   └── TokenAnimation.vue
-│   ├── editor/          # Editor-Hauptkomponenten
+│   ├── editor/          # Main editor components
 │   │   ├── PetriNetEditor.vue
 │   │   ├── EditorCanvas.vue
 │   │   ├── EditorToolbar.vue
@@ -83,81 +83,81 @@ src/
 │   │   ├── PropertiesPanel.vue
 │   │   ├── BreadcrumbNav.vue
 │   │   └── SubprocessPreview.vue
-│   ├── file/            # Datei-Operationen
+│   ├── file/            # File operations
 │   │   └── FileMenu.vue
-│   ├── settings/        # Einstellungen
+│   ├── settings/        # Settings
 │   │   └── SettingsDialog.vue
-│   ├── simulation/      # Quantitative Simulation
+│   ├── simulation/      # Quantitative simulation
 │   │   ├── SimulationPanel.vue
 │   │   ├── SimulationConfig.vue
 │   │   ├── SimulationResults.vue
 │   │   ├── TimeModelConfig.vue
 │   │   ├── ResourceConfig.vue
 │   │   └── BottleneckAnalysis.vue
-│   ├── token-game/      # Token Game
+│   ├── token-game/      # Token game
 │   │   ├── TokenGameControls.vue
 │   │   ├── TokenGameStats.vue
 │   │   └── ConflictDialog.vue
-│   └── triggers/        # Trigger-Editor
+│   └── triggers/        # Trigger editor
 │       └── TriggerEditor.vue
 ├── composables/         # Vue Composition Functions
 │   └── useViewport.ts
-├── i18n/                # Internationalisierung
+├── i18n/                # Internationalization
 │   ├── index.ts
 │   └── locales/
 │       ├── en.ts
 │       └── de.ts
-├── services/            # Business Logic
-│   ├── analysis/        # Analyse-Services
+├── services/            # Business logic
+│   ├── analysis/        # Analysis services
 │   │   ├── index.ts
 │   │   └── metricsCalculator.ts
-│   ├── file/            # File-Services
+│   ├── file/            # File services
 │   │   ├── fileService.ts
 │   │   ├── pnmlParser.ts
 │   │   ├── pnmlWriter.ts
 │   │   ├── jsonParser.ts
 │   │   └── imageExporter.ts
-│   ├── simulation/      # Simulation-Services
+│   ├── simulation/      # Simulation services
 │   │   ├── SimulationEngine.ts
 │   │   └── XESExporter.ts
-│   └── templates/       # Template-Service
+│   └── templates/       # Template service
 │       └── petriNetTemplates.ts
-├── stores/              # Pinia Stores
-│   ├── petriNet.ts      # Haupt-Store für Petri-Netz
-│   ├── config.ts        # Konfiguration & Einstellungen
-│   ├── tokenGame.ts     # Token Game State
-│   └── simulation.ts    # Simulation State
-├── types/               # TypeScript Typen
-│   ├── petri-net.ts     # Petri-Netz Typen
-│   ├── config.ts        # Config Typen
-│   ├── simulation.ts    # Simulation Typen
-│   ├── metrics.ts       # Metriken Typen
-│   ├── triggers.ts      # Trigger Typen
-│   └── file-formats.ts  # Dateiformat Typen
-├── utils/               # Hilfsfunktionen
-│   ├── geometry.ts      # Geometrie-Berechnungen
-│   ├── routing.ts       # Arc-Routing
-│   ├── layout.ts        # Auto-Layout Algorithmen
-│   └── random.ts        # Zufallsgeneratoren
+├── stores/              # Pinia stores
+│   ├── petriNet.ts      # Main store for Petri net
+│   ├── config.ts        # Configuration & settings
+│   ├── tokenGame.ts     # Token game state
+│   └── simulation.ts    # Simulation state
+├── types/               # TypeScript types
+│   ├── petri-net.ts     # Petri net types
+│   ├── config.ts        # Config types
+│   ├── simulation.ts    # Simulation types
+│   ├── metrics.ts       # Metrics types
+│   ├── triggers.ts      # Trigger types
+│   └── file-formats.ts  # File format types
+├── utils/               # Helper functions
+│   ├── geometry.ts      # Geometry calculations
+│   ├── routing.ts       # Arc routing
+│   ├── layout.ts        # Auto-layout algorithms
+│   └── random.ts        # Random generators
 ├── App.vue
 └── main.js
 ```
 
 ## Tech Stack
 
-| Technologie | Version | Zweck |
-|-------------|---------|-------|
-| Vue.js | 3.x | Frontend Framework |
-| Vite | 6.x | Build Tool |
-| Pinia | 3.x | State Management |
-| vue-i18n | 11.x | Internationalisierung |
-| vue-konva | 3.x | Canvas-Rendering (Petri-Netz) |
-| nanoid | 5.x | Eindeutige ID-Generierung |
-| nginx | alpine | Webserver (Produktion) |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Vue.js | 3.x | Frontend framework |
+| Vite | 6.x | Build tool |
+| Pinia | 3.x | State management |
+| vue-i18n | 11.x | Internationalization |
+| vue-konva | 3.x | Canvas rendering (Petri net) |
+| nanoid | 5.x | Unique ID generation |
+| nginx | alpine | Web server (production) |
 
 ## State Management (Pinia)
 
-### Store-Übersicht
+### Store Overview
 
 ```mermaid
 graph LR
@@ -175,19 +175,19 @@ graph LR
     end
 ```
 
-### Reaktivitätsmuster für verschachtelte Objekte
+### Reactivity Patterns for Nested Objects
 
-Bei verschachtelten State-Objekten (z.B. `config.editor.showGrid`) können Reaktivitätsprobleme auftreten. Empfohlene Lösungen:
+Nested state objects (e.g., `config.editor.showGrid`) can cause reactivity issues. Recommended solutions:
 
 ```typescript
-// Store: Getters für verschachtelte Properties
+// Store: Getters for nested properties
 getters: {
   showGrid(): boolean {
     return this.editor.showGrid
   }
 }
 
-// Store: Explizite Toggle-Actions
+// Store: Explicit toggle actions
 actions: {
   toggleShowGrid() {
     this.editor.showGrid = !this.editor.showGrid
@@ -197,13 +197,13 @@ actions: {
 ```
 
 ```typescript
-// Component: $state explizit referenzieren
+// Component: Reference $state explicitly
 const showGrid = computed(() => configStore.$state.editor.showGrid)
 ```
 
 ### Vue-Konva Integration
 
-Bei vue-konva `v-if` auf Layern vermeiden - stattdessen Konva's native `visible` Property:
+Avoid `v-if` on layers with vue-konva - use Konva's native `visible` property instead:
 
 ```vue
 <v-layer :config="gridLayerConfig">
@@ -215,9 +215,9 @@ const gridLayerConfig = computed(() => ({
 </script>
 ```
 
-## Entwicklungsumgebung
+## Development Environment
 
-### Voraussetzungen
+### Prerequisites
 - Node.js 22+
 - npm 10+
 
@@ -231,7 +231,7 @@ npm run dev
 ### Build
 
 ```bash
-# Produktion Build
+# Production build
 npm run build
 
 # Preview
@@ -244,15 +244,15 @@ npm run preview
 docker-compose up --build
 ```
 
-## Internationalisierung (i18n)
+## Internationalization (i18n)
 
-Die Anwendung unterstützt mehrere Sprachen über `vue-i18n`:
+The application supports multiple languages via `vue-i18n`:
 
-- **Konfiguration**: `src/i18n/index.ts`
-- **Sprachdateien**: `src/i18n/locales/`
-- **Unterstützte Sprachen**: Englisch (en), Deutsch (de)
+- **Configuration**: `src/i18n/index.ts`
+- **Language files**: `src/i18n/locales/`
+- **Supported languages**: English (en), German (de)
 
-### Verwendung in Komponenten
+### Usage in Components
 
 ```vue
 <script setup>
@@ -265,29 +265,29 @@ const { t } = useI18n()
 </template>
 ```
 
-### Neue Übersetzungen hinzufügen
+### Adding New Translations
 
-1. Key in `src/i18n/locales/en.ts` hinzufügen
-2. Übersetzung in `src/i18n/locales/de.ts` hinzufügen
-3. In Komponente mit `$t('key.path')` verwenden
+1. Add key in `src/i18n/locales/en.ts`
+2. Add translation in `src/i18n/locales/de.ts`
+3. Use in component with `$t('key.path')`
 
 ## Deployment
 
 ### GitHub Pages
 
-Das Projekt ist auf GitHub Pages deployed:
+The project is deployed on GitHub Pages:
 - **URL**: https://taminofischer.github.io/woped-next/
 - **CI/CD**: GitHub Actions
 
 ### Docker
 
 ```bash
-# Build und Start
+# Build and start
 docker-compose up --build
 
-# Nur Build
+# Build only
 docker build -t woped-next .
 
-# Container starten
+# Start container
 docker run -p 80:80 woped-next
 ```

@@ -1,6 +1,6 @@
-# Konfiguration
+# Configuration
 
-## Übersicht
+## Overview
 
 ```mermaid
 graph TD
@@ -21,7 +21,7 @@ graph TD
     PROD --> ENVPROD
 ```
 
-## Umgebungsvariablen
+## Environment Variables
 
 ### Vite Environment Variables
 
@@ -32,15 +32,15 @@ VITE_API_URL=http://localhost:3000/api
 VITE_DEBUG=false
 ```
 
-| Variable | Beschreibung | Default |
-|----------|--------------|---------|
-| `VITE_APP_TITLE` | Anwendungstitel | WoPeD Next |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_APP_TITLE` | Application title | WoPeD Next |
 | `VITE_API_URL` | Backend API URL | - |
-| `VITE_DEBUG` | Debug-Modus | false |
+| `VITE_DEBUG` | Debug mode | false |
 
-> **Hinweis**: Nur Variablen mit `VITE_` Prefix sind im Client verfügbar.
+> **Note**: Only variables with `VITE_` prefix are available in the client.
 
-## Vite Konfiguration
+## Vite Configuration
 
 ```mermaid
 graph LR
@@ -63,18 +63,18 @@ resolve: {
 }
 ```
 
-## Docker Konfiguration
+## Docker Configuration
 
 ### docker-compose.yml
 
-| Service | Port | Beschreibung |
-|---------|------|--------------|
+| Service | Port | Description |
+|---------|------|-------------|
 | woped-next | 8080:80 | Frontend Container |
 
 ### Nginx Settings
 
-| Setting | Wert | Beschreibung |
-|---------|------|--------------|
-| Gzip | enabled | Komprimierung |
-| Cache | 1 Jahr | Statische Assets |
-| SPA Routing | try_files | Fallback auf index.html |
+| Setting | Value | Description |
+|---------|-------|-------------|
+| Gzip | enabled | Compression |
+| Cache | 1 year | Static assets |
+| SPA Routing | try_files | Fallback to index.html |

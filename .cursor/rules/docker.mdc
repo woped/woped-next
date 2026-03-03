@@ -1,34 +1,34 @@
 ---
-description: Docker-Konfiguration
+description: Docker Configuration
 globs: "{Dockerfile,docker-compose.yml,nginx.conf}"
 alwaysApply: false
 ---
 
 # Docker Setup
 
-## Architektur
-- Multi-Stage Build: Node.js 22 (Build) → nginx alpine (Produktion)
-- Port 80 intern, 8080 extern gemappt
-- nginx serviert statische Dateien aus `/usr/share/nginx/html`
-- SPA-Routing über `try_files $uri /index.html` konfiguriert
+## Architecture
+- Multi-stage build: Node.js 22 (build) → nginx alpine (production)
+- Port 80 internal, 8080 external mapped
+- nginx serves static files from `/usr/share/nginx/html`
+- SPA routing configured via `try_files $uri /index.html`
 
-## Befehle
+## Commands
 ```bash
-# Build und Start
+# Build and start
 docker compose up --build
 
-# Nur Build
+# Build only
 docker build -t woped-next .
 
-# Container starten
+# Start container
 docker run -p 8080:80 woped-next
 
-# Logs anzeigen
+# Show logs
 docker compose logs -f
 ```
 
-## Produktions-Optimierungen
-- Gzip-Kompression aktiviert
-- Cache-Header für statische Assets
-- Security-Header konfiguriert
-- Health-Check auf `/`
+## Production Optimizations
+- Gzip compression enabled
+- Cache headers for static assets
+- Security headers configured
+- Health check on `/`

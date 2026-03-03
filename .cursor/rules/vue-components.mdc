@@ -1,12 +1,12 @@
 ---
-description: Vue.js Komponenten-Konventionen
+description: Vue.js Component Conventions
 globs: "**/*.vue"
 alwaysApply: false
 ---
 
-# Vue Komponenten
+# Vue Components
 
-## Struktur
+## Structure
 ```vue
 <script setup lang="ts">
 import { ref, computed } from 'vue'
@@ -46,19 +46,19 @@ const handleClick = () => { /* ... */ }
 </style>
 ```
 
-## Regeln
-- Composition API mit `<script setup>` verwenden
-- TypeScript mit `lang="ts"` bei Bedarf (für `import type`)
-- Props mit `defineProps()` definieren
-- Events mit `defineEmits()` definieren
-- `scoped` Styles bevorzugen
-- Komponenten in PascalCase benennen
+## Rules
+- Use Composition API with `<script setup>`
+- Use TypeScript with `lang="ts"` when needed (for `import type`)
+- Define props with `defineProps()`
+- Define events with `defineEmits()`
+- Prefer `scoped` styles
+- Name components in PascalCase
 
-## Internationalisierung
-- Alle UI-Texte mit `$t('key.path')` übersetzen
-- Übersetzungen in `src/i18n/locales/en.ts` und `de.ts`
-- Neue Keys immer in beiden Dateien hinzufügen
-- Computed Properties für dynamische Übersetzungen:
+## Internationalization
+- Translate all UI texts with `$t('key.path')`
+- Translations in `src/i18n/locales/en.ts` and `de.ts`
+- Always add new keys to both files
+- Use computed properties for dynamic translations:
   ```typescript
   const items = computed(() => [
     { id: 'a', label: t('items.a') },
@@ -67,14 +67,14 @@ const handleClick = () => { /* ... */ }
   ```
 
 ## Theming
-- CSS-Variablen verwenden: `var(--color-bg)`, `var(--color-text)`, `var(--color-border)`
-- Primärfarbe: `var(--color-primary)`
-- Keine hardcodierten Farben!
-- Dark Mode wird automatisch über `data-theme` Attribut gehandhabt
+- Use CSS variables: `var(--color-bg)`, `var(--color-text)`, `var(--color-border)`
+- Primary color: `var(--color-primary)`
+- No hardcoded colors!
+- Dark mode is handled automatically via `data-theme` attribute
 
-## Canvas-Komponenten (vue-konva)
-- In `src/components/canvas/` ablegen
-- Konva Config über computed Properties:
+## Canvas Components (vue-konva)
+- Place in `src/components/canvas/`
+- Pass Konva config via computed properties:
   ```typescript
   const config = computed(() => ({
     x: props.position.x,
@@ -82,4 +82,4 @@ const handleClick = () => { /* ... */ }
     fill: colors.value.fill,
   }))
   ```
-- Für Sichtbarkeit `visible` Property statt `v-if` verwenden
+- Use `visible` property instead of `v-if` for visibility

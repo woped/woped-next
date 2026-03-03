@@ -1,8 +1,8 @@
-# WoPeD Next - Dokumentation
+# WoPeD Next - Documentation
 
-## Übersicht
+## Overview
 
-WoPeD Next ist eine moderne Web-Anwendung zur Modellierung und Analyse von Petri-Netzen und Workflow-Prozessen. Migriert von der ursprünglichen Java Swing Desktop-Anwendung zu Vue.js 3.
+WoPeD Next is a modern web application for modeling and analyzing Petri nets and workflow processes. Migrated from the original Java Swing desktop application to Vue.js 3.
 
 ```mermaid
 graph LR
@@ -18,7 +18,7 @@ graph LR
         end
         subgraph migration[migration/]
             MIG[migrations.md]
-            FEATURES[Feature-Dokumente]
+            FEATURES[Feature Documents]
         end
     end
 ```
@@ -26,49 +26,49 @@ graph LR
 ## Features
 
 ### Editor
-| Feature | Beschreibung |
-|---------|--------------|
-| **Petri-Netz Editor** | Places, Transitions, Arcs mit Gewichtung |
-| **Workflow Operatoren** | AND/XOR Split/Join, kombinierte Operatoren |
-| **Subprozesse** | Hierarchische Netze mit Drill-down Navigation |
-| **Visualisierung** | Grid, Snap-to-Grid, Auto-Layout, Fit-to-View |
+| Feature | Description |
+|---------|-------------|
+| **Petri Net Editor** | Places, transitions, arcs with weights |
+| **Workflow Operators** | AND/XOR split/join, combined operators |
+| **Subprocesses** | Hierarchical nets with drill-down navigation |
+| **Visualization** | Grid, snap-to-grid, auto-layout, fit-to-view |
 
-### Simulation & Analyse
-| Feature | Beschreibung |
-|---------|--------------|
-| **Token Game** | Animierte Simulation mit Konfliktauflösung |
-| **Quantitative Simulation** | Zeit-basierte Simulation mit Ressourcen |
-| **Qualitative Analyse** | Strukturanalyse, Soundness-Prüfung |
-| **Process Metrics** | Komplexitäts- und Strukturmetriken |
+### Simulation & Analysis
+| Feature | Description |
+|---------|-------------|
+| **Token Game** | Animated simulation with conflict resolution |
+| **Quantitative Simulation** | Time-based simulation with resources |
+| **Qualitative Analysis** | Structure analysis, soundness checking |
+| **Process Metrics** | Complexity and structural metrics |
 
-### Datei & Export
-| Feature | Beschreibung |
-|---------|--------------|
-| **PNML Import/Export** | Standard Petri-Net Format |
-| **JSON Import/Export** | Eigenes Format mit voller Unterstützung |
-| **Bild-Export** | SVG und PNG Export |
-| **Templates** | 10 lehrreiche Beispiel-Netze |
+### File & Export
+| Feature | Description |
+|---------|-------------|
+| **PNML Import/Export** | Standard Petri net format |
+| **JSON Import/Export** | Custom format with full support |
+| **Image Export** | SVG and PNG export |
+| **Templates** | 10 educational example nets |
 
 ### UI/UX
-| Feature | Beschreibung |
-|---------|--------------|
-| **Themes** | Dark/Light Mode mit System-Erkennung |
-| **Sprachen** | Deutsch und Englisch |
-| **Responsive** | Kollabierbare Panels, adaptive Toolbar |
+| Feature | Description |
+|---------|-------------|
+| **Themes** | Dark/light mode with system detection |
+| **Languages** | German and English |
+| **Responsive** | Collapsible panels, adaptive toolbar |
 
-## Inhaltsverzeichnis
+## Table of Contents
 
 ### Development (`dev/`)
-- [Architektur](dev/architecture.md) - Systemarchitektur, Tech Stack, Patterns
-- [Design](dev/design.md) - UI/UX Design-Richtlinien
+- [Architecture](dev/architecture.md) - System architecture, tech stack, patterns
+- [Design](dev/design.md) - UI/UX design guidelines
 
 ### Operations (`ops/`)
-- [Konfiguration](ops/configuration.md) - Umgebungsvariablen und Settings
-- [Deployment](ops/deployment.md) - Build und Deployment-Prozesse
+- [Configuration](ops/configuration.md) - Environment variables and settings
+- [Deployment](ops/deployment.md) - Build and deployment processes
 
 ### Migration (`migration/`)
-- [Migrationen](migration/migrations.md) - Changelog und Implementierungsstatus
-- [Feature-Dokumente](migration/00-migration-overview.md) - Detaillierte Feature-Spezifikationen
+- [Migrations](migration/migrations.md) - Changelog and implementation status
+- [Feature Documents](migration/00-migration-overview.md) - Detailed feature specifications
 
 ## Quick Start
 
@@ -76,10 +76,10 @@ graph LR
 # Installation
 npm install
 
-# Entwicklungsserver
+# Development server
 npm run dev
 
-# Produktion Build
+# Production build
 npm run build
 
 # Docker
@@ -88,14 +88,14 @@ docker-compose up
 
 ## Quick Links
 
-| Bereich | Beschreibung |
-|---------|--------------|
-| [Dev Setup](dev/architecture.md#entwicklungsumgebung) | Lokale Entwicklung starten |
-| [Docker Deploy](ops/deployment.md#docker) | Container-Deployment |
-| [Changelog](migration/migrations.md) | Versionsänderungen |
-| [Feature Status](migration/migrations.md#implementierungsstatus) | Implementierungsstand |
+| Area | Description |
+|------|-------------|
+| [Dev Setup](dev/architecture.md#development-environment) | Start local development |
+| [Docker Deploy](ops/deployment.md#docker) | Container deployment |
+| [Changelog](migration/migrations.md) | Version changes |
+| [Feature Status](migration/migrations.md#implementation-status) | Implementation status |
 
-## Technologie-Stack
+## Technology Stack
 
 ```mermaid
 graph TB

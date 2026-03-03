@@ -1,8 +1,8 @@
-# Feature: Workflow Operatoren
+# Feature: Workflow Operators
 
-## Übersicht
+## Overview
 
-Spezielle Transitionen für Workflow-Netze: AND/XOR Split und Join Operatoren.
+Special transitions for workflow nets: AND/XOR split and join operators.
 
 ```mermaid
 graph LR
@@ -24,7 +24,7 @@ graph LR
     end
 ```
 
-## Operator-Typen
+## Operator Types
 
 ```mermaid
 graph TD
@@ -55,7 +55,7 @@ graph TD
 
 ## Legacy Implementation
 
-### Betroffene Klassen
+### Affected Classes
 
 ```
 WoPeD-Core/
@@ -74,7 +74,7 @@ WoPeD-Editor/
     └── TransXOrJoinAndSplitView.java
 ```
 
-### Operator-Enum (Legacy)
+### Operator Enum (Legacy)
 
 ```java
 public enum OperatorType {
@@ -89,9 +89,9 @@ public enum OperatorType {
 }
 ```
 
-## Moderne Implementation
+## Modern Implementation
 
-### Datenmodell
+### Data Model
 
 ```typescript
 // types/operators.ts
@@ -108,11 +108,11 @@ enum OperatorType {
 
 interface OperatorTransition extends Transition {
   operatorType: OperatorType
-  innerPlaces?: Place[]  // Für combined operators
+  innerPlaces?: Place[]  // For combined operators
 }
 ```
 
-### Komponenten-Architektur
+### Component Architecture
 
 ```mermaid
 graph TD
@@ -132,13 +132,13 @@ graph TD
     BASE --> COMB
 ```
 
-### Visuelle Darstellung
+### Visual Representation
 
 ```mermaid
 graph LR
-    subgraph Symbole
-        AND["◇ AND (Raute)"]
-        XOR["⊗ XOR (Kreis mit X)"]
+    subgraph Symbols
+        AND["◇ AND (Diamond)"]
+        XOR["⊗ XOR (Circle with X)"]
     end
 ```
 
@@ -164,79 +164,79 @@ graph LR
 </template>
 ```
 
-### Token-Semantik
+### Token Semantics
 
 ```mermaid
 stateDiagram-v2
     state "AND-Split" as AS {
         [*] --> Waiting: 1 Token
-        Waiting --> Fired: Alle Ausgänge aktiviert
+        Waiting --> Fired: All outputs activated
     }
     
     state "AND-Join" as AJ {
-        [*] --> Collecting: Tokens sammeln
-        Collecting --> Fired: Alle Eingänge haben Token
+        [*] --> Collecting: Collect tokens
+        Collecting --> Fired: All inputs have tokens
     }
     
     state "XOR-Split" as XS {
         [*] --> Waiting: 1 Token
-        Waiting --> Fired: Ein Ausgang gewählt
+        Waiting --> Fired: One output selected
     }
     
     state "XOR-Join" as XJ {
-        [*] --> Waiting: Auf ein Token warten
-        Waiting --> Fired: Erstes Token durchleiten
+        [*] --> Waiting: Wait for a token
+        Waiting --> Fired: First token passes through
     }
 ```
 
-## Migrationsschritte
+## Migration Steps
 
 ```mermaid
 flowchart TD
-    S1[1. OperatorType Enum] --> S2[2. Datenmodell erweitern]
+    S1[1. OperatorType Enum] --> S2[2. Extend Data Model]
     S2 --> S3[3. Base Operator Component]
-    S3 --> S4[4. Spezifische Operatoren]
+    S3 --> S4[4. Specific Operators]
     S4 --> S5[5. Toolbar Integration]
     S5 --> S6[6. Token Game Integration]
-    S6 --> S7[7. Validierung]
+    S6 --> S7[7. Validation]
 ```
 
-### Detaillierte Schritte
+### Detailed Steps
 
 1. **OperatorType Enum**
    ```typescript
-   // Alle 8 Operator-Typen definieren
+   // Define all 8 operator types
    ```
 
-2. **Datenmodell erweitern**
-   - OperatorTransition Interface
-   - Inner Places für Combined Operators
+2. **Extend Data Model**
+   - OperatorTransition interface
+   - Inner places for combined operators
 
 3. **Base Operator Component**
-   - Gemeinsame Logik
+   - Shared logic
    - Props: type, position, selected
 
-4. **Spezifische Operatoren**
-   - Unterschiedliche SVG-Shapes
-   - AND = Raute, XOR = Kreis mit X
+4. **Specific Operators**
+   - Different SVG shapes
+   - AND = diamond, XOR = circle with X
 
 5. **Toolbar Integration**
-   - Operator-Auswahl Dropdown
-   - Schnelltasten
+   - Operator selection dropdown
+   - Keyboard shortcuts
 
 6. **Token Game Integration**
-   - AND: Synchronisation
-   - XOR: Auswahl
+   - AND: Synchronization
+   - XOR: Selection
 
-7. **Validierung**
-   - Korrekte Verbindungen prüfen
-   - Fehlermeldungen
+7. **Validation**
+   - Check correct connections
+   - Error messages
 
-## UI-Mockup Operator-Auswahl
+## UI Mockup - Operator Selection
 
 ```
 ┌─────────────────────────────────┐
-│ Operator einfügen:              │
+│ Add Operator:                   │
 ├─────────────────────────────────┤
 │ ◇ AND-Split                     │
 │ ◇ AND-Join                      │
@@ -251,10 +251,10 @@ flowchart TD
 └─────────────────────────────────┘
 ```
 
-## Testplan
+## Test Plan
 
-| Test | Beschreibung |
-|------|--------------|
-| Unit | Operator-Typen, Semantik |
-| Visual | Korrekte Darstellung aller 8 Typen |
-| Integration | Token-Fluss durch Operatoren |
+| Test | Description |
+|------|-------------|
+| Unit | Operator types, semantics |
+| Visual | Correct rendering of all 8 types |
+| Integration | Token flow through operators |

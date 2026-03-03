@@ -1,19 +1,19 @@
 # Design
 
-## UI-Konzept
+## UI Concept
 
 ```mermaid
 graph LR
     subgraph Design System
-        COLORS[Farbpalette]
-        TYPO[Typografie]
+        COLORS[Color Palette]
+        TYPO[Typography]
         SPACE[Spacing]
         ICONS[Icons]
     end
     
     subgraph Components
         BTN[Buttons]
-        FORM[Formulare]
+        FORM[Forms]
         CARD[Cards]
         NAV[Navigation]
     end
@@ -21,31 +21,31 @@ graph LR
     Design System --> Components
 ```
 
-## Farbpalette
+## Color Palette
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#42b883'}}}%%
 pie showData
-    title Primärfarben
+    title Primary Colors
     "Primary #42b883" : 40
     "Secondary #35495e" : 30
     "Accent #3eaf7c" : 20
     "Background #f8f8f8" : 10
 ```
 
-| Farbe | Hex | Verwendung |
-|-------|-----|------------|
-| Primary | `#42b883` | Vue Green - Hauptaktionen |
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Primary | `#42b883` | Vue Green - Main actions |
 | Secondary | `#35495e` | Dark Blue - Text, Headers |
 | Accent | `#3eaf7c` | Highlights, Links |
-| Background | `#f8f8f8` | Hintergrund |
-| Error | `#e74c3c` | Fehlermeldungen |
-| Success | `#27ae60` | Erfolgsmeldungen |
+| Background | `#f8f8f8` | Background |
+| Error | `#e74c3c` | Error messages |
+| Success | `#27ae60` | Success messages |
 
-## Typografie
+## Typography
 
-| Element | Font | Größe | Gewicht |
-|---------|------|-------|---------|
+| Element | Font | Size | Weight |
+|---------|------|------|--------|
 | H1 | System | 2.5rem | 700 |
 | H2 | System | 2rem | 600 |
 | H3 | System | 1.5rem | 600 |
@@ -63,7 +63,7 @@ pie showData
 48px - 2xl
 ```
 
-## Komponenten-States
+## Component States
 
 ```mermaid
 stateDiagram-v2
@@ -79,8 +79,8 @@ stateDiagram-v2
 
 ## Responsive Breakpoints
 
-| Breakpoint | Breite | Zielgeräte |
-|------------|--------|------------|
+| Breakpoint | Width | Target Devices |
+|------------|-------|----------------|
 | sm | 640px | Mobile |
 | md | 768px | Tablet |
 | lg | 1024px | Desktop |
