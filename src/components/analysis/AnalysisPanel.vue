@@ -9,6 +9,7 @@ import AnalysisResults from './AnalysisResults.vue'
 import CoverabilityGraphView from './CoverabilityGraphView.vue'
 import CustomMetricsBuilder from './CustomMetricsBuilder.vue'
 import ProcessTree from '@/components/editor/ProcessTree.vue'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -95,7 +96,13 @@ const formatDuration = (ms) => {
   <div class="analysis-panel">
     <!-- Header -->
     <div class="panel-header">
-      <h3>{{ $t('analysis.title') }}</h3>
+      <h3>{{ $t('analysis.title') }}
+        <HelpTooltip
+          title-key="help.tooltips.analysis.title"
+          content-key="help.tooltips.analysis.content"
+          article-id="analysis-overview"
+        />
+      </h3>
       <div class="header-actions">
         <button
           class="btn-run"
@@ -215,8 +222,6 @@ const formatDuration = (ms) => {
   border-radius: 8px;
   padding: 12px;
   font-size: 13px;
-  max-width: 360px;
-  max-height: 500px;
   overflow-y: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useSimulationStore } from '@/stores/simulation'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { useResourceStore } from '@/stores/resources'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
@@ -123,7 +124,13 @@ const totalAssignments = computed(() => {
     <!-- Resources List -->
     <div class="section">
       <div class="section-header">
-        <h4>{{ $t('simulation.resources') }}</h4>
+        <h4>{{ $t('simulation.resources') }}
+          <HelpTooltip
+            title-key="help.tooltips.resources.title"
+            content-key="help.tooltips.resources.content"
+            article-id="simulation-resources"
+          />
+        </h4>
         <button
           class="add-btn"
           @click="showAddResource = !showAddResource"

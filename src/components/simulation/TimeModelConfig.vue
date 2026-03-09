@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useSimulationStore } from '@/stores/simulation'
 import { usePetriNetStore } from '@/stores/petriNet'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
@@ -119,7 +120,13 @@ const formatDistribution = (dist) => {
   <div class="time-model-config">
     <!-- Default Distribution -->
     <div class="config-section">
-      <h4>{{ $t('simulation.defaultTime') }}</h4>
+      <h4>{{ $t('simulation.defaultTime') }}
+        <HelpTooltip
+          title-key="help.tooltips.timeModel.title"
+          content-key="help.tooltips.timeModel.content"
+          article-id="simulation-time-models"
+        />
+      </h4>
       <p class="hint">{{ $t('simulation.defaultTimeHint') }}</p>
       
       <div class="default-config">

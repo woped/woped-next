@@ -7,6 +7,7 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import TokenGameStats from './TokenGameStats.vue'
 import ConflictDialog from './ConflictDialog.vue'
 import HistoryPanel from './HistoryPanel.vue'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const tokenGameStore = useTokenGameStore()
@@ -149,7 +150,13 @@ const statusClass = computed(() => {
 <template>
   <div class="token-game-controls">
     <div class="controls-header">
-      <span class="title">{{ $t('tokenGame.title') }}</span>
+      <span class="title">{{ $t('tokenGame.title') }}
+        <HelpTooltip
+          title-key="help.tooltips.tokenGame.title"
+          content-key="help.tooltips.tokenGame.content"
+          article-id="token-game-basics"
+        />
+      </span>
       <span :class="['status', statusClass]">{{ statusText }}</span>
     </div>
 
@@ -295,7 +302,14 @@ const statusClass = computed(() => {
       </div>
 
       <div class="setting-row">
-        <label>{{ $t('tokenGame.conflicts') }}:</label>
+        <label>{{ $t('tokenGame.conflicts') }}:
+          <HelpTooltip
+            title-key="help.tooltips.conflictResolution.title"
+            content-key="help.tooltips.conflictResolution.content"
+            article-id="token-game-conflicts"
+            placement="left"
+          />
+        </label>
         <div class="btn-group">
           <button
             v-for="option in conflictOptions"

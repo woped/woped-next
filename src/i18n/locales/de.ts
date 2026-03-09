@@ -1,4 +1,7 @@
+import help from './help-de'
+
 export default {
+  help,
   // Common
   common: {
     save: 'Speichern',

@@ -18,11 +18,15 @@ import ContextMenu from './ContextMenu.vue'
 import { fileService } from '@/services/file/fileService'
 import { useConfigStore } from '@/stores/config'
 import { useAutoSave } from '@/composables/useAutoSave'
+import { useHelpStore } from '@/stores/help'
+import HelpDialog from '@/components/help/HelpDialog.vue'
+import GuidedTour from '@/components/help/GuidedTour.vue'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
 const tokenGameStore = useTokenGameStore()
 const configStore = useConfigStore()
+const helpStore = useHelpStore()
 const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
 
 // Auto-save
@@ -80,9 +84,59 @@ const rightPanelTab = ref('properties')
 // Right panel collapsed state (start expanded by default)
 const rightPanelCollapsed = ref(false)
 
+// Resizable panel width
+const PANEL_MIN_WIDTH = 280
+const PANEL_DEFAULT_WIDTH = 360
+const PANEL_MAX_WIDTH = 600
+const rightPanelWidth = ref(PANEL_DEFAULT_WIDTH)
+const isResizing = ref(false)
+
+const rightPanelStyle = computed(() => {
+  if (rightPanelCollapsed.value) return {}
+  return { width: `${rightPanelWidth.value}px` }
+})
+
+const showTabLabels = computed(() => rightPanelWidth.value >= 340)
+
+function startResize(e) {
+  e.preventDefault()
+  isResizing.value = true
+
+  const startX = e.clientX
+  const startWidth = rightPanelWidth.value
+
+  const onMouseMove = (moveEvent) => {
+    const delta = startX - moveEvent.clientX
+    const newWidth = Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, startWidth + delta))
+    rightPanelWidth.value = newWidth
+  }
+
+  const onMouseUp = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    setTimeout(updateCanvasDimensions, 50)
+  }
+
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
+function handleResizeDoubleClick() {
+  if (rightPanelWidth.value < PANEL_DEFAULT_WIDTH + 20) {
+    rightPanelWidth.value = PANEL_MAX_WIDTH
+  } else {
+    rightPanelWidth.value = PANEL_DEFAULT_WIDTH
+  }
+  setTimeout(updateCanvasDimensions, 50)
+}
+
 const toggleRightPanel = () => {
   rightPanelCollapsed.value = !rightPanelCollapsed.value
-  // Trigger canvas resize after panel animation
   setTimeout(updateCanvasDimensions, 250)
 }
 
@@ -154,6 +208,15 @@ onMounted(() => {
 
   // Update canvas dimensions after mount
   setTimeout(updateCanvasDimensions, 100)
+
+  // Initialize help system and show welcome tour on first visit
+  helpStore.loadPersisted()
+  if (!helpStore.hasSeenWelcome) {
+    setTimeout(() => {
+      helpStore.startTour('welcome')
+      helpStore.markWelcomeSeen()
+    }, 800)
+  }
 })
 </script>
 
@@ -194,7 +257,18 @@ onMounted(() => {
       </div>
       
       <!-- Right Side Panel -->
-      <div :class="['right-panel', { collapsed: rightPanelCollapsed }]">
+      <div
+        :class="['right-panel', { collapsed: rightPanelCollapsed, resizing: isResizing }]"
+        :style="rightPanelStyle"
+      >
+        <!-- Resize handle -->
+        <div
+          v-if="!rightPanelCollapsed"
+          class="resize-handle"
+          @mousedown="startResize"
+          @dblclick="handleResizeDoubleClick"
+        ></div>
+
         <button class="collapse-toggle" @click="toggleRightPanel" :title="rightPanelCollapsed ? 'Expand' : 'Collapse'">
           {{ rightPanelCollapsed ? '◀' : '▶' }}
         </button>
@@ -205,28 +279,32 @@ onMounted(() => {
               @click="rightPanelTab = 'properties'"
               :title="$t('properties.title')"
             >
-              📋
+              <span class="tab-icon">📋</span>
+              <span v-if="showTabLabels" class="tab-label">{{ $t('properties.title') }}</span>
             </button>
             <button
               :class="['tab-btn', { active: rightPanelTab === 'tokenGame', highlight: isTokenGameActive }]"
               @click="rightPanelTab = 'tokenGame'"
               :title="$t('tokenGame.title')"
             >
-              ▶
+              <span class="tab-icon">▶</span>
+              <span v-if="showTabLabels" class="tab-label">{{ $t('tokenGame.title') }}</span>
             </button>
             <button
               :class="['tab-btn', { active: rightPanelTab === 'analysis' }]"
               @click="rightPanelTab = 'analysis'"
               :title="$t('analysis.title')"
             >
-              🔍
+              <span class="tab-icon">🔍</span>
+              <span v-if="showTabLabels" class="tab-label">{{ $t('analysis.title') }}</span>
             </button>
             <button
               :class="['tab-btn', { active: rightPanelTab === 'simulation' }]"
               @click="rightPanelTab = 'simulation'"
               :title="$t('simulation.title')"
             >
-              📊
+              <span class="tab-icon">📊</span>
+              <span v-if="showTabLabels" class="tab-label">{{ $t('simulation.title') }}</span>
             </button>
           </div>
           <div class="right-panel-content">
@@ -241,6 +319,10 @@ onMounted(() => {
       </div>
     </div>
     <ContextMenu ref="contextMenuRef" />
+
+    <!-- Help system -->
+    <HelpDialog />
+    <GuidedTour />
 
     <!-- Drop overlay -->
     <div v-if="isDragOver" class="drop-overlay">
@@ -287,7 +369,6 @@ onMounted(() => {
 /* Right Panel */
 .right-panel {
   position: relative;
-  width: 320px;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--color-border);
@@ -296,8 +377,30 @@ onMounted(() => {
   transition: width 0.2s ease;
 }
 
+.right-panel.resizing {
+  transition: none;
+}
+
 .right-panel.collapsed {
-  width: 36px;
+  width: 36px !important;
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 25;
+  transition: background 0.15s;
+}
+
+.resize-handle:hover,
+.right-panel.resizing .resize-handle {
+  background: var(--color-primary);
+  opacity: 0.4;
 }
 
 .collapse-toggle {
@@ -343,14 +446,31 @@ onMounted(() => {
 
 .tab-btn {
   flex: 1;
-  padding: 10px 8px;
+  padding: 8px 4px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--color-text-muted);
-  font-size: 16px;
   cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tab-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.tab-label {
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tab-btn:hover {

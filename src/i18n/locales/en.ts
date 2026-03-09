@@ -1,4 +1,7 @@
+import help from './help-en'
+
 export default {
+  help,
   // Common
   common: {
     save: 'Save',

@@ -7,10 +7,12 @@ import { useConfigStore } from '@/stores/config'
 import { OperatorType, OPERATOR_INFO } from '@/types/petri-net'
 import FileMenu from '@/components/file/FileMenu.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
+import { useHelpStore } from '@/stores/help'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
 const configStore = useConfigStore()
+const helpStore = useHelpStore()
 const { tool, canUndo, canRedo, viewport, selectedOperatorType } = storeToRefs(store)
 
 // Settings dialog state
@@ -131,6 +133,10 @@ const handleKeydown = (e) => {
       store.cancelArcCreation()
       store.clearSelection()
       showOperatorMenu.value = false
+      break
+    case 'f1':
+      e.preventDefault()
+      helpStore.openDialog()
       break
   }
 }
@@ -261,6 +267,15 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
     <div class="toolbar-info">
       <span>{{ store.net.name }}</span>
     </div>
+
+    <!-- Help button -->
+    <button
+      class="tool-btn help-btn"
+      title="Help (F1)"
+      @click="helpStore.openDialog()"
+    >
+      <span class="tool-icon">?</span>
+    </button>
 
     <!-- Settings button -->
     <button
@@ -423,8 +438,25 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
   color: var(--color-text-muted);
 }
 
-.settings-btn {
+.help-btn {
   margin-left: 8px;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.help-btn:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+.help-btn .tool-icon {
+  font-family: system-ui, sans-serif;
+}
+
+.settings-btn {
+  margin-left: 4px;
 }
 
 .settings-btn .tool-icon {

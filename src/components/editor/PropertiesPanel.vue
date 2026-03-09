@@ -6,6 +6,7 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { OperatorType, OPERATOR_INFO } from '@/types/petri-net'
 import SubprocessPreview from './SubprocessPreview.vue'
 import TriggerEditor from '../triggers/TriggerEditor.vue'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
@@ -171,7 +172,13 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
 <template>
   <div class="properties-panel">
     <div class="panel-header">
-      <h3>{{ $t('properties.title') }}</h3>
+      <h3>{{ $t('properties.title') }}
+        <HelpTooltip
+          title-key="help.tooltips.properties.title"
+          content-key="help.tooltips.properties.content"
+          article-id="editor-tools"
+        />
+      </h3>
     </div>
 
     <div class="panel-content">
@@ -303,7 +310,14 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
         </div>
 
         <div class="property-row">
-          <label>{{ $t('properties.routing') }}</label>
+          <label>{{ $t('properties.routing') }}
+            <HelpTooltip
+              title-key="help.tooltips.arcRouting.title"
+              content-key="help.tooltips.arcRouting.content"
+              article-id="arcs-routing"
+              placement="left"
+            />
+          </label>
           <select
             v-model="localRoutingMode"
             @change="updateRoutingMode"

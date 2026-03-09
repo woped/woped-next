@@ -8,6 +8,7 @@ import SimulationConfig from './SimulationConfig.vue'
 import SimulationResults from './SimulationResults.vue'
 import TimeModelConfig from './TimeModelConfig.vue'
 import ResourceConfig from './ResourceConfig.vue'
+import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
 const { t } = useI18n()
 const simulationStore = useSimulationStore()
@@ -39,7 +40,13 @@ const progressPercent = computed(() => Math.round(progress.value * 100))
 <template>
   <div class="simulation-panel">
     <div class="panel-header">
-      <h3>{{ $t('simulation.title') }}</h3>
+      <h3>{{ $t('simulation.title') }}
+        <HelpTooltip
+          title-key="help.tooltips.simulation.title"
+          content-key="help.tooltips.simulation.content"
+          article-id="simulation-overview"
+        />
+      </h3>
       <div class="header-actions">
         <button
           v-if="!isRunning"
