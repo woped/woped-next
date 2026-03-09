@@ -14,12 +14,12 @@ const { net } = storeToRefs(petriNetStore)
 
 // Get enabled items with names
 const enabledItems = computed(() => {
+  if (!net.value) return []
   const items = []
   
-  // Transitions
   for (const id of enabledTransitions.value) {
-    const transition = net.value.transitions.find(t => t.id === id) ||
-                       net.value.operators.find(o => o.id === id)
+    const transition = (net.value.transitions || []).find(tr => tr.id === id) ||
+                       (net.value.operators || []).find(o => o.id === id)
     items.push({
       id,
       type: 'transition',
@@ -28,7 +28,6 @@ const enabledItems = computed(() => {
     })
   }
   
-  // Subprocesses
   for (const id of enabledSubprocesses.value) {
     const subprocess = (net.value.subProcesses || []).find(s => s.id === id)
     items.push({

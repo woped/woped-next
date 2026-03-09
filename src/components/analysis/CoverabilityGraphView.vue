@@ -22,10 +22,11 @@ const isPanning = ref(false)
 const panStart = reactive({ x: 0, y: 0 })
 
 function buildGraph() {
+  if (!net.value) return
   isBuilding.value = true
   setTimeout(() => {
     const initialMarking = {}
-    for (const place of net.value.places) {
+    for (const place of net.value.places || []) {
       if (place.tokens > 0) {
         initialMarking[place.id] = place.tokens
       }

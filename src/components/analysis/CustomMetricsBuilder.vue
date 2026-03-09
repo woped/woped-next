@@ -20,11 +20,12 @@ const thresholdBad = ref('')
 const KNOWN_VARIABLES = ['places', 'transitions', 'arcs', 'operators', 'subprocesses', 'nodes']
 
 function resolveVariables(net) {
-  const p = net.places.length
-  const t = net.transitions.length
-  const a = net.arcs.length
-  const o = net.operators.length
-  const s = net.subProcesses.length
+  if (!net) return { places: 0, transitions: 0, arcs: 0, operators: 0, subprocesses: 0, nodes: 0 }
+  const p = (net.places || []).length
+  const t = (net.transitions || []).length
+  const a = (net.arcs || []).length
+  const o = (net.operators || []).length
+  const s = (net.subProcesses || []).length
   return {
     places: p,
     transitions: t,

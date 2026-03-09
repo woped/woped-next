@@ -21,8 +21,6 @@ const soundnessResult = ref(null)
 const isAnalyzing = ref(false)
 
 // Collapsed states
-const showWorkflow = ref(true)
-const showSoundness = ref(true)
 const showStatistics = ref(false)
 const showCoverability = ref(false)
 const showProcessTree = ref(false)

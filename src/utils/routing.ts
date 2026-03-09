@@ -1,4 +1,4 @@
-import type { Position, ArcRoutingMode } from '@/types/petri-net'
+import type { Position } from '@/types/petri-net'
 
 /**
  * Calculate orthogonal route between two points
@@ -44,21 +44,19 @@ export function bezierRoute(source: Position, target: Position): Position[] {
   const dy = target.y - source.y
   const distance = Math.sqrt(dx * dx + dy * dy)
 
-  // Control point offset (30% of distance, perpendicular to midpoint)
-  const curvature = 0.2
+  if (distance === 0) {
+    return [source, { x: source.x, y: source.y - 30 }, target]
+  }
 
-  // Midpoint
+  const curvature = 0.2
   const midX = (source.x + target.x) / 2
   const midY = (source.y + target.y) / 2
 
-  // Perpendicular vector (normalized)
   const perpX = -dy / distance
   const perpY = dx / distance
 
-  // Control point offset
   const offset = distance * curvature
 
-  // Control points for quadratic bezier (simplified)
   const cp1 = {
     x: midX + perpX * offset,
     y: midY + perpY * offset,
