@@ -440,6 +440,8 @@ const toggleMenu = () => {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 200px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
   padding: 4px 0;
   z-index: 101;
 }
