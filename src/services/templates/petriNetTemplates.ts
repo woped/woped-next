@@ -398,7 +398,344 @@ const createDiningPhilosophers = (): PetriNet => ({
 })
 
 /**
- * 10. State Machine - Simple traffic light
+ * 10. Weighted Arcs - Demonstrate arc weights
+ * Demonstrates: Multi-token consumption/production, capacity management
+ */
+const createWeightedArcs = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Weighted Arcs',
+  places: [
+    createPlace('p1', 'Raw Material', 100, 200, 6),
+    createPlace('p2', 'Assembled', 400, 200),
+    createPlace('p3', 'Quality Check', 600, 100),
+    createPlace('p4', 'Waste', 600, 300),
+    createPlace('p5', 'Finished', 800, 200),
+  ],
+  transitions: [
+    createTransition('t1', 'Assemble (needs 3)', 250, 200),
+    createTransition('t2', 'Pass QC', 500, 100),
+    createTransition('t3', 'Fail QC', 500, 300),
+    createTransition('t4', 'Package (produces 2)', 700, 200),
+  ],
+  arcs: [
+    { ...createArc('p1', 't1'), weight: 3 },
+    createArc('t1', 'p2'),
+    createArc('p2', 't2'),
+    createArc('p2', 't3'),
+    createArc('t2', 'p3'),
+    createArc('t3', 'p4'),
+    createArc('p3', 't4'),
+    { ...createArc('t4', 'p5'), weight: 2 },
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 11. Pipeline - Multi-stage processing
+ * Demonstrates: Pipelining, intermediate buffers, throughput
+ */
+const createPipeline = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Pipeline',
+  places: [
+    createPlace('p1', 'Input Queue', 100, 200, 3),
+    createPlace('p2', 'Stage 1 Buffer', 300, 200),
+    createPlace('p3', 'Stage 2 Buffer', 500, 200),
+    createPlace('p4', 'Stage 3 Buffer', 700, 200),
+    createPlace('p5', 'Output Queue', 900, 200),
+    createPlace('p6', 'Worker 1 Free', 200, 80, 1),
+    createPlace('p7', 'Worker 2 Free', 400, 80, 1),
+    createPlace('p8', 'Worker 3 Free', 600, 80, 1),
+  ],
+  transitions: [
+    createTransition('t1', 'Stage 1', 200, 200),
+    createTransition('t2', 'Stage 2', 400, 200),
+    createTransition('t3', 'Stage 3', 600, 200),
+    createTransition('t4', 'Deliver', 800, 200),
+  ],
+  arcs: [
+    createArc('p1', 't1'),
+    createArc('p6', 't1'),
+    createArc('t1', 'p2'),
+    createArc('t1', 'p6'),
+    createArc('p2', 't2'),
+    createArc('p7', 't2'),
+    createArc('t2', 'p3'),
+    createArc('t2', 'p7'),
+    createArc('p3', 't3'),
+    createArc('p8', 't3'),
+    createArc('t3', 'p4'),
+    createArc('t3', 'p8'),
+    createArc('p4', 't4'),
+    createArc('t4', 'p5'),
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 12. Readers-Writers - Classic concurrency problem
+ * Demonstrates: Shared resource, multiple readers OR one writer
+ */
+const createReadersWriters = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Readers-Writers',
+  places: [
+    createPlace('p1', 'Reader 1 Idle', 100, 100, 1),
+    createPlace('p2', 'Reader 2 Idle', 100, 200, 1),
+    createPlace('p3', 'Writer Idle', 100, 350, 1),
+    createPlace('p4', 'Access Slots', 350, 200, 2),
+    createPlace('p5', 'Reader 1 Reading', 550, 100),
+    createPlace('p6', 'Reader 2 Reading', 550, 200),
+    createPlace('p7', 'Writer Writing', 550, 350),
+  ],
+  transitions: [
+    createTransition('t1', 'R1 Start Read', 250, 100),
+    createTransition('t2', 'R2 Start Read', 250, 200),
+    createTransition('t3', 'W Start Write', 250, 350),
+    createTransition('t4', 'R1 End Read', 450, 100),
+    createTransition('t5', 'R2 End Read', 450, 200),
+    createTransition('t6', 'W End Write', 450, 350),
+  ],
+  arcs: [
+    createArc('p1', 't1'),
+    createArc('p4', 't1'),
+    createArc('t1', 'p5'),
+    createArc('p2', 't2'),
+    createArc('p4', 't2'),
+    createArc('t2', 'p6'),
+    createArc('p3', 't3'),
+    { ...createArc('p4', 't3'), weight: 2 },
+    createArc('t3', 'p7'),
+    createArc('p5', 't4'),
+    createArc('t4', 'p1'),
+    createArc('t4', 'p4'),
+    createArc('p6', 't5'),
+    createArc('t5', 'p2'),
+    createArc('t5', 'p4'),
+    createArc('p7', 't6'),
+    createArc('t6', 'p3'),
+    { ...createArc('t6', 'p4'), weight: 2 },
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 13. Batch Processing - Accumulate then process
+ * Demonstrates: Weighted arcs for accumulation, batch firing
+ */
+const createBatchProcessing = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Batch Processing',
+  places: [
+    createPlace('p1', 'Incoming Items', 100, 200, 5),
+    createPlace('p2', 'Batch Buffer', 350, 200),
+    createPlace('p3', 'Machine Ready', 350, 80, 1),
+    createPlace('p4', 'Processed Batch', 600, 200),
+    createPlace('p5', 'Output', 800, 200),
+  ],
+  transitions: [
+    createTransition('t1', 'Collect', 220, 200),
+    createTransition('t2', 'Process Batch (3)', 480, 200),
+    createTransition('t3', 'Distribute', 700, 200),
+  ],
+  arcs: [
+    createArc('p1', 't1'),
+    createArc('t1', 'p2'),
+    { ...createArc('p2', 't2'), weight: 3 },
+    createArc('p3', 't2'),
+    createArc('t2', 'p4'),
+    createArc('t2', 'p3'),
+    createArc('p4', 't3'),
+    { ...createArc('t3', 'p5'), weight: 3 },
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 14. Order Fulfillment - Realistic business workflow
+ * Demonstrates: Complex workflow with parallel and alternative paths
+ */
+const createOrderFulfillment = (): PetriNet => {
+  const splitId = nanoid()
+  const joinId = nanoid()
+  
+  return {
+    id: nanoid(),
+    name: 'Order Fulfillment',
+    places: [
+      createPlace('p1', 'Order Placed', 80, 250, 1),
+      createPlace('p2', 'Payment Verified', 280, 250),
+      createPlace('p3', 'Inventory Reserved', 530, 150),
+      createPlace('p4', 'Label Printed', 530, 350),
+      createPlace('p5', 'Ready to Ship', 730, 250),
+      createPlace('p6', 'Shipped', 930, 150),
+      createPlace('p7', 'Delivered', 1130, 250),
+      createPlace('p8', 'Notification Sent', 930, 350),
+    ],
+    transitions: [
+      createTransition('t1', 'Verify Payment', 180, 250),
+      createTransition('t2', 'Reserve Stock', 430, 150),
+      createTransition('t3', 'Print Label', 430, 350),
+      createTransition('t4', 'Ship Order', 830, 150),
+      createTransition('t5', 'Confirm Delivery', 1030, 250),
+      createTransition('t6', 'Notify Customer', 830, 350),
+    ],
+    arcs: [
+      createArc('p1', 't1'),
+      createArc('t1', 'p2'),
+      createArc('p2', splitId),
+      createArc(splitId, 't2'),
+      createArc(splitId, 't3'),
+      createArc('t2', 'p3'),
+      createArc('t3', 'p4'),
+      createArc('p3', joinId),
+      createArc('p4', joinId),
+      createArc(joinId, 'p5'),
+      createArc('p5', 't4'),
+      createArc('p5', 't6'),
+      createArc('t4', 'p6'),
+      createArc('t6', 'p8'),
+      createArc('p6', 't5'),
+      createArc('t5', 'p7'),
+    ],
+    operators: [
+      {
+        id: splitId,
+        type: OperatorType.AND_SPLIT,
+        position: { x: 380, y: 250 },
+        label: 'Prepare',
+      },
+      {
+        id: joinId,
+        type: OperatorType.AND_JOIN,
+        position: { x: 630, y: 250 },
+        label: 'Sync',
+      },
+    ],
+    subProcesses: [],
+  }
+}
+
+/**
+ * 15. Approval Process - Decision workflow with retry loop
+ * Demonstrates: Choice, loop-back for rejection, multi-step approval
+ */
+const createApprovalProcess = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Approval Process',
+  places: [
+    createPlace('p1', 'Draft', 100, 200, 1),
+    createPlace('p2', 'Submitted', 300, 200),
+    createPlace('p3', 'Under Review', 500, 200),
+    createPlace('p4', 'Approved', 750, 100),
+    createPlace('p5', 'Rejected', 750, 300),
+    createPlace('p6', 'Published', 950, 100),
+    createPlace('p7', 'Revision Needed', 500, 400),
+  ],
+  transitions: [
+    createTransition('t1', 'Submit', 200, 200),
+    createTransition('t2', 'Assign Reviewer', 400, 200),
+    createTransition('t3', 'Approve', 625, 100),
+    createTransition('t4', 'Reject', 625, 300),
+    createTransition('t5', 'Publish', 850, 100),
+    createTransition('t6', 'Revise & Resubmit', 350, 400),
+  ],
+  arcs: [
+    createArc('p1', 't1'),
+    createArc('t1', 'p2'),
+    createArc('p2', 't2'),
+    createArc('t2', 'p3'),
+    createArc('p3', 't3'),
+    createArc('p3', 't4'),
+    createArc('t3', 'p4'),
+    createArc('t4', 'p5'),
+    createArc('p4', 't5'),
+    createArc('t5', 'p6'),
+    createArc('p5', 't6'),
+    createArc('t6', 'p7'),
+    createArc('p7', 't2'),
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 16. Error Handling Workflow - Process with exception path
+ * Demonstrates: Normal flow with error detection and recovery
+ */
+const createErrorHandling = (): PetriNet => {
+  const xorSplitId = nanoid()
+  const xorJoinId = nanoid()
+
+  return {
+    id: nanoid(),
+    name: 'Error Handling',
+    places: [
+      createPlace('p1', 'Request', 80, 250, 1),
+      createPlace('p2', 'Validated', 280, 250),
+      createPlace('p3', 'Processing OK', 530, 100),
+      createPlace('p4', 'Processing Error', 530, 400),
+      createPlace('p5', 'Result Ready', 730, 100),
+      createPlace('p6', 'Error Logged', 730, 300),
+      createPlace('p7', 'Retry Ready', 730, 500),
+      createPlace('p8', 'Completed', 980, 250),
+    ],
+    transitions: [
+      createTransition('t1', 'Validate', 180, 250),
+      createTransition('t2', 'Execute', 430, 100),
+      createTransition('t3', 'Fail', 430, 400),
+      createTransition('t4', 'Return Result', 630, 100),
+      createTransition('t5', 'Log Error', 630, 300),
+      createTransition('t6', 'Retry', 630, 500),
+      createTransition('t7', 'Deliver', 880, 100),
+      createTransition('t8', 'Escalate', 880, 300),
+    ],
+    arcs: [
+      createArc('p1', 't1'),
+      createArc('t1', 'p2'),
+      createArc('p2', xorSplitId),
+      createArc(xorSplitId, 't2'),
+      createArc(xorSplitId, 't3'),
+      createArc('t2', 'p3'),
+      createArc('t3', 'p4'),
+      createArc('p3', 't4'),
+      createArc('t4', 'p5'),
+      createArc('p4', 't5'),
+      createArc('p4', 't6'),
+      createArc('t5', 'p6'),
+      createArc('t6', 'p7'),
+      createArc('p7', 't1'),
+      createArc('p5', 't7'),
+      createArc('t7', 'p8'),
+      createArc('p6', 't8'),
+      createArc('t8', xorJoinId),
+      createArc('p8', xorJoinId),
+      createArc(xorJoinId, 'p8'),
+    ],
+    operators: [
+      {
+        id: xorSplitId,
+        type: OperatorType.XOR_SPLIT,
+        position: { x: 380, y: 250 },
+        label: 'Route',
+      },
+      {
+        id: xorJoinId,
+        type: OperatorType.XOR_JOIN,
+        position: { x: 930, y: 250 },
+        label: 'Merge',
+      },
+    ],
+    subProcesses: [],
+  }
+}
+
+/**
+ * 17. State Machine - Simple traffic light
  * Demonstrates: State-based modeling
  */
 const createStateMachine = (): PetriNet => ({
@@ -460,6 +797,13 @@ export const templates: Template[] = [
     category: 'basic',
     create: createLoop,
   },
+  {
+    id: 'weightedArcs',
+    nameKey: 'templates.weightedArcs',
+    descriptionKey: 'templates.weightedArcsDesc',
+    category: 'basic',
+    create: createWeightedArcs,
+  },
   // Synchronization patterns
   {
     id: 'mutex',
@@ -489,6 +833,27 @@ export const templates: Template[] = [
     category: 'patterns',
     create: createDiningPhilosophers,
   },
+  {
+    id: 'pipeline',
+    nameKey: 'templates.pipeline',
+    descriptionKey: 'templates.pipelineDesc',
+    category: 'patterns',
+    create: createPipeline,
+  },
+  {
+    id: 'readersWriters',
+    nameKey: 'templates.readersWriters',
+    descriptionKey: 'templates.readersWritersDesc',
+    category: 'patterns',
+    create: createReadersWriters,
+  },
+  {
+    id: 'batchProcessing',
+    nameKey: 'templates.batchProcessing',
+    descriptionKey: 'templates.batchProcessingDesc',
+    category: 'patterns',
+    create: createBatchProcessing,
+  },
   // Workflow patterns
   {
     id: 'workflow',
@@ -496,6 +861,27 @@ export const templates: Template[] = [
     descriptionKey: 'templates.workflowDesc',
     category: 'workflow',
     create: createWorkflowWithOperators,
+  },
+  {
+    id: 'orderFulfillment',
+    nameKey: 'templates.orderFulfillment',
+    descriptionKey: 'templates.orderFulfillmentDesc',
+    category: 'workflow',
+    create: createOrderFulfillment,
+  },
+  {
+    id: 'approvalProcess',
+    nameKey: 'templates.approvalProcess',
+    descriptionKey: 'templates.approvalProcessDesc',
+    category: 'workflow',
+    create: createApprovalProcess,
+  },
+  {
+    id: 'errorHandling',
+    nameKey: 'templates.errorHandling',
+    descriptionKey: 'templates.errorHandlingDesc',
+    category: 'workflow',
+    create: createErrorHandling,
   },
   {
     id: 'stateMachine',
