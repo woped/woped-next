@@ -70,6 +70,8 @@ export default {
     semaphoreDesc: 'Zählender Semaphor für Ressourcenpool',
     diningPhilosophers: 'Speisende Philosophen',
     diningPhilosophersDesc: 'Klassisches Nebenläufigkeitsproblem (vereinfacht)',
+    unboundedNet: 'Unbeschränktes Netz',
+    unboundedNetDesc: 'Erzeuger schneller als Verbraucher — Stelle wächst unbegrenzt (zeigt ω im Überdeckbarkeitsgraph)',
     pipeline: 'Pipeline',
     pipelineDesc: 'Mehrstufige Verarbeitung mit Zwischenpuffern',
     readersWriters: 'Leser-Schreiber',

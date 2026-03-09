@@ -432,7 +432,39 @@ const createWeightedArcs = (): PetriNet => ({
 })
 
 /**
- * 11. Pipeline - Multi-stage processing
+ * 11. Unbounded Net - Producer without consumption limit
+ * Demonstrates: Unbounded place, infinite state space, ω in coverability graph
+ */
+const createUnboundedNet = (): PetriNet => ({
+  id: nanoid(),
+  name: 'Unbounded Net',
+  places: [
+    createPlace('p1', 'Generator Ready', 100, 200, 1),
+    createPlace('p2', 'Buffer (unbounded)', 350, 200),
+    createPlace('p3', 'Slow Consumer Ready', 100, 350, 1),
+    createPlace('p4', 'Consumed', 550, 350),
+  ],
+  transitions: [
+    createTransition('t1', 'Produce (fast)', 220, 200),
+    createTransition('t2', 'Consume (slow)', 350, 350),
+    createTransition('t3', 'Reset Consumer', 450, 350),
+  ],
+  arcs: [
+    createArc('p1', 't1'),
+    createArc('t1', 'p2'),
+    createArc('t1', 'p1'),
+    createArc('p2', 't2'),
+    createArc('p3', 't2'),
+    createArc('t2', 'p4'),
+    createArc('p4', 't3'),
+    createArc('t3', 'p3'),
+  ],
+  operators: [],
+  subProcesses: [],
+})
+
+/**
+ * 12. Pipeline - Multi-stage processing
  * Demonstrates: Pipelining, intermediate buffers, throughput
  */
 const createPipeline = (): PetriNet => ({
@@ -832,6 +864,13 @@ export const templates: Template[] = [
     descriptionKey: 'templates.diningPhilosophersDesc',
     category: 'patterns',
     create: createDiningPhilosophers,
+  },
+  {
+    id: 'unboundedNet',
+    nameKey: 'templates.unboundedNet',
+    descriptionKey: 'templates.unboundedNetDesc',
+    category: 'patterns',
+    create: createUnboundedNet,
   },
   {
     id: 'pipeline',

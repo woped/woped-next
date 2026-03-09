@@ -70,6 +70,8 @@ export default {
     semaphoreDesc: 'Counting semaphore for resource pool',
     diningPhilosophers: 'Dining Philosophers',
     diningPhilosophersDesc: 'Classic concurrency problem (simplified)',
+    unboundedNet: 'Unbounded Net',
+    unboundedNetDesc: 'Producer outpaces consumer — place grows without limit (shows ω in coverability graph)',
     pipeline: 'Pipeline',
     pipelineDesc: 'Multi-stage processing with intermediate buffers',
     readersWriters: 'Readers-Writers',
