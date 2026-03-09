@@ -316,20 +316,20 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'Coverability Graph',
-      description: 'Explore all reachable states of your Petri net.',
+      title: 'State Space Graphs',
+      description: 'Explore all reachable states with the Reachability or Coverability Graph.',
       steps: {
         tab: {
           title: 'Analysis Tab',
-          content: 'Open the Analysis tab to access the coverability graph feature. Scroll down to find the "Coverability Graph" section.',
+          content: 'Open the Analysis tab and scroll down to the "State Space Graphs" section.',
         },
         section: {
-          title: 'Build the Graph',
-          content: 'Expand the Coverability Graph section and click "Build Graph". The system computes all reachable markings (states) and transitions between them.',
+          title: 'Choose Graph Type',
+          content: 'Toggle between Reachability Graph (exact markings, bounded nets only) and Coverability Graph (uses ω for unbounded nets). Then click "Build Graph".',
         },
         graph: {
           title: 'Interpreting Results',
-          content: 'The graph shows states as nodes and transition firings as edges. Look for deadlock states (no outgoing edges) and ω symbols (unbounded places). Statistics are displayed above the graph.',
+          content: 'Nodes represent markings (states), edges represent transition firings. Red nodes are deadlocks, blue nodes are final states. Statistics are displayed above the graph.',
         },
       },
     },
@@ -688,24 +688,26 @@ You can set the default strategy in Settings → Simulation → Conflict Resolut
     },
 
     analysisCoverability: {
-      title: 'Coverability Graph',
-      content: `The **coverability graph** (also called reachability graph for bounded nets) shows all possible states of your Petri net.
+      title: 'State Space Graphs',
+      content: `The **State Space Graphs** section provides two complementary views of your Petri net's behavior:
 
-**What it shows:**
+**Reachability Graph** — enumerates all *exact* reachable markings. Every node contains concrete token counts, enabling precise reachability queries ("Can marking M be reached?") and full liveness analysis. Only works for **bounded** nets (finite state space). If the net is unbounded, the construction automatically falls back to the coverability graph.
+
+**Coverability Graph** — works for *all* nets, including unbounded ones. Uses **ω (omega)** to represent places where tokens can grow infinitely, guaranteeing termination. Useful for detecting unboundedness, deadlocks, and dead transitions, but loses exact token counts.
+
+**What the graph shows:**
 - Each **node** represents a marking (state) — the number of tokens in each place
 - Each **edge** represents a transition firing that leads from one state to another
-- **Deadlock states** have no outgoing edges
-- **ω (omega)** symbols indicate unbounded places
-
-**Building the graph:** Click "Build Graph" in the Analysis panel's Coverability Graph section.
+- **Deadlock states** (red) have no outgoing edges
+- **Final states** (blue) are proper termination points
 
 **Interpreting results:**
 - **States:** Total number of reachable markings
 - **Deadlocks:** States where no transition is enabled
+- **Bounded/Unbounded:** Whether the state space is finite
 - **Final States:** States that are proper termination points
-- **Unbounded:** If ω appears, the net is unbounded (tokens can grow infinitely)
 
-**Note:** The maximum number of states is limited (configurable in Settings) to prevent excessive computation.`,
+**Note:** The maximum number of states is limited to prevent excessive computation.`,
     },
 
     analysisMetrics: {

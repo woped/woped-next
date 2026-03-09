@@ -3,7 +3,7 @@ import { ref, computed, reactive, nextTick, onMounted, onBeforeUnmount } from 'v
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
-import { buildCoverabilityGraph } from '@/services/analysis/soundnessAnalyzer'
+import { buildCoverabilityGraph, buildReachabilityGraph } from '@/services/analysis/soundnessAnalyzer'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -12,6 +12,8 @@ const { net } = storeToRefs(petriNetStore)
 const graph = ref(null)
 const svgContainer = ref(null)
 const isBuilding = ref(false)
+const graphMode = ref('coverability')
+const reachabilityOverflow = ref(false)
 
 const NODE_RADIUS = 28
 const LAYER_HEIGHT = 150
@@ -21,20 +23,42 @@ const transform = reactive({ x: 0, y: 0, scale: 1 })
 const isPanning = ref(false)
 const panStart = reactive({ x: 0, y: 0 })
 
+function getInitialMarking() {
+  const marking = {}
+  for (const place of net.value.places || []) {
+    if (place.tokens > 0) {
+      marking[place.id] = place.tokens
+    }
+  }
+  return marking
+}
+
 function buildGraph() {
   if (!net.value) return
   isBuilding.value = true
+  reachabilityOverflow.value = false
   setTimeout(() => {
-    const initialMarking = {}
-    for (const place of net.value.places || []) {
-      if (place.tokens > 0) {
-        initialMarking[place.id] = place.tokens
+    const initialMarking = getInitialMarking()
+    if (graphMode.value === 'reachability') {
+      const result = buildReachabilityGraph(net.value, initialMarking)
+      if (result === null) {
+        reachabilityOverflow.value = true
+        graph.value = buildCoverabilityGraph(net.value, initialMarking)
+      } else {
+        graph.value = result
       }
+    } else {
+      graph.value = buildCoverabilityGraph(net.value, initialMarking)
     }
-    graph.value = buildCoverabilityGraph(net.value, initialMarking)
     isBuilding.value = false
     nextTick(() => centerView())
   }, 10)
+}
+
+function setMode(mode) {
+  graphMode.value = mode
+  graph.value = null
+  reachabilityOverflow.value = false
 }
 
 const nodePositions = computed(() => {
@@ -333,39 +357,63 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="cg-container">
+    <div class="cg-mode-tabs">
+      <button
+        :class="['cg-mode-btn', { active: graphMode === 'coverability' }]"
+        @click="setMode('coverability')"
+      >
+        {{ $t('analysis.coverabilityGraph') }}
+      </button>
+      <button
+        :class="['cg-mode-btn', { active: graphMode === 'reachability' }]"
+        @click="setMode('reachability')"
+      >
+        {{ $t('analysis.reachabilityGraph') }}
+      </button>
+    </div>
+
+    <div class="cg-mode-hint">
+      {{ graphMode === 'reachability' ? $t('analysis.reachabilityHint') : $t('analysis.coverabilityHint') }}
+    </div>
+
+    <div v-if="reachabilityOverflow" class="cg-overflow-warning">
+      <span class="warning-icon">⚠</span>
+      {{ $t('analysis.reachabilityOverflow') }}
+    </div>
+
     <div class="cg-toolbar">
       <button class="cg-btn cg-btn-primary" :disabled="isBuilding" @click="buildGraph">
-        {{ isBuilding ? 'Building...' : 'Build Graph' }}
+        {{ isBuilding ? $t('analysis.building') : $t('analysis.buildGraph') }}
       </button>
-      <button v-if="graph" class="cg-btn" @click="resetView">Reset View</button>
+      <button v-if="graph" class="cg-btn" @click="resetView">{{ $t('analysis.resetView') }}</button>
     </div>
 
     <div v-if="graph" class="cg-summary">
-      <span class="cg-tag">States: {{ graph.nodes.length }}</span>
+      <span class="cg-tag">{{ $t('analysis.states') }}: {{ graph.nodes.length }}</span>
       <span class="cg-tag" :class="graph.bounded ? 'cg-tag-ok' : 'cg-tag-warn'">
-        {{ graph.bounded ? 'Bounded' : 'Unbounded' }}
+        {{ graph.bounded ? $t('analysis.bounded') : $t('analysis.unbounded') }}
       </span>
       <span
         class="cg-tag"
         :class="graph.deadlockNodes.length > 0 ? 'cg-tag-err' : 'cg-tag-ok'"
       >
-        Deadlocks: {{ graph.deadlockNodes.length }}
+        {{ $t('analysis.deadlocks') }}: {{ graph.deadlockNodes.length }}
       </span>
-      <span class="cg-tag">Final states: {{ graph.reachableFinalStates }}</span>
+      <span class="cg-tag">{{ $t('analysis.finalStates') }}: {{ graph.reachableFinalStates }}</span>
     </div>
 
     <div v-if="graph" class="cg-legend">
       <span class="cg-legend-item">
-        <span class="cg-dot cg-dot-initial" /> Initial
+        <span class="cg-dot cg-dot-initial" /> {{ $t('analysis.legendInitial') }}
       </span>
       <span class="cg-legend-item">
-        <span class="cg-dot cg-dot-final" /> Final
+        <span class="cg-dot cg-dot-final" /> {{ $t('analysis.legendFinal') }}
       </span>
       <span class="cg-legend-item">
-        <span class="cg-dot cg-dot-deadlock" /> Deadlock
+        <span class="cg-dot cg-dot-deadlock" /> {{ $t('analysis.legendDeadlock') }}
       </span>
       <span class="cg-legend-item">
-        <span class="cg-dot cg-dot-other" /> Other
+        <span class="cg-dot cg-dot-other" /> {{ $t('analysis.legendOther') }}
       </span>
     </div>
 
@@ -447,7 +495,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="!graph" class="cg-empty">
-      Click "Build Graph" to generate the coverability / reachability graph from the current net.
+      {{ $t('analysis.graphEmpty') }}
     </div>
   </div>
 </template>
@@ -457,6 +505,70 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.cg-mode-tabs {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cg-mode-btn {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--color-bg);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cg-mode-btn:last-child {
+  border-right: none;
+}
+
+.cg-mode-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.cg-mode-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.cg-mode-hint {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.cg-overflow-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+:global(.dark) .cg-overflow-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.warning-icon {
+  flex-shrink: 0;
+  font-size: 13px;
 }
 
 .cg-toolbar {

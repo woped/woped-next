@@ -316,20 +316,20 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'Erreichbarkeitsgraph',
-      description: 'Erkunde alle erreichbaren Zustände deines Petri-Netzes.',
+      title: 'Zustandsraumgraphen',
+      description: 'Erkunde alle erreichbaren Zustände mit dem Erreichbarkeits- oder Überdeckungsgraphen.',
       steps: {
         tab: {
           title: 'Analyse-Tab',
-          content: 'Öffne den Analyse-Tab um die Erreichbarkeitsgraph-Funktion zu erreichen. Scrolle nach unten zum Bereich "Erreichbarkeitsgraph".',
+          content: 'Öffne den Analyse-Tab und scrolle nach unten zum Bereich "Zustandsraumgraphen".',
         },
         section: {
-          title: 'Graph erstellen',
-          content: 'Klappe den Erreichbarkeitsgraph-Bereich auf und klicke "Graph erstellen". Das System berechnet alle erreichbaren Markierungen (Zustände) und Übergänge zwischen ihnen.',
+          title: 'Graphtyp wählen',
+          content: 'Wechsle zwischen Erreichbarkeitsgraph (exakte Markierungen, nur beschränkte Netze) und Überdeckungsgraph (nutzt ω für unbeschränkte Netze). Klicke dann "Graph erstellen".',
         },
         graph: {
           title: 'Ergebnisse interpretieren',
-          content: 'Der Graph zeigt Zustände als Knoten und Transitionsfeuern als Kanten. Suche nach Deadlock-Zuständen (keine ausgehenden Kanten) und ω-Symbolen (unbeschränkte Stellen). Statistiken werden über dem Graphen angezeigt.',
+          content: 'Knoten repräsentieren Markierungen (Zustände), Kanten repräsentieren Transitionsfeuern. Rote Knoten sind Deadlocks, blaue Knoten sind Endzustände. Statistiken werden über dem Graphen angezeigt.',
         },
       },
     },
@@ -688,24 +688,26 @@ Du kannst die Standardstrategie in Einstellungen → Simulation → Konfliktlös
     },
 
     analysisCoverability: {
-      title: 'Erreichbarkeitsgraph',
-      content: `Der **Erreichbarkeitsgraph** (auch Überdeckungsgraph genannt) zeigt alle möglichen Zustände deines Petri-Netzes.
+      title: 'Zustandsraumgraphen',
+      content: `Der Bereich **Zustandsraumgraphen** bietet zwei komplementäre Ansichten des Verhaltens deines Petri-Netzes:
 
-**Was er zeigt:**
+**Erreichbarkeitsgraph** — zählt alle *exakt* erreichbaren Markierungen auf. Jeder Knoten enthält konkrete Token-Zahlen, was präzise Erreichbarkeitsabfragen ("Kann Markierung M erreicht werden?") und vollständige Lebendigkeitsanalyse ermöglicht. Funktioniert nur für **beschränkte** Netze (endlicher Zustandsraum). Bei unbeschränkten Netzen wird automatisch auf den Überdeckungsgraphen zurückgefallen.
+
+**Überdeckungsgraph** — funktioniert für *alle* Netze, auch unbeschränkte. Nutzt **ω (Omega)** um Stellen darzustellen, an denen Token unbegrenzt wachsen können, und garantiert so die Terminierung. Nützlich zur Erkennung von Unbeschränktheit, Deadlocks und toten Transitionen, verliert aber exakte Token-Zahlen.
+
+**Was der Graph zeigt:**
 - Jeder **Knoten** repräsentiert eine Markierung (Zustand) — die Anzahl der Token in jeder Stelle
-- Jede **Kante** repräsentiert ein Feuern einer Transition, das von einem Zustand zu einem anderen führt
-- **Deadlock-Zustände** haben keine ausgehenden Kanten
-- **ω (Omega)**-Symbole zeigen unbeschränkte Stellen an
-
-**Graph erstellen:** Klicke "Graph erstellen" im Erreichbarkeitsgraph-Bereich des Analyse-Panels.
+- Jede **Kante** repräsentiert ein Feuern einer Transition
+- **Deadlock-Zustände** (rot) haben keine ausgehenden Kanten
+- **Endzustände** (blau) sind ordnungsgemäße Terminierungspunkte
 
 **Ergebnisse interpretieren:**
 - **Zustände:** Gesamtzahl erreichbarer Markierungen
 - **Deadlocks:** Zustände, in denen keine Transition aktiviert ist
+- **Beschränkt/Unbeschränkt:** Ob der Zustandsraum endlich ist
 - **Endzustände:** Zustände, die ordnungsgemäße Terminierungspunkte sind
-- **Unbeschränkt:** Wenn ω erscheint, ist das Netz unbeschränkt (Token können unendlich wachsen)
 
-**Hinweis:** Die maximale Anzahl an Zuständen ist begrenzt (konfigurierbar in den Einstellungen) um übermäßige Berechnung zu vermeiden.`,
+**Hinweis:** Die maximale Anzahl an Zuständen ist begrenzt, um übermäßige Berechnung zu vermeiden.`,
     },
 
     analysisMetrics: {

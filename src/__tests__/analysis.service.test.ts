@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
-import { analyzeWorkflow, analyzeSoundness, computeStatistics } from '@/services/analysis'
+import { analyzeWorkflow, analyzeSoundness, computeStatistics, buildCoverabilityGraph, buildReachabilityGraph } from '@/services/analysis'
 import { OperatorType } from '@/types/petri-net'
 
 describe('Analysis Services', () => {
@@ -183,6 +183,114 @@ describe('Analysis Services', () => {
 
       // Should find that the net is bounded
       expect(result.issues.some(i => i.message.includes('bounded'))).toBe(true)
+    })
+  })
+
+  describe('buildReachabilityGraph', () => {
+    it('should build a complete graph for a simple bounded net', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'Start')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'End')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p2.id)
+
+      const graph = buildReachabilityGraph(store.net, { [p1.id]: 1 })
+
+      expect(graph).not.toBeNull()
+      expect(graph!.nodes.length).toBe(2)
+      expect(graph!.edges.length).toBe(1)
+      expect(graph!.bounded).toBe(true)
+      expect(graph!.nodes[0].isInitial).toBe(true)
+      expect(graph!.nodes.some(n => n.isFinal)).toBe(true)
+    })
+
+    it('should contain no omega values', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'Start')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'End')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p2.id)
+
+      const graph = buildReachabilityGraph(store.net, { [p1.id]: 1 })
+
+      expect(graph).not.toBeNull()
+      for (const node of graph!.nodes) {
+        for (const val of Object.values(node.marking)) {
+          expect(val).not.toBe('omega')
+        }
+      }
+    })
+
+    it('should return null for an unbounded net', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'P1')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p1.id)
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'P2')
+      store.addArc(t1.id, p2.id)
+
+      const graph = buildReachabilityGraph(store.net, { [p1.id]: 1 }, 50)
+
+      expect(graph).toBeNull()
+    })
+
+    it('should detect deadlocks', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'Start')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'Dead')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p2.id)
+
+      const graph = buildReachabilityGraph(store.net, { [p1.id]: 1 })
+
+      expect(graph).not.toBeNull()
+      expect(graph!.deadlockNodes.length).toBeGreaterThan(0)
+    })
+
+    it('should handle a net with a cycle (bounded)', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'P1')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'P2')
+      const t2 = store.addTransition({ x: 300, y: 0 }, 'T2')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p2.id)
+      store.addArc(p2.id, t2.id)
+      store.addArc(t2.id, p1.id)
+
+      const graph = buildReachabilityGraph(store.net, { [p1.id]: 1 })
+
+      expect(graph).not.toBeNull()
+      expect(graph!.bounded).toBe(true)
+      expect(graph!.nodes.length).toBe(2)
+      expect(graph!.edges.length).toBe(2)
+    })
+
+    it('should differ from coverability graph for unbounded nets', () => {
+      const store = usePetriNetStore()
+      const p1 = store.addPlace({ x: 0, y: 0 }, 'P1')
+      store.updatePlace(p1.id, { tokens: 1 })
+      const t1 = store.addTransition({ x: 100, y: 0 }, 'T1')
+      store.addArc(p1.id, t1.id)
+      store.addArc(t1.id, p1.id)
+      const p2 = store.addPlace({ x: 200, y: 0 }, 'P2')
+      store.addArc(t1.id, p2.id)
+
+      const reachGraph = buildReachabilityGraph(store.net, { [p1.id]: 1 }, 50)
+      const coverGraph = buildCoverabilityGraph(store.net, { [p1.id]: 1 })
+
+      expect(reachGraph).toBeNull()
+      expect(coverGraph).not.toBeNull()
+      expect(coverGraph.bounded).toBe(false)
     })
   })
 })

@@ -189,11 +189,11 @@ const formatDuration = (ms) => {
       @run="runSoundnessAnalysis"
     />
 
-    <!-- Coverability Graph -->
+    <!-- State Space Graphs -->
     <div class="section">
       <div class="section-header" @click="showCoverability = !showCoverability">
         <span class="toggle">{{ showCoverability ? '▼' : '▶' }}</span>
-        <span class="section-title">{{ $t('analysis.coverabilityGraph') }}</span>
+        <span class="section-title">{{ $t('analysis.stateSpaceGraphs') }}</span>
       </div>
       <div v-if="showCoverability" class="section-content">
         <CoverabilityGraphView />

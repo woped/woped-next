@@ -468,6 +468,92 @@ function checkOptionToComplete(
 }
 
 /**
+ * Build reachability graph (only for bounded nets — no omega abstraction).
+ * Returns null if the state space exceeds maxStates, indicating unboundedness.
+ */
+export function buildReachabilityGraph(
+  net: PetriNet,
+  initialMarking: Record<string, number>,
+  maxStates: number = MAX_STATES
+): CoverabilityGraph | null {
+  const nodes: CoverabilityNode[] = []
+  const edges: CoverabilityEdge[] = []
+  const visited = new Map<string, CoverabilityNode>()
+
+  const sinkPlaces = net.places.filter(
+    (p) => !net.arcs.some((arc) => arc.sourceId === p.id)
+  )
+
+  const initial: CoverabilityNode = {
+    id: 'M0',
+    marking: { ...initialMarking },
+    isDeadlock: false,
+    isInitial: true,
+    isFinal: checkFinalMarking(initialMarking, sinkPlaces.map((p) => p.id)),
+  }
+
+  nodes.push(initial)
+  visited.set(markingKey(initial.marking), initial)
+
+  const queue = [initial]
+  let stateCount = 0
+
+  while (queue.length > 0) {
+    if (stateCount >= maxStates) return null
+
+    const current = queue.shift()!
+    stateCount++
+
+    const enabled = getEnabledTransitions(net, current.marking)
+
+    if (enabled.length === 0) {
+      current.isDeadlock = true
+    }
+
+    for (const transitionId of enabled) {
+      const newMarking = fireTransition(net, current.marking, transitionId)
+
+      const key = markingKey(newMarking)
+      let targetNode = visited.get(key)
+
+      if (!targetNode) {
+        targetNode = {
+          id: `M${nodes.length}`,
+          marking: newMarking,
+          parentId: current.id,
+          firedTransition: transitionId,
+          isDeadlock: false,
+          isInitial: false,
+          isFinal: checkFinalMarking(newMarking, sinkPlaces.map((p) => p.id)),
+        }
+        nodes.push(targetNode)
+        visited.set(key, targetNode)
+        queue.push(targetNode)
+      }
+
+      const transition =
+        net.transitions.find((t) => t.id === transitionId) ||
+        net.operators.find((o) => o.id === transitionId)
+
+      edges.push({
+        from: current.id,
+        to: targetNode.id,
+        transitionId,
+        transitionName: transition?.name || transitionId,
+      })
+    }
+  }
+
+  return {
+    nodes,
+    edges,
+    bounded: true,
+    deadlockNodes: nodes.filter((n) => n.isDeadlock).map((n) => n.id),
+    reachableFinalStates: nodes.filter((n) => n.isFinal).length,
+  }
+}
+
+/**
  * Create a unique key for a marking
  */
 function markingKey(marking: Record<string, number | 'omega'>): string {
