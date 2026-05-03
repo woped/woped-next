@@ -18,7 +18,11 @@ graph LR
         end
         subgraph migration[migration/]
             MIG[migrations.md]
-            FEATURES[Feature Documents]
+            MIGDOCS[Feature Documents]
+        end
+        subgraph features[features/]
+            FEAT[features.md]
+            FEATDOCS[Feature Documents]
         end
     end
 ```
@@ -69,6 +73,10 @@ graph LR
 ### Migration (`migration/`)
 - [Migrations](migration/migrations.md) - Changelog and implementation status
 - [Feature Documents](migration/00-migration-overview.md) - Detailed feature specifications
+
+### New Features (`features/`)
+- [Features](features/features.md) - Status & overview of new features
+- [Overview](features/00-features-overview.md) - Guide & template for feature documentation
 
 ## Quick Start
 
