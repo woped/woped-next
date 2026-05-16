@@ -365,10 +365,3 @@ describe('routing', () => {
     })
   })
 })
-
-// TEMPORARY — remove after CI negative-test verification (Task 1)
-describe('CI negative test (intentional failure)', () => {
-  it('must fail so CI turns red', () => {
-    expect(true).toBe(false)
-  })
-})
