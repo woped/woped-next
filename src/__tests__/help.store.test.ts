@@ -112,7 +112,7 @@ describe('Help Store', () => {
     it('should do nothing for a non-existent category', () => {
       const store = useHelpStore()
 
-      store.openArticleByCategory('nonexistent')
+      store.openArticleByCategory('nonexistent' as 'getting-started')
 
       expect(store.dialogOpen).toBe(false)
       expect(store.activeArticleId).toBeNull()
