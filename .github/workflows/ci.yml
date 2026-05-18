@@ -22,10 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # TODO(Task 1 follow-up): enable after existing TS errors are fixed (~37).
-      # Run locally: npm run typecheck
-      # - name: TypeScript check
-      #   run: npm run typecheck
+      - name: TypeScript check
+        run: npm run typecheck
 
       - name: Run tests
         run: npm run test:run
