@@ -1,0 +1,35 @@
+name: "Improvement"
+description: "Enhancement or refactor to existing functionality"
+title: "[Improve]: "
+labels: ["improvement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-sentence improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current State
+      description: What's suboptimal today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired State
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: "- [ ] ...\n- [ ] ..."
+    validations:
+      required: true
