@@ -1,3 +1,6 @@
+import type { LLMConfig } from '@/types/chat'
+import { llmFallbackP2T } from './llmFallback'
+
 const P2T_ENDPOINT = '/p2t/generateText'
 
 export const p2tTool = {
@@ -20,7 +23,7 @@ export const p2tTool = {
     },
   },
 
-  async execute(args: { pnml: string }): Promise<string> {
+  async execute(args: { pnml: string }, llmConfig?: LLMConfig): Promise<string> {
     try {
       const response = await fetch(P2T_ENDPOINT, {
         method: 'POST',
@@ -29,6 +32,9 @@ export const p2tTool = {
       })
 
       if (!response.ok) {
+        if (llmConfig) {
+          return await llmFallbackP2T(llmConfig, args.pnml)
+        }
         return JSON.stringify({
           error: `P2T service returned ${response.status}. The service may not be available.`,
         })
@@ -36,9 +42,12 @@ export const p2tTool = {
 
       const text = await response.text()
       return JSON.stringify({ description: text })
-    } catch (error) {
+    } catch {
+      if (llmConfig) {
+        return await llmFallbackP2T(llmConfig, args.pnml)
+      }
       return JSON.stringify({
-        error: `P2T service unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: 'P2T service unreachable and no LLM fallback available.',
       })
     }
   },

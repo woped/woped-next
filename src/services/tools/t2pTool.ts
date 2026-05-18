@@ -1,3 +1,6 @@
+import type { LLMConfig } from '@/types/chat'
+import { llmFallbackT2P } from './llmFallback'
+
 const T2P_ENDPOINT = '/t2p-2.0/generate_pnml'
 
 export const t2pTool = {
@@ -25,18 +28,23 @@ export const t2pTool = {
     },
   },
 
-  async execute(args: { text: string; language?: string }): Promise<string> {
+  async execute(
+    args: { text: string; language?: string },
+    llmConfig?: LLMConfig,
+  ): Promise<string> {
+    const language = args.language || 'en'
+
     try {
       const response = await fetch(T2P_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: args.text,
-          language: args.language || 'en',
-        }),
+        body: JSON.stringify({ text: args.text, language }),
       })
 
       if (!response.ok) {
+        if (llmConfig) {
+          return await llmFallbackT2P(llmConfig, args.text, language)
+        }
         return JSON.stringify({
           error: `T2P service returned ${response.status}. The service may not be available.`,
         })
@@ -44,9 +52,12 @@ export const t2pTool = {
 
       const data = await response.json()
       return JSON.stringify({ pnml: data.result || data.pnml || '' })
-    } catch (error) {
+    } catch {
+      if (llmConfig) {
+        return await llmFallbackT2P(llmConfig, args.text, language)
+      }
       return JSON.stringify({
-        error: `T2P service unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: 'T2P service unreachable and no LLM fallback available.',
       })
     }
   },

@@ -1,4 +1,4 @@
-import type { ToolCall, ToolResult, ModelCommand } from '@/types/chat'
+import type { ToolCall, ToolResult, ModelCommand, LLMConfig } from '@/types/chat'
 import { chatLogger } from './chatLogger'
 import { t2pTool } from './tools/t2pTool'
 import { p2tTool } from './tools/p2tTool'
@@ -19,6 +19,7 @@ export const toolDefinitions = [
 
 export async function executeToolCall(
   toolCall: ToolCall,
+  llmConfig?: LLMConfig,
 ): Promise<{ result: ToolResult; commands: ModelCommand[] }> {
   let content: string
   const commands: ModelCommand[] = []
@@ -26,7 +27,10 @@ export async function executeToolCall(
   try {
     switch (toolCall.name) {
       case 't2p_convert': {
-        content = await t2pTool.execute(toolCall.arguments as { text: string; language?: string })
+        content = await t2pTool.execute(
+          toolCall.arguments as { text: string; language?: string },
+          llmConfig,
+        )
         try {
           const parsed = JSON.parse(content)
           if (parsed.pnml) {
@@ -40,7 +44,7 @@ export async function executeToolCall(
         if (!args.pnml) {
           args.pnml = modelSerializer.getModelPnml()
         }
-        content = await p2tTool.execute(args as { pnml: string })
+        content = await p2tTool.execute(args as { pnml: string }, llmConfig)
         break
       }
       case 'analyze_model': {

@@ -26,8 +26,10 @@ const MAX_TOOL_ITERATIONS = 5
 
 export class ChatOrchestrator {
   private client: LLMClient
+  private config: LLMConfig
 
   constructor(config: LLMConfig) {
+    this.config = config
     this.client = new LLMClient(config)
   }
 
@@ -88,7 +90,7 @@ export class ChatOrchestrator {
 
         for (const toolCall of toolCalls) {
           chatLogger.toolCall(toolCall.name, toolCall.arguments)
-          const { result, commands } = await executeToolCall(toolCall)
+          const { result, commands } = await executeToolCall(toolCall, this.config)
           chatLogger.toolResult(toolCall.name, result.content.substring(0, 120))
           allCommands.push(...commands)
 
