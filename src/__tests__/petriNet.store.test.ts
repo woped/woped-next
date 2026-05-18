@@ -67,9 +67,9 @@ describe('PetriNet Store', () => {
 
       const arc = store.addArc(place.id, transition.id)
 
-      expect(arc).toBeDefined()
-      expect(arc.sourceId).toBe(place.id)
-      expect(arc.targetId).toBe(transition.id)
+      expect(arc).not.toBeNull()
+      expect(arc!.sourceId).toBe(place.id)
+      expect(arc!.targetId).toBe(transition.id)
       expect(store.net.arcs).toHaveLength(1)
     })
 
@@ -80,9 +80,9 @@ describe('PetriNet Store', () => {
 
       const arc = store.addArc(transition.id, place.id)
 
-      expect(arc).toBeDefined()
-      expect(arc.sourceId).toBe(transition.id)
-      expect(arc.targetId).toBe(place.id)
+      expect(arc).not.toBeNull()
+      expect(arc!.sourceId).toBe(transition.id)
+      expect(arc!.targetId).toBe(place.id)
     })
 
     it('should not add an arc from place to place', () => {
