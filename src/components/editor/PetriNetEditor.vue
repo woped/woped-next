@@ -21,6 +21,7 @@ import { useAutoSave } from '@/composables/useAutoSave'
 import { useHelpStore } from '@/stores/help'
 import HelpDialog from '@/components/help/HelpDialog.vue'
 import GuidedTour from '@/components/help/GuidedTour.vue'
+import ChatPanel from '@/components/chat/ChatPanel.vue'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
@@ -306,6 +307,14 @@ onMounted(() => {
               <span class="tab-icon">📊</span>
               <span v-if="showTabLabels" class="tab-label">{{ $t('simulation.title') }}</span>
             </button>
+            <button
+              :class="['tab-btn', { active: rightPanelTab === 'chat' }]"
+              @click="rightPanelTab = 'chat'"
+              :title="$t('chat.title')"
+            >
+              <span class="tab-icon">💬</span>
+              <span v-if="showTabLabels" class="tab-label">{{ $t('chat.title') }}</span>
+            </button>
           </div>
           <div class="right-panel-content">
             <PropertiesPanel v-if="rightPanelTab === 'properties'" />
@@ -314,6 +323,7 @@ onMounted(() => {
             </div>
             <AnalysisPanel v-else-if="rightPanelTab === 'analysis'" />
             <SimulationPanel v-else-if="rightPanelTab === 'simulation'" />
+            <ChatPanel v-else-if="rightPanelTab === 'chat'" />
           </div>
         </template>
       </div>
