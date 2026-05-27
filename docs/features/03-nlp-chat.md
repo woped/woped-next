@@ -302,6 +302,8 @@ flowchart TD
 
 **Changed files:**
 - `src/components/editor/PetriNetEditor.vue` — Integrate ChatPanel as tab in the right panel
+- `src/i18n/locales/en.ts` — English translations for chat feature
+- `src/i18n/locales/de.ts` — German translations for chat feature
 - `infrastructure/webservices/000-https-woped.conf` — CORS headers for T2P/P2T (browser access)
 
 ### Prerequisite: T2P/P2T Browser Accessibility
@@ -444,15 +446,7 @@ Since the OpenAI API key comes from the user and the service URLs are accessible
 
 ### Frontend (additional)
 
-```json
-{
-  "dependencies": {
-    "openai": "^4.x"
-  }
-}
-```
-
-The `openai` npm package supports browser environments and is used directly in the frontend.
+No additional npm dependencies required. The implementation uses the native `fetch` API to communicate directly with the OpenAI REST API (`https://api.openai.com/v1/chat/completions`). This avoids adding a heavy client library and keeps the bundle lean.
 
 ### Existing Services (must be reachable)
 
