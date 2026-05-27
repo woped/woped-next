@@ -33,7 +33,11 @@ describe('LocalMcpServer', () => {
     const names = server.listTools().map((t) => t.name)
     expect(names).toContain('help_modeling')
     expect(names).toContain('get_model_info')
-    expect(names).toHaveLength(2)
+    expect(names).toContain('t2p_convert')
+    expect(names).toContain('p2t_describe')
+    expect(names).toContain('modify_model')
+    expect(names).toContain('analyze_model')
+    expect(names.length).toBeGreaterThanOrEqual(2)
   })
 
   it('rejects duplicate tool registration', () => {
