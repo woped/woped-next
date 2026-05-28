@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { nanoid } from 'nanoid'
+import { normalizePetriNet } from '@/utils/petriNetNormalize'
 import type {
   PetriNet,
   Place,
@@ -878,12 +879,9 @@ export const usePetriNetStore = defineStore('petriNet', {
      * Load a net from data (supports legacy single-net and new multi-net format)
      */
     loadNet(net: PetriNet) {
-      // Ensure the net has subProcesses array
-      if (!net.subProcesses) {
-        net.subProcesses = []
-      }
-      
-      const loadedNet = JSON.parse(JSON.stringify(net)) as PetriNet
+      const { net: loadedNet } = normalizePetriNet(
+        JSON.parse(JSON.stringify(net)) as PetriNet,
+      )
       this.nets = { [loadedNet.id]: loadedNet }
       this.activeNetId = loadedNet.id
       this.breadcrumb = [loadedNet.id]
@@ -897,7 +895,12 @@ export const usePetriNetStore = defineStore('petriNet', {
      * Load multiple nets (for files with subprocesses)
      */
     loadNets(nets: Record<string, PetriNet>, mainNetId: string) {
-      this.nets = JSON.parse(JSON.stringify(nets))
+      const cloned = JSON.parse(JSON.stringify(nets)) as Record<string, PetriNet>
+      const normalized: Record<string, PetriNet> = {}
+      for (const [id, net] of Object.entries(cloned)) {
+        normalized[id] = normalizePetriNet(net).net
+      }
+      this.nets = normalized
       this.activeNetId = mainNetId
       this.breadcrumb = [mainNetId]
       this.selectedIds = []

@@ -17,6 +17,7 @@ export const modelInfoTool = {
 
   execute(): string {
     const summary = modelSerializer.getModelSummary()
-    return JSON.stringify(summary)
+    const elements = modelSerializer.getModelElements()
+    return JSON.stringify({ ...summary, elements })
   },
 }

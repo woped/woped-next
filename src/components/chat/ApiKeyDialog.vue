@@ -1,22 +1,38 @@
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { AVAILABLE_MODELS } from '@/types/chat'
+import { AVAILABLE_MODELS_BY_PROVIDER, PROVIDER_OPTIONS } from '@/types/chat'
+import type { LLMProvider } from '@/types/chat'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
 
 const apiKey = ref('')
+const selectedProvider = ref<LLMProvider>('openai')
 const selectedModel = ref('gpt-4o')
 const isValidating = ref(false)
 const validationError = ref('')
 
+const availableModels = computed(() => AVAILABLE_MODELS_BY_PROVIDER[selectedProvider.value])
+
+function getDefaultModel(provider: LLMProvider): string {
+  return AVAILABLE_MODELS_BY_PROVIDER[provider][0]?.id || 'gpt-4o'
+}
+
 onMounted(() => {
   apiKey.value = chatStore.llmConfig.apiKey
+  selectedProvider.value = chatStore.llmConfig.provider
   selectedModel.value = chatStore.llmConfig.model
 })
+
+watch(selectedProvider, () => {
+  const modelExists = availableModels.value.some((model) => model.id === selectedModel.value)
+  if (!modelExists) {
+    selectedModel.value = getDefaultModel(selectedProvider.value)
+  }
+}, { immediate: true })
 
 async function handleSave() {
   if (!apiKey.value.trim()) {
@@ -28,13 +44,14 @@ async function handleSave() {
   validationError.value = ''
 
   try {
-    const valid = await LLMClient.validateApiKey(apiKey.value.trim())
+    const valid = await LLMClient.validateApiKey(apiKey.value.trim(), selectedProvider.value)
     if (!valid) {
       validationError.value = t('chat.apiKey.invalid')
       return
     }
 
     chatStore.saveConfig({
+      provider: selectedProvider.value,
       apiKey: apiKey.value.trim(),
       model: selectedModel.value,
     })
@@ -58,12 +75,21 @@ function handleCancel() {
       <p class="dialog-description">{{ t('chat.apiKey.description') }}</p>
 
       <div class="form-group">
+        <label class="form-label">{{ t('chat.apiKey.provider') }}</label>
+        <select v-model="selectedProvider" class="form-select">
+          <option v-for="provider in PROVIDER_OPTIONS" :key="provider.id" :value="provider.id">
+            {{ provider.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">{{ t('chat.apiKey.label') }}</label>
         <input
           v-model="apiKey"
           type="password"
           class="form-input"
-          placeholder="sk-..."
+          :placeholder="selectedProvider === 'gemini' ? 'AIza...' : 'sk-...'"
           @keydown.enter="handleSave"
         />
       </div>
@@ -71,7 +97,7 @@ function handleCancel() {
       <div class="form-group">
         <label class="form-label">{{ t('chat.apiKey.model') }}</label>
         <select v-model="selectedModel" class="form-select">
-          <option v-for="model in AVAILABLE_MODELS" :key="model.id" :value="model.id">
+          <option v-for="model in availableModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
