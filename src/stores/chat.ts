@@ -9,6 +9,8 @@ import { DEFAULT_LLM_CONFIG } from '@/types/chat'
 
 const LLM_CONFIG_STORAGE_KEY = 'woped_llm_config'
 const API_KEY_STORAGE_KEY = 'woped_openai_api_key'
+const CHAT_MESSAGES_STORAGE_KEY = 'woped_chat_messages'
+const MAX_PERSISTED_MESSAGES = 100
 
 interface ChatState {
   messages: ChatMessage[]
@@ -52,26 +54,69 @@ export const useChatStore = defineStore('chat', {
         this.isConfigured = apiKey.length > 0
       } catch {
         this.llmConfig = { ...DEFAULT_LLM_CONFIG }
+        this.isConfigured = false
       }
+
+      this.loadMessages()
     },
 
     saveConfig(config: Partial<LLMConfig>) {
-      if (config.apiKey !== undefined) {
-        localStorage.setItem(API_KEY_STORAGE_KEY, config.apiKey)
-      }
-
       this.llmConfig = { ...this.llmConfig, ...config }
       this.isConfigured = this.llmConfig.apiKey.length > 0
 
-      const { apiKey: _, ...configWithoutKey } = this.llmConfig
-      localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(configWithoutKey))
+      try {
+        if (config.apiKey !== undefined) {
+          localStorage.setItem(API_KEY_STORAGE_KEY, config.apiKey)
+        }
+
+        const { apiKey: _, ...configWithoutKey } = this.llmConfig
+        localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(configWithoutKey))
+      } catch (e) {
+        chatLogger.error('Failed to save chat config', e)
+      }
     },
 
     clearConfig() {
-      localStorage.removeItem(API_KEY_STORAGE_KEY)
-      localStorage.removeItem(LLM_CONFIG_STORAGE_KEY)
+      try {
+        localStorage.removeItem(API_KEY_STORAGE_KEY)
+        localStorage.removeItem(LLM_CONFIG_STORAGE_KEY)
+      } catch (e) {
+        chatLogger.error('Failed to clear chat config', e)
+      }
       this.llmConfig = { ...DEFAULT_LLM_CONFIG }
       this.isConfigured = false
+    },
+
+    loadMessages() {
+      try {
+        const savedMessages = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+        if (!savedMessages) {
+          this.messages = []
+          return
+        }
+
+        const parsed = JSON.parse(savedMessages)
+        if (!Array.isArray(parsed)) {
+          this.messages = []
+          return
+        }
+
+        this.messages = parsed.filter((message: unknown) => this.isValidChatMessage(message))
+      } catch (e) {
+        this.messages = []
+        chatLogger.error('Failed to load chat messages', e)
+      }
+    },
+
+    saveMessages() {
+      try {
+        const persistableMessages = this.messages
+          .filter((message) => !message.isLoading)
+          .slice(-MAX_PERSISTED_MESSAGES)
+        localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(persistableMessages))
+      } catch (e) {
+        chatLogger.error('Failed to save chat messages', e)
+      }
     },
 
     openApiKeyDialog() {
@@ -141,6 +186,7 @@ export const useChatStore = defineStore('chat', {
             timestamp: new Date().toISOString(),
             commands: response.commands.length > 0 ? response.commands : undefined,
           }
+          this.saveMessages()
         }
       } catch (error) {
         activeOrchestrator = null
@@ -160,6 +206,7 @@ export const useChatStore = defineStore('chat', {
               error: errorMessage,
             }
           }
+          this.saveMessages()
         }
       } finally {
         this.isLoading = false
@@ -249,6 +296,26 @@ export const useChatStore = defineStore('chat', {
 
     clearMessages() {
       this.messages = []
+      try {
+        localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
+      } catch (e) {
+        chatLogger.error('Failed to clear chat messages', e)
+      }
+    },
+
+    isValidChatMessage(message: unknown): message is ChatMessage {
+      if (!message || typeof message !== 'object') return false
+
+      const candidate = message as Partial<ChatMessage>
+      const validRoles = ['user', 'assistant', 'system']
+
+      return (
+        typeof candidate.id === 'string' &&
+        typeof candidate.content === 'string' &&
+        typeof candidate.timestamp === 'string' &&
+        typeof candidate.role === 'string' &&
+        validRoles.includes(candidate.role)
+      )
     },
 
     getNextPosition(): { x: number; y: number } {
