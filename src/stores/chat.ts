@@ -6,9 +6,12 @@ import { usePetriNetStore } from './petriNet'
 import { fileService } from '@/services/file/fileService'
 import type { ChatMessage, ModelCommand, LLMConfig } from '@/types/chat'
 import { DEFAULT_LLM_CONFIG } from '@/types/chat'
+import { extractPnmlContent } from '@/utils/petriNetNormalize'
+import { resolveArcEndpoints, resolveElementId } from '@/utils/chatElementResolve'
 
 const LLM_CONFIG_STORAGE_KEY = 'woped_llm_config'
-const API_KEY_STORAGE_KEY = 'woped_openai_api_key'
+const OPENAI_API_KEY_STORAGE_KEY = 'woped_openai_api_key'
+const GEMINI_API_KEY_STORAGE_KEY = 'woped_gemini_api_key'
 
 interface ChatState {
   messages: ChatMessage[]
@@ -41,26 +44,38 @@ export const useChatStore = defineStore('chat', {
   actions: {
     loadConfig() {
       try {
-        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || ''
+        const openAiApiKey = localStorage.getItem(OPENAI_API_KEY_STORAGE_KEY) || ''
+        const geminiApiKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || ''
         const savedConfig = localStorage.getItem(LLM_CONFIG_STORAGE_KEY)
         if (savedConfig) {
           const parsed = JSON.parse(savedConfig)
-          this.llmConfig = { ...DEFAULT_LLM_CONFIG, ...parsed, apiKey }
+          const provider = parsed.provider === 'gemini' ? 'gemini' : 'openai'
+          const providerApiKey = provider === 'gemini' ? geminiApiKey : openAiApiKey
+          this.llmConfig = { ...DEFAULT_LLM_CONFIG, ...parsed, provider, apiKey: providerApiKey }
         } else {
-          this.llmConfig.apiKey = apiKey
+          this.llmConfig = {
+            ...DEFAULT_LLM_CONFIG,
+            provider: 'openai',
+            apiKey: openAiApiKey,
+          }
         }
-        this.isConfigured = apiKey.length > 0
+        this.isConfigured = this.llmConfig.apiKey.length > 0
       } catch {
         this.llmConfig = { ...DEFAULT_LLM_CONFIG }
       }
     },
 
     saveConfig(config: Partial<LLMConfig>) {
+      const nextConfig = { ...this.llmConfig, ...config }
+
       if (config.apiKey !== undefined) {
-        localStorage.setItem(API_KEY_STORAGE_KEY, config.apiKey)
+        const keyStorage = nextConfig.provider === 'gemini'
+          ? GEMINI_API_KEY_STORAGE_KEY
+          : OPENAI_API_KEY_STORAGE_KEY
+        localStorage.setItem(keyStorage, config.apiKey)
       }
 
-      this.llmConfig = { ...this.llmConfig, ...config }
+      this.llmConfig = nextConfig
       this.isConfigured = this.llmConfig.apiKey.length > 0
 
       const { apiKey: _, ...configWithoutKey } = this.llmConfig
@@ -68,7 +83,8 @@ export const useChatStore = defineStore('chat', {
     },
 
     clearConfig() {
-      localStorage.removeItem(API_KEY_STORAGE_KEY)
+      localStorage.removeItem(OPENAI_API_KEY_STORAGE_KEY)
+      localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY)
       localStorage.removeItem(LLM_CONFIG_STORAGE_KEY)
       this.llmConfig = { ...DEFAULT_LLM_CONFIG }
       this.isConfigured = false
@@ -139,7 +155,10 @@ export const useChatStore = defineStore('chat', {
             role: 'assistant',
             content: response.message,
             timestamp: new Date().toISOString(),
-            commands: response.commands.length > 0 ? response.commands : undefined,
+            commands:
+              response.commands && response.commands.length > 0
+                ? response.commands
+                : undefined,
           }
         }
       } catch (error) {
@@ -182,25 +201,38 @@ export const useChatStore = defineStore('chat', {
           break
         }
         case 'add_arc': {
-          const sourceId = command.params.source_id as string
-          const targetId = command.params.target_id as string
+          const net = petriNetStore.net
+          if (!net) break
+          const { sourceId, targetId } = resolveArcEndpoints(net, command.params)
           if (sourceId && targetId) {
-            petriNetStore.addArc(sourceId, targetId)
+            const arc = petriNetStore.addArc(sourceId, targetId)
+            if (!arc) {
+              chatLogger.warn(`add_arc skipped: invalid arc ${sourceId} → ${targetId}`)
+            }
+          } else {
+            chatLogger.warn(
+              `add_arc skipped: could not resolve source or target (${JSON.stringify(command.params)})`,
+            )
           }
           break
         }
         case 'remove_element': {
-          const elementId = command.params.element_id as string
+          const net = petriNetStore.net
+          const elementId = net
+            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            : null
           if (elementId) {
             petriNetStore.deleteElement(elementId)
           }
           break
         }
         case 'rename_element': {
-          const elementId = command.params.element_id as string
+          const net = petriNetStore.net
           const name = command.params.name as string
+          const elementId = net
+            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            : null
           if (elementId && name) {
-            const net = petriNetStore.net
             if (net) {
               const isPlace = net.places.some((p) => p.id === elementId)
               if (isPlace) {
@@ -213,20 +245,46 @@ export const useChatStore = defineStore('chat', {
           break
         }
         case 'set_tokens': {
-          const elementId = command.params.element_id as string
+          const net = petriNetStore.net
           const tokens = command.params.tokens as number
+          const elementId = net
+            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            : null
           if (elementId && tokens !== undefined) {
             petriNetStore.updatePlace(elementId, { tokens })
           }
           break
         }
         case 'import_net': {
-          const pnml = command.params.pnml as string
-          if (pnml) {
+          const rawPnml = command.params.pnml as string
+          if (rawPnml) {
             try {
+              const pnml = extractPnmlContent(rawPnml)
+              if (!pnml) {
+                chatLogger.error('Import net from chat', new Error('Empty PNML content'))
+                break
+              }
               const result = fileService.importFromString(pnml, 'pnml')
-              if (result.success && result.net) {
+              if (!result.net) {
+                chatLogger.error(
+                  'Import net from chat',
+                  new Error(result.errors.map((e) => e.message).join('; ') || 'Import failed'),
+                )
+                break
+              }
+              if (result.subNets && result.subNets.size > 0) {
+                const nets: Record<string, typeof result.net> = {
+                  [result.net.id]: result.net,
+                }
+                for (const [id, subNet] of result.subNets) {
+                  nets[id] = subNet
+                }
+                petriNetStore.loadNets(nets, result.net.id)
+              } else {
                 petriNetStore.loadNet(result.net)
+              }
+              if (!result.success && result.warnings.length > 0) {
+                chatLogger.warn(`Import warnings: ${result.warnings.join('; ')}`)
               }
             } catch (e) {
               chatLogger.error('Import net from chat', e)

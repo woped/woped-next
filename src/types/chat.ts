@@ -33,24 +33,40 @@ export interface ModelSummary {
 }
 
 export interface LLMConfig {
+  provider: LLMProvider
   apiKey: string
   model: string
   maxTokens: number
   temperature: number
 }
 
+export type LLMProvider = 'openai' | 'gemini'
+
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
+  provider: 'openai',
   apiKey: '',
   model: 'gpt-4o',
   maxTokens: 4096,
   temperature: 0.7,
 }
 
-export const AVAILABLE_MODELS = [
-  { id: 'gpt-4o', name: 'GPT-4o' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-] as const
+export const PROVIDER_OPTIONS: Array<{ id: LLMProvider; name: string }> = [
+  { id: 'openai', name: 'OpenAI' },
+  { id: 'gemini', name: 'Google Gemini' },
+]
+
+export const AVAILABLE_MODELS_BY_PROVIDER: Record<LLMProvider, Array<{ id: string; name: string }>> = {
+  openai: [
+    { id: 'gpt-4o', name: 'GPT-4o' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+  ],
+  gemini: [
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+  ],
+}
 
 export interface ToolCall {
   id: string
