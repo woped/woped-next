@@ -96,6 +96,7 @@ docker compose up --build
 
 ## 📖 Documentation
 
+- [AGENTS.md](AGENTS.md) — Project reference for developers and AI coding agents
 - [Architecture](docs/dev/architecture.md) — System design and patterns
 - [Migration Status](docs/migration/migrations.md) — Feature implementation progress
 - [Deployment](docs/ops/deployment.md) — Build and deploy instructions
