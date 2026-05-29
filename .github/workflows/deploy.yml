@@ -32,6 +32,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Endpoints are likely to change as the APIs evolve.
+          VITE_P2T_ENDPOINT: https://woped.dhbw-karlsruhe.de/p2t/generateText
+          VITE_T2P_ENDPOINT: https://woped.dhbw-karlsruhe.de/t2p-2.0/generate_pnml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

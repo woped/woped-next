@@ -1,7 +1,6 @@
 import type { LLMConfig } from '@/types/chat'
+import { TOOL_ENDPOINTS } from '@/services/tools/toolConfig'
 import { llmFallbackT2P } from './llmFallback'
-
-const T2P_ENDPOINT = '/t2p-2.0/generate_pnml'
 
 export const t2pTool = {
   definition: {
@@ -34,8 +33,14 @@ export const t2pTool = {
   ): Promise<string> {
     const language = args.language || 'en'
 
+    if (!TOOL_ENDPOINTS.t2p) {
+      return JSON.stringify({
+        error: 'T2P endpoint is not configured.',
+      })
+    }
+
     try {
-      const response = await fetch(T2P_ENDPOINT, {
+      const response = await fetch(TOOL_ENDPOINTS.t2p, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: args.text, language }),
