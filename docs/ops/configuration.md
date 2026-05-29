@@ -30,6 +30,8 @@ graph TD
 VITE_APP_TITLE=WoPeD Next
 VITE_API_URL=http://localhost:3000/api
 VITE_DEBUG=false
+VITE_P2T_ENDPOINT=https://woped.dhbw-karlsruhe.de/p2t/generateText
+VITE_T2P_ENDPOINT=https://woped.dhbw-karlsruhe.de/t2p-2.0/generate_pnml
 ```
 
 | Variable | Description | Default |
@@ -37,6 +39,8 @@ VITE_DEBUG=false
 | `VITE_APP_TITLE` | Application title | WoPeD Next |
 | `VITE_API_URL` | Backend API URL | - |
 | `VITE_DEBUG` | Debug mode | false |
+| `VITE_P2T_ENDPOINT` | P2T API endpoint (likely to change as APIs evolve) | - |
+| `VITE_T2P_ENDPOINT` | T2P API endpoint (likely to change as APIs evolve) | - |
 
 > **Note**: Only variables with `VITE_` prefix are available in the client.
 
