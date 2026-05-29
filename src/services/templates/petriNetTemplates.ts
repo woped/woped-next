@@ -23,6 +23,7 @@ const createPlace = (id: string, name: string, x: number, y: number, tokens = 0)
   name,
   position: { x, y },
   tokens,
+  capacity: -1,
 })
 
 // Helper to create a transition
@@ -38,6 +39,7 @@ const createArc = (sourceId: string, targetId: string, weight = 1): Arc => ({
   sourceId,
   targetId,
   weight,
+  waypoints: [],
 })
 
 /**
@@ -338,13 +340,15 @@ const createWorkflowWithOperators = (): PetriNet => {
     operators: [
       {
         id: andSplitId,
-        type: OperatorType.AND_SPLIT,
+        name: 'Parallel',
+        operatorType: OperatorType.AND_SPLIT,
         position: { x: 350, y: 200 },
         label: 'Parallel',
       },
       {
         id: xorJoinId,
-        type: OperatorType.AND_JOIN,
+        name: 'Sync',
+        operatorType: OperatorType.AND_JOIN,
         position: { x: 650, y: 200 },
         label: 'Sync',
       },
@@ -637,13 +641,15 @@ const createOrderFulfillment = (): PetriNet => {
     operators: [
       {
         id: splitId,
-        type: OperatorType.AND_SPLIT,
+        name: 'Prepare',
+        operatorType: OperatorType.AND_SPLIT,
         position: { x: 380, y: 250 },
         label: 'Prepare',
       },
       {
         id: joinId,
-        type: OperatorType.AND_JOIN,
+        name: 'Sync',
+        operatorType: OperatorType.AND_JOIN,
         position: { x: 630, y: 250 },
         label: 'Sync',
       },
@@ -751,13 +757,15 @@ const createErrorHandling = (): PetriNet => {
     operators: [
       {
         id: xorSplitId,
-        type: OperatorType.XOR_SPLIT,
+        name: 'Route',
+        operatorType: OperatorType.XOR_SPLIT,
         position: { x: 380, y: 250 },
         label: 'Route',
       },
       {
         id: xorJoinId,
-        type: OperatorType.XOR_JOIN,
+        name: 'Merge',
+        operatorType: OperatorType.XOR_JOIN,
         position: { x: 930, y: 250 },
         label: 'Merge',
       },

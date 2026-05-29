@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 const PREFIX = '[Chat]'
 const ENABLED = import.meta.env.DEV
 

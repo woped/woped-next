@@ -8,8 +8,8 @@ function createSimpleNet(): PetriNet {
     id: 'net-1',
     name: 'Test',
     places: [
-      { id: 'p-start', name: 'Start', position: { x: 0, y: 0 }, tokens: 0 },
-      { id: 'p-end', name: 'End', position: { x: 200, y: 0 }, tokens: 0 },
+      { id: 'p-start', name: 'Start', position: { x: 0, y: 0 }, tokens: 0, capacity: -1 },
+      { id: 'p-end', name: 'End', position: { x: 200, y: 0 }, tokens: 0, capacity: -1 },
     ],
     transitions: [
       { id: 't1', name: 'T1', position: { x: 100, y: 0 } },
