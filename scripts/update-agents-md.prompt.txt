@@ -1,0 +1,41 @@
+You are updating AGENTS.md for the WoPeD Next repository (browser Petri net editor, Vue 3 + Vite + Pinia).
+
+## Input
+
+Read `.github/agents-md-context.json` first. It contains machine-parsed structural facts from the repository (stores, workflows, package versions, services tree, scripts).
+
+## Task (OpenCode /init scope, structural only)
+
+Update AGENTS.md so structural sections match the context file and the actual codebase. Improve in place; do not replace the whole file.
+
+### Sections you MUST keep accurate
+
+1. **Tech Stack** table — dependency versions must align with `package.json` in the context file.
+2. **Repository Structure** fenced tree — reflect current `src/components/*` feature folders, `src/stores/`, `src/services/`, and `.github/workflows/*.yml`.
+3. **Application entry points** table — only list files that exist in `entryPoints` from the context.
+4. **Architecture** mermaid diagram — include every Pinia store from `stores` in the state subgraph (use short node ids matching store names).
+5. **Pinia stores** — mention that agents must check `src/stores/` for the current set; name each `*.ts` store file from context.
+6. **Services** tree — match `services` in the context (include `tools/`, chat-related services, and root-level service files if present).
+7. **Build & Development Commands** table — scripts must match `package.scripts` from context.
+8. **"Not in this repository today"** bullets — verify each claim against `flags` and the repo; remove or fix stale statements (e.g. if `ci.yml` exists, do not claim only deploy runs on PRs).
+9. **Roadmap (not implemented yet)** — do not list workflows that already exist; the update-agents-md workflow itself is implemented once this PR lands.
+
+### Sections you MUST NOT rewrite
+
+- Development Conventions (Vue/TypeScript examples, i18n rules, styling prose)
+- AI Agent Guidelines (unless a bullet is factually wrong about repo layout)
+- Contribution Workflow checklist
+- Long code examples in ` ```vue ` blocks
+
+### Style rules
+
+- English only.
+- Keep tool-agnostic tone (Cursor, Copilot, Codex, etc.).
+- Preserve existing heading hierarchy where possible.
+- Do not invent paths, APIs, or features not present in the repo.
+
+## Output
+
+- Edit only `AGENTS.md`.
+- If it already matches the context, make no changes.
+- Do not create commits, branches, or pull requests (GitHub Actions handles git).
