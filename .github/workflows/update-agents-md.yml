@@ -5,6 +5,7 @@ on:
   schedule:
     # Weekly Monday 06:00 UTC — keep AI context in sync with structure changes
     - cron: '0 6 * * 1'
+  # Run when structural PRs are merged (read-only checkout on main; output is always a new PR branch)
   push:
     branches: [main]
     paths:
@@ -36,7 +37,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          ref: main
+          fetch-depth: 0
+          # Token required so create-pull-request can push a branch (never pushes to main)
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Parse repository structure
         run: node scripts/generate-agents-context.mjs
@@ -58,7 +62,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
           model: anthropic/claude-sonnet-4-20250514
-          use_github_token: true
+          # OpenCode edits files only; git/PR is handled by create-pull-request below
+          use_github_token: false
           prompt: |
             You are updating AGENTS.md for the WoPeD Next repository (browser Petri net editor, Vue 3 + Vite + Pinia).
 
@@ -70,18 +75,34 @@ jobs:
 
             MUST NOT rewrite: Development Conventions examples, i18n/styling prose, AI Agent Guidelines (except factual repo layout fixes), Contribution Workflow.
 
-            English only. Do not invent paths or features. Edit only AGENTS.md. No commits or PRs.
+            English only. Do not invent paths or features. Edit only AGENTS.md.
+
+            Do NOT run git commands, commit, push, or open pull requests.
 
             Full instructions are also in `scripts/update-agents-md.prompt.txt`.
 
       - name: Validate AGENTS.md against parsed context
         run: node scripts/validate-agents-md-structure.mjs
 
+      - name: Detect AGENTS.md changes
+        id: changes
+        run: |
+          if git diff --quiet -- AGENTS.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No AGENTS.md changes — skipping PR."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "AGENTS.md changed — will open a pull request."
+          fi
+
       - name: Create pull request
-        id: pr
+        if: steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
           branch: chore/update-agents-md
+          delete-branch: true
           title: 'chore: sync AGENTS.md structural context'
           commit-message: 'chore: sync AGENTS.md structural context'
           body: |
@@ -97,7 +118,7 @@ jobs:
             Please check that conventions, i18n, and agent-guideline prose were not unintentionally shortened.
 
             ---
-            _Workflow: `.github/workflows/update-agents-md.yml`_
+            _Workflow: `.github/workflows/update-agents-md.yml` — changes land via PR only, not direct push to `main`._
           labels: |
             documentation
             chore
