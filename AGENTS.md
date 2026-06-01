@@ -158,6 +158,26 @@ When using **Cursor**, additional context lives in `.cursor/rules/`:
 | `services.mdc` | Service layer patterns |
 | `docker.mdc` | Docker and nginx |
 
+### GitHub MCP Server
+
+The repository ships a GitHub MCP server configuration at `.cursor/mcp.json`. This gives Cursor (and other MCP-compatible agents) standardized access to GitHub — reading issues, PRs, and repository metadata without manual API calls.
+
+**Setup:**
+
+1. Create a GitHub Personal Access Token (PAT) at <https://github.com/settings/tokens> with at least the `repo` scope.
+2. Store it in a `.env` file so it persists across terminal sessions:
+   ```bash
+   # ~/.env
+   export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_yourTokenHere
+   ```
+   Then source that file from your shell profile (e.g. `~/.zshrc` or `~/.bashrc`):
+   ```bash
+   source ~/.env
+   ```
+3. Restart Cursor — it picks up the variable automatically via the `${GITHUB_PERSONAL_ACCESS_TOKEN}` placeholder in `.cursor/mcp.json`.
+
+The token is never stored in the repository; the config file only references the environment variable.
+
 ---
 
 ## Development Conventions
