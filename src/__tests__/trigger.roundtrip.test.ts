@@ -3,6 +3,7 @@ import { PNMLParser } from '@/services/file/pnmlParser'
 import { PNMLWriter } from '@/services/file/pnmlWriter'
 import { JSONParser, JSONWriter } from '@/services/file/jsonParser'
 import type { PetriNet } from '@/types/petri-net'
+import { DEFAULT_EXPORT_OPTIONS } from '@/types/file-formats'
 import type { Trigger, TimeTrigger, ResourceTrigger, MessageTrigger } from '@/types/triggers'
 
 const pnmlParser = new PNMLParser()
@@ -15,8 +16,8 @@ function createNetWithTriggers(): PetriNet {
     id: 'trigger-net',
     name: 'Trigger Test',
     places: [
-      { id: 'p1', name: 'Start', position: { x: 0, y: 0 }, tokens: 1 },
-      { id: 'p2', name: 'End', position: { x: 300, y: 0 }, tokens: 0 },
+      { id: 'p1', name: 'Start', position: { x: 0, y: 0 }, tokens: 1, capacity: -1 },
+      { id: 'p2', name: 'End', position: { x: 300, y: 0 }, tokens: 0, capacity: -1 },
     ],
     transitions: [
       {
@@ -42,7 +43,7 @@ function createNetWithTriggers(): PetriNet {
 describe('Trigger Roundtrip — PNML', () => {
   it('should write triggers into PNML and parse them back', () => {
     const original = createNetWithTriggers()
-    const pnml = pnmlWriter.write(original, { includeLayout: true })
+    const pnml = pnmlWriter.write(original, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
     expect(pnml).toContain('<trigger')
     expect(pnml).toContain('type="time"')
@@ -77,14 +78,14 @@ describe('Trigger Roundtrip — PNML', () => {
     const net: PetriNet = {
       id: 'no-trigger',
       name: 'No Triggers',
-      places: [{ id: 'p1', name: 'P', position: { x: 0, y: 0 }, tokens: 0 }],
+      places: [{ id: 'p1', name: 'P', position: { x: 0, y: 0 }, tokens: 0, capacity: -1 }],
       transitions: [{ id: 't1', name: 'T', position: { x: 100, y: 0 } }],
       operators: [],
       subProcesses: [],
       arcs: [],
     }
 
-    const pnml = pnmlWriter.write(net, { includeLayout: true })
+    const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
     expect(pnml).not.toContain('<trigger')
 
     const result = pnmlParser.parse(pnml)
@@ -97,7 +98,7 @@ describe('Trigger Roundtrip — PNML', () => {
 describe('Trigger Roundtrip — JSON', () => {
   it('should preserve triggers through JSON write/parse', () => {
     const original = createNetWithTriggers()
-    const json = jsonWriter.write(original, {})
+    const json = jsonWriter.write(original, { ...DEFAULT_EXPORT_OPTIONS, format: 'json' })
     const result = jsonParser.parse(json)
 
     expect(result.success).toBe(true)
@@ -122,7 +123,7 @@ describe('Trigger Roundtrip — JSON', () => {
       arcs: [],
     }
 
-    const json = jsonWriter.write(net, {})
+    const json = jsonWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, format: 'json' })
     const result = jsonParser.parse(json)
 
     expect(result.success).toBe(true)
