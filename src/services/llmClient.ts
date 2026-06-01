@@ -1,5 +1,8 @@
 import type { LLMConfig, ToolCall } from '@/types/chat'
+import type { BrowserMcpServer } from '@/types/mcp'
 import { chatLogger } from './chatLogger'
+import { mcpToOpenAiTools } from './mcp/mcpToOpenAiTools'
+import { mcpToolResultToChatResult, type ChatToolResult } from './mcp/mcpToolResult'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool'
@@ -34,10 +37,12 @@ export interface ChatCompletionResponse {
 
 export class LLMClient {
   private config: LLMConfig
+  private mcpServer?: BrowserMcpServer
   private abortController: AbortController | null = null
 
-  constructor(config: LLMConfig) {
+  constructor(config: LLMConfig, mcpServer?: BrowserMcpServer) {
     this.config = config
+    this.mcpServer = mcpServer
   }
 
   abort() {
@@ -119,6 +124,24 @@ export class LLMClient {
         arguments: args,
       }
     })
+  }
+
+  getToolsForCompletion(): ToolDefinition[] {
+    if (!this.mcpServer) return []
+    return mcpToOpenAiTools(this.mcpServer.listTools())
+  }
+
+  async executeMcpToolCall(toolCall: ToolCall): Promise<ChatToolResult> {
+    if (!this.mcpServer) {
+      throw new Error('No MCP server configured')
+    }
+
+    const mcpResult = await this.mcpServer.callTool({
+      name: toolCall.name,
+      arguments: toolCall.arguments,
+    })
+
+    return mcpToolResultToChatResult(toolCall, mcpResult)
   }
 
   static async validateApiKey(apiKey: string): Promise<boolean> {
