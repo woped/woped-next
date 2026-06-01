@@ -25,6 +25,7 @@ graph TB
     SIM[simulation]
     RES[resources]
     HLP[help]
+    CHAT[chat]
   end
   subgraph logic [Services and Utils]
     File[fileService / PNML]
@@ -81,7 +82,7 @@ Versions below match [package.json](package.json) at time of writing.
 
 **Runtime:** Node.js 22 (Dockerfile and GitHub Actions deploy workflow).
 
-**Not in this repository today:** npm workspaces / `packages/` monorepo, backend (Express/SQLite), pnpm, ESLint/Prettier config, PR CI workflow (only deploy on `main` exists).
+**Not in this repository today:** npm workspaces / `packages/` monorepo, backend (Express/SQLite), pnpm, ESLint/Prettier config.
 
 ---
 
@@ -123,7 +124,7 @@ woped-next/
 │   ├── migration/               # Java → web migration status
 │   └── ops/                     # Deployment, configuration
 ├── .cursor/rules/               # Cursor-specific rules (subset of this file)
-├── .github/workflows/           # deploy.yml (GitHub Pages on push to main)
+├── .github/workflows/           # ci.yml, deploy.yml, update-agents-md.yml
 ├── vite.config.js
 ├── vitest.config.js
 ├── tailwind.config.js
@@ -527,7 +528,7 @@ Use `.cursor/rules/` as additional, IDE-specific hints; this file remains the cr
 
 ### Roadmap (not implemented yet)
 
-Planned AI/dev workflow improvements are described in [docs/features/02-ai-development-enablement.md](docs/features/02-ai-development-enablement.md) (PR CI, issue templates, `auto-mate`). Do not assume those workflows exist until the corresponding files are in the repo.
+Planned AI/dev workflow improvements are described in [docs/features/02-ai-development-enablement.md](docs/features/02-ai-development-enablement.md) (issue templates, `auto-mate`, Cursor Skills). Structural sections in this file are synced by [.github/workflows/update-agents-md.yml](.github/workflows/update-agents-md.yml) (OpenCode + parsed repo context). Do not assume other planned workflows exist until the corresponding files are in the repo.
 
 ---
 
