@@ -1,7 +1,6 @@
 import type { LLMConfig } from '@/types/chat'
+import { TOOL_ENDPOINTS } from '@/services/tools/toolConfig'
 import { llmFallbackP2T } from './llmFallback'
-
-const P2T_ENDPOINT = '/p2t/generateText'
 
 export const p2tTool = {
   definition: {
@@ -24,8 +23,14 @@ export const p2tTool = {
   },
 
   async execute(args: { pnml: string }, llmConfig?: LLMConfig): Promise<string> {
+    if (!TOOL_ENDPOINTS.p2t) {
+      return JSON.stringify({
+        error: 'P2T endpoint is not configured.',
+      })
+    }
+
     try {
-      const response = await fetch(P2T_ENDPOINT, {
+      const response = await fetch(TOOL_ENDPOINTS.p2t, {
         method: 'POST',
         headers: { 'Content-Type': 'application/xml' },
         body: args.pnml,
