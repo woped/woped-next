@@ -4,10 +4,32 @@ import {
   parseP2TArgs,
   p2tMcpTool,
 } from '@/services/tools/p2tMcpTool'
+import type { LLMConfig } from '@/types/chat'
+
+vi.mock('@/services/tools/toolConfig', () => ({
+  TOOL_ENDPOINTS: {
+    t2p: 'http://test-t2p/generate_pnml',
+    p2t: 'http://test-p2t/generateText',
+  },
+}))
+
+vi.mock('@/services/tools/llmFallback', () => ({
+  llmFallbackT2P: vi.fn(),
+  llmFallbackP2T: vi.fn(async () =>
+    JSON.stringify({ description: 'LLM bypass description' }),
+  ),
+}))
+
+const llmConfig: LLMConfig = {
+  apiKey: 'sk-test',
+  model: 'gpt-4o',
+  maxTokens: 4096,
+  temperature: 0.7,
+}
 
 describe('p2tMcpTool', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -40,8 +62,8 @@ describe('p2tMcpTool', () => {
           new Response('A simple order process.', {
             status: 200,
             headers: { 'Content-Type': 'text/plain' },
-          })
-      )
+          }),
+      ),
     )
 
     const result = await executeP2T({ pnml: '<pnml/>' })
@@ -54,7 +76,7 @@ describe('p2tMcpTool', () => {
   it('returns an error result when the P2T service responds non-2xx', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response('', { status: 503 }))
+      vi.fn(async () => new Response('', { status: 503 })),
     )
 
     const result = await executeP2T({ pnml: '<pnml/>' })
@@ -63,17 +85,15 @@ describe('p2tMcpTool', () => {
     expect(result.content[0].text).toContain('503')
   })
 
-  it('returns an error result when the network call throws', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        throw new Error('network down')
-      })
-    )
+  it('uses LLM fallback when the network call throws and llmConfig is set', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      throw new Error('network down')
+    }))
 
-    const result = await executeP2T({ pnml: '<pnml/>' })
+    const result = await executeP2T({ pnml: '<pnml/>' }, llmConfig)
 
-    expect(result.isError).toBe(true)
-    expect(result.content[0].text.toLowerCase()).toContain('unreachable')
+    expect(result.isError).toBeFalsy()
+    const payload = JSON.parse(result.content[0].text)
+    expect(payload.description).toBe('LLM bypass description')
   })
 })

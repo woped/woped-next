@@ -4,10 +4,32 @@ import {
   parseT2PArgs,
   t2pMcpTool,
 } from '@/services/tools/t2pMcpTool'
+import type { LLMConfig } from '@/types/chat'
+
+vi.mock('@/services/tools/toolConfig', () => ({
+  TOOL_ENDPOINTS: {
+    t2p: 'http://test-t2p/generate_pnml',
+    p2t: 'http://test-p2t/generateText',
+  },
+}))
+
+vi.mock('@/services/tools/llmFallback', () => ({
+  llmFallbackT2P: vi.fn(async () =>
+    JSON.stringify({ pnml: '<pnml fallback="true"/>' }),
+  ),
+  llmFallbackP2T: vi.fn(),
+}))
+
+const llmConfig: LLMConfig = {
+  apiKey: 'sk-test',
+  model: 'gpt-4o',
+  maxTokens: 4096,
+  temperature: 0.7,
+}
 
 describe('t2pMcpTool', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -49,8 +71,8 @@ describe('t2pMcpTool', () => {
           new Response(JSON.stringify({ result: '<pnml/>' }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
-          })
-      )
+          }),
+      ),
     )
 
     const result = await executeT2P({ text: 'order process' })
@@ -63,7 +85,7 @@ describe('t2pMcpTool', () => {
   it('returns an error result when the T2P service responds non-2xx', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response('', { status: 500 }))
+      vi.fn(async () => new Response('', { status: 500 })),
     )
 
     const result = await executeT2P({ text: 'order process' })
@@ -72,12 +94,25 @@ describe('t2pMcpTool', () => {
     expect(result.content[0].text).toContain('500')
   })
 
-  it('returns an error result when the network call throws', async () => {
+  it('uses LLM fallback when the service fails and llmConfig is set', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 503 })),
+    )
+
+    const result = await executeT2P({ text: 'order process' }, llmConfig)
+
+    expect(result.isError).toBeFalsy()
+    const payload = JSON.parse(result.content[0].text)
+    expect(payload.pnml).toContain('fallback')
+  })
+
+  it('returns an error result when the network call throws without llmConfig', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
         throw new Error('network down')
-      })
+      }),
     )
 
     const result = await executeT2P({ text: 'order process' })
