@@ -3,9 +3,13 @@ name: PR Review
 on:
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   review:
@@ -21,10 +25,7 @@ jobs:
         with:
           model: openai/gpt-4.1-mini
           prompt: |
-            Review this PR for WoPeD Next (Vue 3 + Pinia Petri net editor).
-
-            Check: i18n (strings in en.ts + de.ts), tests for new logic,
-            CSS variables instead of hardcoded colors, TypeScript safety,
-            nanoid for element IDs, conventions from AGENTS.md.
-
+            Review this PR for WoPeD Next.
+            Follow conventions in AGENTS.md.
+            Check: i18n (en.ts+de.ts), tests, CSS variables, TypeScript safety, nanoid for element IDs.
             Post a review summary as a PR comment.
