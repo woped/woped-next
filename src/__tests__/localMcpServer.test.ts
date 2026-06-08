@@ -20,6 +20,7 @@ function createMockNet(): PetriNet {
         targetId: 't1',
         weight: 1,
         routingMode: 'direct',
+        waypoints: [],
       },
     ],
   }
