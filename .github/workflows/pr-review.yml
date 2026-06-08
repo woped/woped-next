@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
   pull-requests: write
   checks: read
@@ -39,17 +38,17 @@ jobs:
         run: |
           SHA="${{ github.event.pull_request.head.sha }}"
           for i in $(seq 20); do
-            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/status" \
-              --jq '.state')
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
+              --jq '[.check_runs[] | select(.name == "ci") | .conclusion] | first')
             echo "CI status: $CONCLUSION (attempt $i/20)"
             if [ "$CONCLUSION" = "success" ]; then
               echo "CI passed, continuing with review..."
               exit 0
             fi
-            if [ "$CONCLUSION" = "failure" ]; then
-              echo "CI failed, posting notification."
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "neutral" ] || [ "$CONCLUSION" = "cancelled" ] || [ "$CONCLUSION" = "timed_out" ]; then
+              echo "CI failed ($CONCLUSION), posting notification."
               gh pr comment "${{ github.event.pull_request.number }}" \
-                --body "❌ **CI checks failed.** Review skipped — please fix CI issues first."
+                --body "❌ **CI checks failed ($CONCLUSION).** Review skipped — please fix CI issues first."
               exit 1
             fi
             sleep 30
@@ -83,7 +82,7 @@ jobs:
           CONTEXT
 
       - name: Run OpenCode review
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@main
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
