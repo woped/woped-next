@@ -15,7 +15,7 @@ export type T2PArgs = z.infer<typeof t2pArgsSchema>
 export const t2pMcpTool: McpTool = {
   name: 't2p_convert',
   description:
-    'Convert natural language text to a Petri net (PNML format) using the T2P 2.0 service.',
+    'Convert natural language text to a Petri net (PNML format). Uses the T2P service when configured, otherwise falls back to the configured LLM.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -1,5 +1,6 @@
 import type { LLMConfig, LLMModelOption, LLMProvider, ToolCall } from '@/types/chat'
 import type { BrowserMcpServer } from '@/types/mcp'
+import { sanitizeSchemaForGemini } from '@/utils/geminiSchema'
 import { chatLogger } from './chatLogger'
 import { mcpToOpenAiTools } from './mcp/mcpToOpenAiTools'
 import { mcpToolResultToChatResult, type ChatToolResult } from './mcp/mcpToolResult'
@@ -36,6 +37,8 @@ export interface ChatCompletionResponse {
   finishReason: string
 }
 
+const API_REQUEST_TIMEOUT_MS = 120_000
+
 export class LLMClient {
   private config: LLMConfig
   private mcpServer?: BrowserMcpServer
@@ -68,16 +71,44 @@ export class LLMClient {
     return this.chatCompletionOpenAI(messages, controller, tools)
   }
 
-  private async chatCompletionOpenAI(
+  private formatOpenAiMessages(messages: ChatMessage[]): Record<string, unknown>[] {
+    return messages.map((message) => {
+      const formatted: Record<string, unknown> = { role: message.role }
+
+      if (message.role === 'tool') {
+        formatted.content = message.content ?? ''
+        if (message.tool_call_id) {
+          formatted.tool_call_id = message.tool_call_id
+        }
+        return formatted
+      }
+
+      if (message.role === 'assistant' && message.tool_calls?.length) {
+        formatted.content = message.content ?? null
+        formatted.tool_calls = message.tool_calls
+        return formatted
+      }
+
+      formatted.content = message.content ?? ''
+      return formatted
+    })
+  }
+
+  private buildOpenAiRequestBody(
     messages: ChatMessage[],
-    controller: AbortController,
     tools?: ToolDefinition[],
-  ): Promise<ChatCompletionResponse> {
+  ): Record<string, unknown> {
     const body: Record<string, unknown> = {
       model: this.config.model,
-      messages,
-      max_tokens: this.config.maxTokens,
-      temperature: this.config.temperature,
+      messages: this.formatOpenAiMessages(messages),
+    }
+
+    if (this.isOpenAiReasoningModel()) {
+      body.max_completion_tokens = this.config.maxTokens
+      body.temperature = 1
+    } else {
+      body.max_tokens = this.config.maxTokens
+      body.temperature = this.config.temperature
     }
 
     if (tools && tools.length > 0) {
@@ -85,15 +116,51 @@ export class LLMClient {
       body.tool_choice = 'auto'
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.apiKey}`,
+    return body
+  }
+
+  private isOpenAiReasoningModel(): boolean {
+    return /^(o\d|gpt-5)/i.test(this.config.model)
+  }
+
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    controller: AbortController,
+  ): Promise<Response> {
+    const timeoutId = setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS)
+
+    try {
+      return await fetch(url, { ...init, signal: controller.signal })
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error('The request timed out. Please try again or choose a faster model.')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  private async chatCompletionOpenAI(
+    messages: ChatMessage[],
+    controller: AbortController,
+    tools?: ToolDefinition[],
+  ): Promise<ChatCompletionResponse> {
+    const body = this.buildOpenAiRequestBody(messages, tools)
+
+    const response = await this.fetchWithTimeout(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiKey}`,
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    })
+      controller,
+    )
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
@@ -153,13 +220,13 @@ export class LLMClient {
           functionDeclarations: tools.map((tool) => ({
             name: tool.function.name,
             description: tool.function.description,
-            parameters: tool.function.parameters,
+            parameters: sanitizeSchemaForGemini(tool.function.parameters),
           })),
         },
       ]
     }
 
-    const response = await fetch(
+    const response = await this.fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent?key=${encodeURIComponent(this.config.apiKey)}`,
       {
         method: 'POST',
@@ -167,8 +234,8 @@ export class LLMClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal,
       },
+      controller,
     )
 
     if (!response.ok) {
@@ -317,9 +384,20 @@ export class LLMClient {
   }
 
   static async validateApiKey(apiKey: string, provider: LLMProvider): Promise<boolean> {
+    if (!apiKey.trim()) return false
+
     try {
-      const models = await LLMClient.listModels(apiKey, provider)
-      return models.length > 0
+      if (provider === 'gemini') {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=1`,
+        )
+        return response.ok
+      }
+
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+      return response.ok
     } catch {
       return false
     }
@@ -331,7 +409,27 @@ export class LLMClient {
     if (provider === 'gemini') {
       return LLMClient.listGeminiModels(apiKey)
     }
+
     return LLMClient.listOpenAIModels(apiKey)
+  }
+
+  private static isOpenAiChatModel(id: string): boolean {
+    const excluded =
+      /(embed|tts|whisper|dall-e|davinci|babbage|moderation|realtime|audio|transcribe|search|instruct)/i
+    const chatPrefix = /^(gpt-|o\d|chatgpt-)/i
+    if (!chatPrefix.test(id) || excluded.test(id)) return false
+    // Skip dated snapshots (e.g. gpt-4-0613, gpt-4o-2024-08-06)
+    if (/-\d{4}(-\d{2}(-\d{2})?)?$/.test(id)) return false
+    return true
+  }
+
+  private static isGeminiChatModel(id: string): boolean {
+    if (!/^gemini-/i.test(id)) return false
+    if (/embed|aqa|imagen|veo|gemma|learnlm|nano|tts|robotics|computer-use/i.test(id)) {
+      return false
+    }
+    if (/-exp$|-experimental|-preview$/i.test(id)) return false
+    return true
   }
 
   private static async listOpenAIModels(apiKey: string): Promise<LLMModelOption[]> {
@@ -344,11 +442,10 @@ export class LLMClient {
     }
 
     const data = await response.json() as { data?: Array<{ id: string }> }
-    const excluded = /(embed|tts|whisper|dall-e|davinci|babbage|moderation|realtime|audio|transcribe|search)/i
 
     return (data.data || [])
       .map((model) => model.id)
-      .filter((id) => /^gpt-/i.test(id) && !excluded.test(id))
+      .filter((id) => LLMClient.isOpenAiChatModel(id))
       .sort((a, b) => a.localeCompare(b))
       .map((id) => ({ id, name: id }))
   }
@@ -379,6 +476,7 @@ export class LLMClient {
           name: model.displayName?.trim() || id,
         }
       })
+      .filter((model) => LLMClient.isGeminiChatModel(model.id))
       .sort((a, b) => a.name.localeCompare(b.name))
   }
 }

@@ -24,6 +24,9 @@ export const p2tTool = {
 
   async execute(args: { pnml: string }, llmConfig?: LLMConfig): Promise<string> {
     if (!TOOL_ENDPOINTS.p2t) {
+      if (llmConfig?.apiKey) {
+        return await llmFallbackP2T(llmConfig, args.pnml)
+      }
       return JSON.stringify({
         error: 'P2T endpoint is not configured.',
       })

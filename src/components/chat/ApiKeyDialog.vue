@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { FALLBACK_MODELS_BY_PROVIDER, PROVIDER_OPTIONS } from '@/types/chat'
+import { PROVIDER_OPTIONS } from '@/types/chat'
 import type { LLMModelOption, LLMProvider } from '@/types/chat'
 
 const { t } = useI18n()
@@ -11,20 +11,19 @@ const chatStore = useChatStore()
 
 const apiKey = ref('')
 const selectedProvider = ref<LLMProvider>('openai')
-const selectedModel = ref('gpt-4o')
+const selectedModel = ref('')
 const availableModels = ref<LLMModelOption[]>([])
 const isValidating = ref(false)
 const isLoadingModels = ref(false)
 const validationError = ref('')
 const modelsError = ref('')
 
-function getFallbackModels(provider: LLMProvider): LLMModelOption[] {
-  return FALLBACK_MODELS_BY_PROVIDER[provider]
-}
-
 function ensureSelectedModelInList() {
   const models = availableModels.value
-  if (models.length === 0) return
+  if (models.length === 0) {
+    selectedModel.value = ''
+    return
+  }
 
   const exists = models.some((model) => model.id === selectedModel.value)
   if (!exists) {
@@ -35,28 +34,27 @@ function ensureSelectedModelInList() {
 async function loadAvailableModels() {
   const key = apiKey.value.trim()
   if (!key) {
-    availableModels.value = getFallbackModels(selectedProvider.value)
+    availableModels.value = []
+    selectedModel.value = ''
     modelsError.value = ''
-    ensureSelectedModelInList()
     return
   }
 
   isLoadingModels.value = true
   modelsError.value = ''
+  availableModels.value = []
 
   try {
     const models = await LLMClient.listModels(key, selectedProvider.value)
-    if (models.length > 0) {
-      availableModels.value = models
-    } else {
-      availableModels.value = getFallbackModels(selectedProvider.value)
+    availableModels.value = models
+    if (models.length === 0) {
       modelsError.value = t('chat.apiKey.modelsEmpty')
     }
     ensureSelectedModelInList()
   } catch {
-    availableModels.value = getFallbackModels(selectedProvider.value)
+    availableModels.value = []
+    selectedModel.value = ''
     modelsError.value = t('chat.apiKey.modelsLoadFailed')
-    ensureSelectedModelInList()
   } finally {
     isLoadingModels.value = false
   }
@@ -66,12 +64,13 @@ onMounted(async () => {
   apiKey.value = chatStore.llmConfig.apiKey
   selectedProvider.value = chatStore.llmConfig.provider
   selectedModel.value = chatStore.llmConfig.model
-  availableModels.value = getFallbackModels(selectedProvider.value)
   await loadAvailableModels()
 })
 
 watch(selectedProvider, async () => {
-  availableModels.value = getFallbackModels(selectedProvider.value)
+  availableModels.value = []
+  selectedModel.value = ''
+  modelsError.value = ''
   await loadAvailableModels()
 })
 
@@ -81,17 +80,30 @@ async function handleSave() {
     return
   }
 
+  if (!selectedModel.value) {
+    validationError.value = t('chat.apiKey.modelRequired')
+    return
+  }
+
   isValidating.value = true
   validationError.value = ''
 
   try {
+    if (availableModels.value.length === 0) {
+      await loadAvailableModels()
+    }
+
     const valid = await LLMClient.validateApiKey(apiKey.value.trim(), selectedProvider.value)
     if (!valid) {
       validationError.value = t('chat.apiKey.invalid')
       return
     }
 
-    await loadAvailableModels()
+    const modelInList = availableModels.value.some((model) => model.id === selectedModel.value)
+    if (!modelInList) {
+      validationError.value = t('chat.apiKey.modelUnavailable')
+      return
+    }
 
     chatStore.saveConfig({
       provider: selectedProvider.value,
@@ -134,7 +146,6 @@ function handleCancel() {
           class="form-input"
           :placeholder="selectedProvider === 'gemini' ? 'AIza...' : 'sk-...'"
           @keydown.enter="handleSave"
-          @blur="loadAvailableModels"
         />
       </div>
 
@@ -155,12 +166,22 @@ function handleCancel() {
           class="form-select"
           :disabled="isLoadingModels || availableModels.length === 0"
         >
+          <option v-if="availableModels.length === 0" disabled value="">
+            {{
+              !apiKey.trim()
+                ? t('chat.apiKey.enterKeyForModels')
+                : isLoadingModels
+                  ? t('chat.apiKey.loadingModels')
+                  : t('chat.apiKey.noModels')
+            }}
+          </option>
           <option v-for="model in availableModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
         <p v-if="modelsError" class="hint-text">{{ modelsError }}</p>
         <p v-else-if="isLoadingModels" class="hint-text">{{ t('chat.apiKey.loadingModels') }}</p>
+        <p v-else-if="!apiKey.trim()" class="hint-text">{{ t('chat.apiKey.enterKeyForModels') }}</p>
       </div>
 
       <p v-if="validationError" class="error-text">{{ validationError }}</p>
@@ -171,7 +192,11 @@ function handleCancel() {
         <button class="btn btn-secondary" @click="handleCancel">
           {{ t('common.cancel') }}
         </button>
-        <button class="btn btn-primary" :disabled="isValidating" @click="handleSave">
+        <button
+          class="btn btn-primary"
+          :disabled="isValidating || isLoadingModels || !selectedModel"
+          @click="handleSave"
+        >
           <span v-if="isValidating">{{ t('chat.apiKey.validating') }}</span>
           <span v-else>{{ t('common.save') }}</span>
         </button>

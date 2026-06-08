@@ -60,18 +60,6 @@ export interface LLMModelOption {
   name: string
 }
 
-/** Fallback when API model list is unavailable (no key yet or fetch failed). */
-export const FALLBACK_MODELS_BY_PROVIDER: Record<LLMProvider, LLMModelOption[]> = {
-  openai: [
-    { id: 'gpt-4o', name: 'GPT-4o' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-  ],
-  gemini: [
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
-  ],
-}
-
 export interface ToolCall {
   id: string
   name: string
