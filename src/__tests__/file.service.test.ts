@@ -3,6 +3,7 @@ import { PNMLParser } from '@/services/file/pnmlParser'
 import { PNMLWriter } from '@/services/file/pnmlWriter'
 import { JSONParser, JSONWriter } from '@/services/file/jsonParser'
 import type { PetriNet } from '@/types/petri-net'
+import { DEFAULT_EXPORT_OPTIONS } from '@/types/file-formats'
 
 // Create instances
 const pnmlParser = new PNMLParser()
@@ -44,13 +45,14 @@ describe('File Services', () => {
       id: 'test-net',
       name: 'Test Net',
       places: [
-        { id: 'p1', name: 'Place 1', position: { x: 100, y: 100 }, tokens: 1 },
-        { id: 'p2', name: 'Place 2', position: { x: 300, y: 100 }, tokens: 0 },
+        { id: 'p1', name: 'Place 1', position: { x: 100, y: 100 }, tokens: 1, capacity: -1 },
+        { id: 'p2', name: 'Place 2', position: { x: 300, y: 100 }, tokens: 0, capacity: -1 },
       ],
       transitions: [
         { id: 't1', name: 'Transition 1', position: { x: 200, y: 100 } },
       ],
       operators: [],
+      subProcesses: [],
       arcs: [
         { id: 'a1', sourceId: 'p1', targetId: 't1', weight: 1, waypoints: [] },
         { id: 'a2', sourceId: 't1', targetId: 'p2', weight: 1, waypoints: [] },
@@ -120,7 +122,7 @@ describe('File Services', () => {
   describe('PNMLWriter', () => {
     it('should write PNML with net element', () => {
       const net = createSampleNet()
-      const pnml = pnmlWriter.write(net, { includeLayout: true })
+      const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
       expect(pnml).toContain('<?xml')
       expect(pnml).toContain('<net')
@@ -129,7 +131,7 @@ describe('File Services', () => {
 
     it('should include all places', () => {
       const net = createSampleNet()
-      const pnml = pnmlWriter.write(net, { includeLayout: true })
+      const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
       expect(pnml).toContain('Place 1')
       expect(pnml).toContain('Place 2')
@@ -137,14 +139,14 @@ describe('File Services', () => {
 
     it('should include all transitions', () => {
       const net = createSampleNet()
-      const pnml = pnmlWriter.write(net, { includeLayout: true })
+      const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
       expect(pnml).toContain('Transition 1')
     })
 
     it('should include arcs', () => {
       const net = createSampleNet()
-      const pnml = pnmlWriter.write(net, { includeLayout: true })
+      const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
       expect(pnml).toContain('<arc')
       expect(pnml).toContain('source="p1"')
@@ -153,7 +155,7 @@ describe('File Services', () => {
 
     it('should include layout when requested', () => {
       const net = createSampleNet()
-      const pnml = pnmlWriter.write(net, { includeLayout: true })
+      const pnml = pnmlWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
 
       expect(pnml).toContain('<graphics')
       expect(pnml).toContain('<position')
@@ -162,7 +164,7 @@ describe('File Services', () => {
     it('should be parseable by PNMLParser', () => {
       const originalNet = createSampleNet()
 
-      const pnml = pnmlWriter.write(originalNet, { includeLayout: true })
+      const pnml = pnmlWriter.write(originalNet, { ...DEFAULT_EXPORT_OPTIONS, includeLayout: true })
       const result = pnmlParser.parse(pnml)
 
       expect(result.success).toBe(true)
@@ -211,14 +213,14 @@ describe('File Services', () => {
   describe('JSONWriter', () => {
     it('should write valid JSON', () => {
       const net = createSampleNet()
-      const json = jsonWriter.write(net, {})
+      const json = jsonWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, format: 'json' })
 
       expect(() => JSON.parse(json)).not.toThrow()
     })
 
     it('should preserve all data', () => {
       const net = createSampleNet()
-      const json = jsonWriter.write(net, {})
+      const json = jsonWriter.write(net, { ...DEFAULT_EXPORT_OPTIONS, format: 'json' })
       const parsed = JSON.parse(json)
 
       expect(parsed.places).toHaveLength(2)
@@ -228,7 +230,7 @@ describe('File Services', () => {
 
     it('should be parseable by JSONParser', () => {
       const originalNet = createSampleNet()
-      const json = jsonWriter.write(originalNet, {})
+      const json = jsonWriter.write(originalNet, { ...DEFAULT_EXPORT_OPTIONS, format: 'json' })
       const result = jsonParser.parse(json)
 
       expect(result.success).toBe(true)

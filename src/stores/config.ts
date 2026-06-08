@@ -81,7 +81,12 @@ export const useConfigStore = defineStore('config', {
         if (saved) {
           const parsed = JSON.parse(saved)
           // Deep merge with defaults to handle new config options
-          this.$patch(this.deepMerge(DEFAULT_CONFIG, parsed))
+          this.$patch(
+            this.deepMerge(
+              DEFAULT_CONFIG as unknown as Record<string, unknown>,
+              parsed as unknown as Record<string, unknown>
+            ) as unknown as typeof DEFAULT_CONFIG
+          )
         }
       } catch (e) {
         console.warn('Failed to load configuration:', e)

@@ -547,6 +547,10 @@ export default {
       invalid: 'The API key is invalid. Please check and try again.',
       validationFailed: 'Could not validate the key. Check your connection.',
       validating: 'Validating...',
+      refreshModels: 'Refresh models',
+      loadingModels: 'Loading models...',
+      modelsLoadFailed: 'Could not load models from the provider. Showing fallback list.',
+      modelsEmpty: 'No chat models returned by the provider. Showing fallback list.',
     },
     commands: {
       addPlace: 'Add place "{name}"',

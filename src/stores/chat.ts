@@ -12,6 +12,8 @@ import { resolveArcEndpoints, resolveElementId } from '@/utils/chatElementResolv
 const LLM_CONFIG_STORAGE_KEY = 'woped_llm_config'
 const OPENAI_API_KEY_STORAGE_KEY = 'woped_openai_api_key'
 const GEMINI_API_KEY_STORAGE_KEY = 'woped_gemini_api_key'
+const CHAT_MESSAGES_STORAGE_KEY = 'woped_chat_messages'
+const MAX_PERSISTED_MESSAGES = 100
 
 interface ChatState {
   messages: ChatMessage[]
@@ -62,32 +64,74 @@ export const useChatStore = defineStore('chat', {
         this.isConfigured = this.llmConfig.apiKey.length > 0
       } catch {
         this.llmConfig = { ...DEFAULT_LLM_CONFIG }
+        this.isConfigured = false
       }
+
+      this.loadMessages()
     },
 
     saveConfig(config: Partial<LLMConfig>) {
       const nextConfig = { ...this.llmConfig, ...config }
-
-      if (config.apiKey !== undefined) {
-        const keyStorage = nextConfig.provider === 'gemini'
-          ? GEMINI_API_KEY_STORAGE_KEY
-          : OPENAI_API_KEY_STORAGE_KEY
-        localStorage.setItem(keyStorage, config.apiKey)
-      }
-
       this.llmConfig = nextConfig
       this.isConfigured = this.llmConfig.apiKey.length > 0
 
-      const { apiKey: _, ...configWithoutKey } = this.llmConfig
-      localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(configWithoutKey))
+      try {
+        if (config.apiKey !== undefined) {
+          const keyStorage = nextConfig.provider === 'gemini'
+            ? GEMINI_API_KEY_STORAGE_KEY
+            : OPENAI_API_KEY_STORAGE_KEY
+          localStorage.setItem(keyStorage, config.apiKey)
+        }
+
+        const { apiKey: _, ...configWithoutKey } = this.llmConfig
+        localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(configWithoutKey))
+      } catch (e) {
+        chatLogger.error('Failed to save chat config', e)
+      }
     },
 
     clearConfig() {
-      localStorage.removeItem(OPENAI_API_KEY_STORAGE_KEY)
-      localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY)
-      localStorage.removeItem(LLM_CONFIG_STORAGE_KEY)
+      try {
+        localStorage.removeItem(OPENAI_API_KEY_STORAGE_KEY)
+        localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY)
+        localStorage.removeItem(LLM_CONFIG_STORAGE_KEY)
+      } catch (e) {
+        chatLogger.error('Failed to clear chat config', e)
+      }
       this.llmConfig = { ...DEFAULT_LLM_CONFIG }
       this.isConfigured = false
+    },
+
+    loadMessages() {
+      try {
+        const savedMessages = localStorage.getItem(CHAT_MESSAGES_STORAGE_KEY)
+        if (!savedMessages) {
+          this.messages = []
+          return
+        }
+
+        const parsed = JSON.parse(savedMessages)
+        if (!Array.isArray(parsed)) {
+          this.messages = []
+          return
+        }
+
+        this.messages = parsed.filter((message: unknown) => this.isValidChatMessage(message))
+      } catch (e) {
+        this.messages = []
+        chatLogger.error('Failed to load chat messages', e)
+      }
+    },
+
+    saveMessages() {
+      try {
+        const persistableMessages = this.messages
+          .filter((message) => !message.isLoading)
+          .slice(-MAX_PERSISTED_MESSAGES)
+        localStorage.setItem(CHAT_MESSAGES_STORAGE_KEY, JSON.stringify(persistableMessages))
+      } catch (e) {
+        chatLogger.error('Failed to save chat messages', e)
+      }
     },
 
     openApiKeyDialog() {
@@ -104,7 +148,6 @@ export const useChatStore = defineStore('chat', {
         activeOrchestrator = null
       }
       this.isLoading = false
-      // Remove the loading message
       const loadingIndex = this.messages.findIndex((m) => m.isLoading)
       if (loadingIndex !== -1) {
         this.messages.splice(loadingIndex, 1)
@@ -160,6 +203,7 @@ export const useChatStore = defineStore('chat', {
                 ? response.commands
                 : undefined,
           }
+          this.saveMessages()
         }
       } catch (error) {
         activeOrchestrator = null
@@ -167,7 +211,6 @@ export const useChatStore = defineStore('chat', {
         const messageIndex = this.messages.findIndex((m) => m.id === loadingId)
         if (messageIndex !== -1) {
           const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
-          // Don't show aborted requests as errors
           if (errorMessage.includes('abort')) {
             this.messages.splice(messageIndex, 1)
           } else {
@@ -179,6 +222,7 @@ export const useChatStore = defineStore('chat', {
               error: errorMessage,
             }
           }
+          this.saveMessages()
         }
       } finally {
         this.isLoading = false
@@ -307,6 +351,26 @@ export const useChatStore = defineStore('chat', {
 
     clearMessages() {
       this.messages = []
+      try {
+        localStorage.removeItem(CHAT_MESSAGES_STORAGE_KEY)
+      } catch (e) {
+        chatLogger.error('Failed to clear chat messages', e)
+      }
+    },
+
+    isValidChatMessage(message: unknown): message is ChatMessage {
+      if (!message || typeof message !== 'object') return false
+
+      const candidate = message as Partial<ChatMessage>
+      const validRoles = ['user', 'assistant', 'system']
+
+      return (
+        typeof candidate.id === 'string' &&
+        typeof candidate.content === 'string' &&
+        typeof candidate.timestamp === 'string' &&
+        typeof candidate.role === 'string' &&
+        validRoles.includes(candidate.role)
+      )
     },
 
     getNextPosition(): { x: number; y: number } {

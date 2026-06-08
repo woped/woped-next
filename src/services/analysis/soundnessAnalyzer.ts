@@ -435,7 +435,7 @@ function checkFinalMarking(
 
   // Check if at least one sink place has a token
   for (const sinkId of sinkPlaceIds) {
-    if ((marking[sinkId] ?? 0) > 0) {
+    if (Number(marking[sinkId] ?? 0) > 0) {
       return true
     }
   }

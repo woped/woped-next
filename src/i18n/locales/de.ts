@@ -547,6 +547,10 @@ export default {
       invalid: 'Der API-Schlüssel ist ungültig. Bitte prüfen und erneut versuchen.',
       validationFailed: 'Schlüssel konnte nicht validiert werden. Prüfen Sie Ihre Verbindung.',
       validating: 'Validiere...',
+      refreshModels: 'Modelle aktualisieren',
+      loadingModels: 'Modelle werden geladen...',
+      modelsLoadFailed: 'Modelle konnten nicht vom Anbieter geladen werden. Fallback-Liste wird angezeigt.',
+      modelsEmpty: 'Keine Chat-Modelle vom Anbieter erhalten. Fallback-Liste wird angezeigt.',
     },
     commands: {
       addPlace: 'Stelle "{name}" hinzufügen',

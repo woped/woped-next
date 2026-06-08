@@ -55,16 +55,20 @@ export const PROVIDER_OPTIONS: Array<{ id: LLMProvider; name: string }> = [
   { id: 'gemini', name: 'Google Gemini' },
 ]
 
-export const AVAILABLE_MODELS_BY_PROVIDER: Record<LLMProvider, Array<{ id: string; name: string }>> = {
+export interface LLMModelOption {
+  id: string
+  name: string
+}
+
+/** Fallback when API model list is unavailable (no key yet or fetch failed). */
+export const FALLBACK_MODELS_BY_PROVIDER: Record<LLMProvider, LLMModelOption[]> = {
   openai: [
     { id: 'gpt-4o', name: 'GPT-4o' },
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
   ],
   gemini: [
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
   ],
 }
 

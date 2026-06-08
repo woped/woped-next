@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { AVAILABLE_MODELS_BY_PROVIDER, PROVIDER_OPTIONS } from '@/types/chat'
-import type { LLMProvider } from '@/types/chat'
+import { FALLBACK_MODELS_BY_PROVIDER, PROVIDER_OPTIONS } from '@/types/chat'
+import type { LLMModelOption, LLMProvider } from '@/types/chat'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
@@ -12,27 +12,68 @@ const chatStore = useChatStore()
 const apiKey = ref('')
 const selectedProvider = ref<LLMProvider>('openai')
 const selectedModel = ref('gpt-4o')
+const availableModels = ref<LLMModelOption[]>([])
 const isValidating = ref(false)
+const isLoadingModels = ref(false)
 const validationError = ref('')
+const modelsError = ref('')
 
-const availableModels = computed(() => AVAILABLE_MODELS_BY_PROVIDER[selectedProvider.value])
-
-function getDefaultModel(provider: LLMProvider): string {
-  return AVAILABLE_MODELS_BY_PROVIDER[provider][0]?.id || 'gpt-4o'
+function getFallbackModels(provider: LLMProvider): LLMModelOption[] {
+  return FALLBACK_MODELS_BY_PROVIDER[provider]
 }
 
-onMounted(() => {
+function ensureSelectedModelInList() {
+  const models = availableModels.value
+  if (models.length === 0) return
+
+  const exists = models.some((model) => model.id === selectedModel.value)
+  if (!exists) {
+    selectedModel.value = models[0].id
+  }
+}
+
+async function loadAvailableModels() {
+  const key = apiKey.value.trim()
+  if (!key) {
+    availableModels.value = getFallbackModels(selectedProvider.value)
+    modelsError.value = ''
+    ensureSelectedModelInList()
+    return
+  }
+
+  isLoadingModels.value = true
+  modelsError.value = ''
+
+  try {
+    const models = await LLMClient.listModels(key, selectedProvider.value)
+    if (models.length > 0) {
+      availableModels.value = models
+    } else {
+      availableModels.value = getFallbackModels(selectedProvider.value)
+      modelsError.value = t('chat.apiKey.modelsEmpty')
+    }
+    ensureSelectedModelInList()
+  } catch {
+    availableModels.value = getFallbackModels(selectedProvider.value)
+    modelsError.value = t('chat.apiKey.modelsLoadFailed')
+    ensureSelectedModelInList()
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
+onMounted(async () => {
   apiKey.value = chatStore.llmConfig.apiKey
   selectedProvider.value = chatStore.llmConfig.provider
   selectedModel.value = chatStore.llmConfig.model
+  availableModels.value = getFallbackModels(selectedProvider.value)
+  await loadAvailableModels()
 })
 
-watch(selectedProvider, () => {
-  const modelExists = availableModels.value.some((model) => model.id === selectedModel.value)
-  if (!modelExists) {
-    selectedModel.value = getDefaultModel(selectedProvider.value)
-  }
-}, { immediate: true })
+watch(selectedProvider, async () => {
+  availableModels.value = getFallbackModels(selectedProvider.value)
+  await loadAvailableModels()
+})
 
 async function handleSave() {
   if (!apiKey.value.trim()) {
@@ -49,6 +90,8 @@ async function handleSave() {
       validationError.value = t('chat.apiKey.invalid')
       return
     }
+
+    await loadAvailableModels()
 
     chatStore.saveConfig({
       provider: selectedProvider.value,
@@ -91,16 +134,33 @@ function handleCancel() {
           class="form-input"
           :placeholder="selectedProvider === 'gemini' ? 'AIza...' : 'sk-...'"
           @keydown.enter="handleSave"
+          @blur="loadAvailableModels"
         />
       </div>
 
       <div class="form-group">
-        <label class="form-label">{{ t('chat.apiKey.model') }}</label>
-        <select v-model="selectedModel" class="form-select">
+        <div class="model-header">
+          <label class="form-label">{{ t('chat.apiKey.model') }}</label>
+          <button
+            type="button"
+            class="refresh-btn"
+            :disabled="isLoadingModels || !apiKey.trim()"
+            @click="loadAvailableModels"
+          >
+            {{ isLoadingModels ? t('chat.apiKey.loadingModels') : t('chat.apiKey.refreshModels') }}
+          </button>
+        </div>
+        <select
+          v-model="selectedModel"
+          class="form-select"
+          :disabled="isLoadingModels || availableModels.length === 0"
+        >
           <option v-for="model in availableModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
+        <p v-if="modelsError" class="hint-text">{{ modelsError }}</p>
+        <p v-else-if="isLoadingModels" class="hint-text">{{ t('chat.apiKey.loadingModels') }}</p>
       </div>
 
       <p v-if="validationError" class="error-text">{{ validationError }}</p>
@@ -159,12 +219,24 @@ function handleCancel() {
   margin-bottom: 16px;
 }
 
+.model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .form-label {
   display: block;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary);
   margin-bottom: 6px;
+}
+
+.model-header .form-label {
+  margin-bottom: 0;
 }
 
 .form-input,
@@ -184,6 +256,32 @@ function handleCancel() {
 .form-input:focus,
 .form-select:focus {
   border-color: var(--color-primary);
+}
+
+.refresh-btn {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hint-text {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
 }
 
 .error-text {

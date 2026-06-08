@@ -100,10 +100,17 @@ export const useTokenGameStore = defineStore('tokenGame', {
       }
       
       // Find end places (places with no outgoing arcs)
-      const endPlaces = this.getEndPlaces(net)
-      
+      const placesWithOutgoing = new Set(
+        net.arcs
+          .filter((arc) => net.places.some((p) => p.id === arc.sourceId))
+          .map((arc) => arc.sourceId)
+      )
+      const endPlaces = net.places
+        .filter((place) => !placesWithOutgoing.has(place.id))
+        .map((place) => place.id)
+
       // Can step out if any end place has tokens
-      return endPlaces.some(placeId => (this.marking.tokens[placeId] ?? 0) > 0)
+      return endPlaces.some((placeId) => (this.marking.tokens[placeId] ?? 0) > 0)
     },
 
     /**

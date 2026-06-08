@@ -1,4 +1,4 @@
-import type { LLMConfig, LLMProvider, ToolCall } from '@/types/chat'
+import type { LLMConfig, LLMModelOption, LLMProvider, ToolCall } from '@/types/chat'
 import { chatLogger } from './chatLogger'
 
 export interface ChatMessage {
@@ -295,16 +295,67 @@ export class LLMClient {
 
   static async validateApiKey(apiKey: string, provider: LLMProvider): Promise<boolean> {
     try {
-      const response = provider === 'gemini'
-        ? await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-          )
-        : await fetch('https://api.openai.com/v1/models', {
-            headers: { Authorization: `Bearer ${apiKey}` },
-          })
-      return response.ok
+      const models = await LLMClient.listModels(apiKey, provider)
+      return models.length > 0
     } catch {
       return false
     }
+  }
+
+  static async listModels(apiKey: string, provider: LLMProvider): Promise<LLMModelOption[]> {
+    if (!apiKey.trim()) return []
+
+    if (provider === 'gemini') {
+      return LLMClient.listGeminiModels(apiKey)
+    }
+    return LLMClient.listOpenAIModels(apiKey)
+  }
+
+  private static async listOpenAIModels(apiKey: string): Promise<LLMModelOption[]> {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) {
+      throw new Error(`OpenAI models API error: ${response.status}`)
+    }
+
+    const data = await response.json() as { data?: Array<{ id: string }> }
+    const excluded = /(embed|tts|whisper|dall-e|davinci|babbage|moderation|realtime|audio|transcribe|search)/i
+
+    return (data.data || [])
+      .map((model) => model.id)
+      .filter((id) => /^gpt-/i.test(id) && !excluded.test(id))
+      .sort((a, b) => a.localeCompare(b))
+      .map((id) => ({ id, name: id }))
+  }
+
+  private static async listGeminiModels(apiKey: string): Promise<LLMModelOption[]> {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+    )
+
+    if (!response.ok) {
+      throw new Error(`Gemini models API error: ${response.status}`)
+    }
+
+    const data = await response.json() as {
+      models?: Array<{
+        name: string
+        displayName?: string
+        supportedGenerationMethods?: string[]
+      }>
+    }
+
+    return (data.models || [])
+      .filter((model) => model.supportedGenerationMethods?.includes('generateContent'))
+      .map((model) => {
+        const id = model.name.replace(/^models\//, '')
+        return {
+          id,
+          name: model.displayName?.trim() || id,
+        }
+      })
+      .sort((a, b) => a.name.localeCompare(b.name))
   }
 }

@@ -422,6 +422,8 @@ The chat panel opens as a tab alongside Properties/Token Game/Simulation in the 
 | Model Transformer | `POST /pnml-bpmn-transformer/transform` | XML | XML |
 
 These APIs are called directly from the browser (via Apache Reverse Proxy with CORS).
+When deploying on GitHub Pages, full endpoint URLs must be configured because there is no reverse proxy.
+Endpoints are likely to change as the APIs evolve.
 
 ## Deployment
 
