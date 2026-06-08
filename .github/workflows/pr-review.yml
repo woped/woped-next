@@ -82,7 +82,7 @@ jobs:
           CONTEXT
 
       - name: Run OpenCode review
-        uses: anomalyco/opencode/github@main
+        uses: anomalyco/opencode/github@latest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         with:
