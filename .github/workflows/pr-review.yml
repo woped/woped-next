@@ -26,7 +26,7 @@ jobs:
         with:
           model: openai/gpt-4.1-mini
           prompt: |
-            Review this PR for WoPeD Next.
-            Follow conventions in AGENTS.md.
-            Check: i18n (en.ts+de.ts), tests, CSS variables, TypeScript safety, nanoid for element IDs.
-            Post a review summary as a PR comment.
+            Briefly review this PR for WoPeD Next.
+            Follow AGENTS.md conventions.
+            Check: i18n, tests, CSS variables, TypeScript, nanoid.
+            Leave a short comment summarizing the check result.
