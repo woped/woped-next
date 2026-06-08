@@ -1,9 +1,9 @@
 import { LLMClient } from './llmClient'
-import type { ChatMessage, ToolDefinition } from './llmClient'
-import { toolDefinitions, executeToolCall } from './toolExecutor'
+import type { ChatMessage } from './llmClient'
+import { createNlpMcpServer } from './mcp/createNlpMcpServer'
 import { modelSerializer } from './modelSerializer'
 import { chatLogger } from './chatLogger'
-import type { LLMConfig, OrchestratorResponse, ModelCommand } from '@/types/chat'
+import type { LLMConfig, OrchestratorResponse, ModelCommand, ToolCall } from '@/types/chat'
 
 const SYSTEM_PROMPT = `You are a helpful Petri net modeling assistant in WoPeD (Workflow Petri Net Designer). You help users with:
 - Creating Petri nets from natural language descriptions (use t2p_convert)
@@ -26,11 +26,9 @@ const MAX_TOOL_ITERATIONS = 5
 
 export class ChatOrchestrator {
   private client: LLMClient
-  private config: LLMConfig
 
   constructor(config: LLMConfig) {
-    this.config = config
-    this.client = new LLMClient(config)
+    this.client = new LLMClient(config, createNlpMcpServer(config))
   }
 
   abort() {
@@ -67,15 +65,13 @@ export class ChatOrchestrator {
     chatLogger.message('sent', userMessage)
 
     const allCommands: ModelCommand[] = []
+    const tools = this.client.getToolsForCompletion()
     let iterations = 0
 
     while (iterations < MAX_TOOL_ITERATIONS) {
       iterations++
 
-      const response = await this.client.chatCompletion(
-        messages,
-        toolDefinitions as ToolDefinition[],
-      )
+      const response = await this.client.chatCompletion(messages, tools)
 
       const hasToolCalls = response.message.tool_calls && response.message.tool_calls.length > 0
 
@@ -89,8 +85,9 @@ export class ChatOrchestrator {
         })
 
         for (const toolCall of toolCalls) {
-          chatLogger.toolCall(toolCall.name, toolCall.arguments)
-          const { result, commands } = await executeToolCall(toolCall, this.config)
+          const executableToolCall = this.withModelContext(toolCall, modelPnml)
+          chatLogger.toolCall(executableToolCall.name, executableToolCall.arguments)
+          const { result, commands } = await this.client.executeMcpToolCall(executableToolCall)
           chatLogger.toolResult(toolCall.name, result.content.substring(0, 120))
           allCommands.push(...commands)
 
@@ -121,5 +118,23 @@ export class ChatOrchestrator {
       message: 'The request required too many processing steps. Please try a simpler request.',
       commands: allCommands,
     }
+  }
+
+  private withModelContext(toolCall: ToolCall, modelPnml: string): ToolCall {
+    if (
+      toolCall.name === 'p2t_describe' &&
+      modelPnml &&
+      typeof toolCall.arguments.pnml !== 'string'
+    ) {
+      return {
+        ...toolCall,
+        arguments: {
+          ...toolCall.arguments,
+          pnml: modelPnml,
+        },
+      }
+    }
+
+    return toolCall
   }
 }
