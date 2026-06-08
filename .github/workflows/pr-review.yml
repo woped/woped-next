@@ -1,0 +1,118 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  checks: read
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for CI checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.event.pull_request.head.sha }}"
+          for i in $(seq 20); do
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/status" \
+              --jq '.state')
+            echo "CI status: $CONCLUSION (attempt $i/20)"
+            if [ "$CONCLUSION" = "success" ]; then
+              echo "CI passed, continuing with review..."
+              exit 0
+            fi
+            if [ "$CONCLUSION" = "failure" ]; then
+              echo "CI failed, posting notification."
+              gh pr comment "${{ github.event.pull_request.number }}" \
+                --body "❌ **CI checks failed.** Review skipped — please fix CI issues first."
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "Timeout waiting for CI"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "⏳ **Timeout:** CI checks did not complete within 10 minutes."
+          exit 1
+
+      - name: Generate PR context
+        run: |
+          cat > .github/pr-context.md <<- CONTEXT
+          # PR Review Context
+
+          ## PR Metadata
+          - Title: ${{ github.event.pull_request.title }}
+          - Author: ${{ github.event.pull_request.user.login }}
+          - Branch: ${{ github.event.pull_request.head.ref }}
+          - CI Status: success
+
+          ## Description
+          ${{ github.event.pull_request.body }}
+
+          ## Changed Files
+          $(git diff origin/main...HEAD --stat)
+
+          ## Full Diff
+          \`\`\`diff
+          $(git diff origin/main...HEAD)
+          \`\`\`
+          CONTEXT
+
+      - name: Run OpenCode review
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          model: openai/gpt-4.1-mini
+          use_github_token: true
+          prompt: |
+            You are reviewing a Pull Request for WoPeD Next.
+
+            Read `.github/pr-context.md` for the full PR metadata, changed files, and diff.
+
+            Post a single review comment on this PR (via the GitHub token) with the following structure:
+
+            ## PR Review Summary
+
+            ### 1. Summary
+            What does this PR do? (2-3 sentences)
+
+            ### 2. Files Changed
+            Group modified files by purpose.
+
+            ### 3. Best Practices Check
+            - **i18n**: Are new UI strings added to BOTH `src/i18n/locales/en.ts` AND `src/i18n/locales/de.ts`?
+            - **Tests**: Are tests included for new/changed logic? (check src/__tests__/)
+            - **CSS**: Are theme CSS variables used instead of hardcoded colors?
+            - **TypeScript**: Is type safety maintained? No `any` or unsafe casts?
+            - **nanoid**: Are `nanoid()` calls used for new Petri net element IDs?
+            - **Conventions**: Does the code follow patterns of neighboring files? (naming, imports, composables)
+
+            ### 4. Verdict
+            - ✅ Looks good (no issues)
+            - ⚠️ Minor issues (non-blocking suggestions)
+            - ❌ Needs changes (blocking issues found)
