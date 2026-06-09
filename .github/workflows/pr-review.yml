@@ -1,0 +1,32 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anomalyco/opencode/github@latest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          model: openai/gpt-4.1-mini
+          prompt: |
+            Briefly review this PR for WoPeD Next.
+            Follow AGENTS.md conventions.
+            Check: i18n, tests, CSS variables, TypeScript, nanoid.
+            Leave a short comment summarizing the check result.
