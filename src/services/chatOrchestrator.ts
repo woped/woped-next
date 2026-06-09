@@ -84,6 +84,7 @@ export class ChatOrchestrator {
           role: 'assistant',
           content: response.message.content,
           tool_calls: response.message.tool_calls,
+          gemini_model_parts: response.message.gemini_model_parts,
         })
 
         for (const toolCall of toolCalls) {
@@ -97,7 +98,7 @@ export class ChatOrchestrator {
             role: 'tool',
             content: result.content,
             tool_call_id: result.toolCallId,
-            tool_name: toolCall.name,
+            tool_name: toolCall.providerFunctionName ?? toolCall.name,
           })
         }
 

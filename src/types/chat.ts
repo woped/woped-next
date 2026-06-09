@@ -64,6 +64,8 @@ export interface ToolCall {
   id: string
   name: string
   arguments: Record<string, unknown>
+  /** Original function name from the provider (e.g. Gemini default_api: prefix). */
+  providerFunctionName?: string
 }
 
 export interface ToolResult {

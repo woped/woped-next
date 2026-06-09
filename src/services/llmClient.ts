@@ -11,6 +11,8 @@ export interface ChatMessage {
   tool_calls?: ToolCallRaw[]
   tool_call_id?: string
   tool_name?: string
+  /** Raw Gemini model parts (incl. thought_signature) for multi-turn tool calling. */
+  gemini_model_parts?: unknown[]
 }
 
 interface ToolCallRaw {
@@ -33,11 +35,23 @@ export interface ChatCompletionResponse {
     role: 'assistant'
     content: string | null
     tool_calls?: ToolCallRaw[]
+    gemini_model_parts?: unknown[]
   }
   finishReason: string
 }
 
 const API_REQUEST_TIMEOUT_MS = 120_000
+
+interface GeminiPart {
+  text?: string
+  thought?: boolean
+  thought_signature?: string
+  functionCall?: { name: string; args?: Record<string, unknown> }
+}
+
+function normalizeGeminiToolName(name: string): string {
+  return name.replace(/^default_api:/, '')
+}
 
 export class LLMClient {
   private config: LLMConfig
@@ -252,10 +266,7 @@ export class LLMClient {
       throw new Error('No response from Gemini API')
     }
 
-    const parts = candidate.content.parts as Array<{
-      text?: string
-      functionCall?: { name: string; args?: Record<string, unknown> }
-    }>
+    const parts = candidate.content.parts as GeminiPart[]
     const toolCalls: ToolCallRaw[] = []
     const textParts: string[] = []
 
@@ -285,6 +296,7 @@ export class LLMClient {
         role: 'assistant',
         content,
         tool_calls: hasToolCalls ? toolCalls : undefined,
+        gemini_model_parts: parts,
       },
       finishReason: candidate.finishReason || 'stop',
     }
@@ -298,6 +310,10 @@ export class LLMClient {
     }
 
     if (message.role === 'assistant') {
+      if (message.gemini_model_parts?.length) {
+        return { role: 'model', parts: message.gemini_model_parts }
+      }
+
       const parts: unknown[] = []
       if (message.content) {
         parts.push({ text: message.content })
@@ -357,9 +373,14 @@ export class LLMClient {
       } catch {
         args = {}
       }
+      const providerFunctionName = tc.function.name
+      const name = normalizeGeminiToolName(providerFunctionName)
+
       return {
         id: tc.id,
-        name: tc.function.name,
+        name,
+        providerFunctionName:
+          name !== providerFunctionName ? providerFunctionName : undefined,
         arguments: args,
       }
     })
