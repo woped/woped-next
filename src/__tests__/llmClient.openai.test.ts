@@ -17,20 +17,23 @@ describe('LLMClient OpenAI formatting', () => {
   })
 
   it('strips Gemini-only fields from tool messages', async () => {
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              role: 'assistant',
-              content: 'Done',
+    const fetchMock = vi.fn<
+      (url: string, init?: RequestInit) => Promise<Response>
+    >(async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: 'Done',
+              },
+              finish_reason: 'stop',
             },
-            finish_reason: 'stop',
-          },
-        ],
-      }),
-    }))
+          ],
+        }),
+      }) as Response)
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new LLMClient(baseConfig)
@@ -78,17 +81,20 @@ describe('LLMClient OpenAI formatting', () => {
   })
 
   it('uses max_completion_tokens for reasoning models', async () => {
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: { role: 'assistant', content: 'ok' },
-            finish_reason: 'stop',
-          },
-        ],
-      }),
-    }))
+    const fetchMock = vi.fn<
+      (url: string, init?: RequestInit) => Promise<Response>
+    >(async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: { role: 'assistant', content: 'ok' },
+              finish_reason: 'stop',
+            },
+          ],
+        }),
+      }) as Response)
     vi.stubGlobal('fetch', fetchMock)
 
     const client = new LLMClient({ ...baseConfig, model: 'o3-mini' })
