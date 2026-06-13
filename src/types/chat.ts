@@ -46,10 +46,20 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   temperature: 0.7,
 }
 
-export const AVAILABLE_MODELS = [
+export interface ModelOption {
+  id: string
+  name: string
+}
+
+/**
+ * Static fallback list of current chat models, used before an API key is
+ * entered or when model discovery fails. Kept intentionally small and current,
+ * covering distinct use cases (flagship / balanced / efficient).
+ */
+export const AVAILABLE_MODELS: readonly ModelOption[] = [
+  { id: 'gpt-4.1', name: 'GPT-4.1' },
   { id: 'gpt-4o', name: 'GPT-4o' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o mini' },
 ] as const
 
 export interface ToolCall {

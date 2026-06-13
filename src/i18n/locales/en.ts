@@ -546,6 +546,8 @@ export default {
       invalid: 'The API key is invalid. Please check and try again.',
       validationFailed: 'Could not validate the key. Check your connection.',
       validating: 'Validating...',
+      discovering: 'Loading available models…',
+      discoveryFailed: 'Could not load models from the API — showing the default list.',
     },
     commands: {
       addPlace: 'Add place "{name}"',

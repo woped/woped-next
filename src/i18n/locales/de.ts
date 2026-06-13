@@ -546,6 +546,8 @@ export default {
       invalid: 'Der API-Schlüssel ist ungültig. Bitte prüfen und erneut versuchen.',
       validationFailed: 'Schlüssel konnte nicht validiert werden. Prüfen Sie Ihre Verbindung.',
       validating: 'Validiere...',
+      discovering: 'Verfügbare Modelle werden geladen…',
+      discoveryFailed: 'Modelle konnten nicht von der API geladen werden — Standardliste wird angezeigt.',
     },
     commands: {
       addPlace: 'Stelle "{name}" hinzufügen',

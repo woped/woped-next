@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { watchDebounced } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { AVAILABLE_MODELS } from '@/types/chat'
+import { discoverModels, FALLBACK_MODELS } from '@/services/modelDiscovery'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
@@ -13,9 +14,58 @@ const selectedModel = ref('gpt-4o')
 const isValidating = ref(false)
 const validationError = ref('')
 
+const availableModels = ref([...FALLBACK_MODELS])
+const isDiscovering = ref(false)
+const usedFallback = ref(false)
+// Monotonic token so only the latest discovery result is applied.
+let discoveryToken = 0
+
+async function discover(key) {
+  const trimmed = key.trim()
+  if (!trimmed) {
+    availableModels.value = [...FALLBACK_MODELS]
+    usedFallback.value = false
+    isDiscovering.value = false
+    return
+  }
+
+  const token = ++discoveryToken
+  isDiscovering.value = true
+  usedFallback.value = false
+
+  try {
+    const models = await discoverModels(trimmed)
+    if (token !== discoveryToken) return
+    availableModels.value = models
+    usedFallback.value =
+      models.length === FALLBACK_MODELS.length &&
+      models.every((m, i) => m.id === FALLBACK_MODELS[i].id)
+    ensureSelectedModelValid()
+  } finally {
+    if (token === discoveryToken) isDiscovering.value = false
+  }
+}
+
+function ensureSelectedModelValid() {
+  if (!availableModels.value.some((m) => m.id === selectedModel.value)) {
+    selectedModel.value = availableModels.value[0]?.id ?? selectedModel.value
+  }
+}
+
+watchDebounced(
+  apiKey,
+  (key) => {
+    discover(key)
+  },
+  { debounce: 500 },
+)
+
 onMounted(() => {
   apiKey.value = chatStore.llmConfig.apiKey
   selectedModel.value = chatStore.llmConfig.model
+  if (apiKey.value.trim()) {
+    discover(apiKey.value)
+  }
 })
 
 async function handleSave() {
@@ -70,11 +120,13 @@ function handleCancel() {
 
       <div class="form-group">
         <label class="form-label">{{ t('chat.apiKey.model') }}</label>
-        <select v-model="selectedModel" class="form-select">
-          <option v-for="model in AVAILABLE_MODELS" :key="model.id" :value="model.id">
+        <select v-model="selectedModel" class="form-select" :disabled="isDiscovering">
+          <option v-for="model in availableModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
+        <p v-if="isDiscovering" class="model-hint">{{ t('chat.apiKey.discovering') }}</p>
+        <p v-else-if="usedFallback" class="model-hint">{{ t('chat.apiKey.discoveryFailed') }}</p>
       </div>
 
       <p v-if="validationError" class="error-text">{{ validationError }}</p>
@@ -158,6 +210,12 @@ function handleCancel() {
 .form-input:focus,
 .form-select:focus {
   border-color: var(--color-primary);
+}
+
+.model-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
 }
 
 .error-text {
