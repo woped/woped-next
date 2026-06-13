@@ -1,4 +1,4 @@
-import type { LLMConfig, ToolCall } from '@/types/chat'
+import type { LLMConfig, LLMProvider, ToolCall } from '@/types/chat'
 import type { BrowserMcpServer } from '@/types/mcp'
 import { chatLogger } from './chatLogger'
 import { mcpToOpenAiTools } from './mcp/mcpToOpenAiTools'
@@ -35,6 +35,12 @@ export interface ChatCompletionResponse {
   finishReason: string
 }
 
+// Both providers use the OpenAI-compatible REST format — only the endpoint differs.
+const PROVIDER_ENDPOINTS: Record<string, string> = {
+  openai: 'https://api.openai.com/v1/chat/completions',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+}
+
 export class LLMClient {
   private config: LLMConfig
   private mcpServer?: BrowserMcpServer
@@ -53,8 +59,13 @@ export class LLMClient {
     messages: ChatMessage[],
     tools?: ToolDefinition[],
   ): Promise<ChatCompletionResponse> {
+    if (this.config.provider === 'mock') {
+      return this.mockCompletion(messages)
+    }
+
     this.abortController = new AbortController()
 
+    const url = PROVIDER_ENDPOINTS[this.config.provider]
     const body: Record<string, unknown> = {
       model: this.config.model,
       messages,
@@ -69,7 +80,7 @@ export class LLMClient {
 
     chatLogger.apiRequest(this.config.model, messages.length, !!(tools && tools.length > 0))
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +92,8 @@ export class LLMClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
-      const message = error?.error?.message || `OpenAI API Error: ${response.status} ${response.statusText}`
+      const message =
+        error?.error?.message || `API Error: ${response.status} ${response.statusText}`
       chatLogger.error('API request failed', new Error(message))
       throw new Error(message)
     }
@@ -90,7 +102,7 @@ export class LLMClient {
     const choice = data.choices?.[0]
 
     if (!choice) {
-      throw new Error('No response from OpenAI API')
+      throw new Error('No response from API')
     }
 
     const hasToolCalls = !!(choice.message.tool_calls && choice.message.tool_calls.length > 0)
@@ -99,6 +111,17 @@ export class LLMClient {
     return {
       message: choice.message,
       finishReason: choice.finish_reason,
+    }
+  }
+
+  private mockCompletion(messages: ChatMessage[]): ChatCompletionResponse {
+    const last = [...messages].reverse().find((m) => m.role === 'user')
+    return {
+      message: {
+        role: 'assistant',
+        content: `[Demo] Your message: "${last?.content ?? ''}". This is a mock response — no API key required.`,
+      },
+      finishReason: 'stop',
     }
   }
 
@@ -144,7 +167,19 @@ export class LLMClient {
     return mcpToolResultToChatResult(toolCall, mcpResult)
   }
 
-  static async validateApiKey(apiKey: string): Promise<boolean> {
+  static async validateApiKey(apiKey: string, provider: LLMProvider = 'openai'): Promise<boolean> {
+    if (provider === 'mock') return true
+    if (provider === 'gemini') {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/openai/models`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        )
+        return response.ok
+      } catch {
+        return false
+      }
+    }
     try {
       const response = await fetch('https://api.openai.com/v1/models', {
         headers: { Authorization: `Bearer ${apiKey}` },

@@ -62,7 +62,7 @@ export const useChatStore = defineStore('chat', {
 
     saveConfig(config: Partial<LLMConfig>) {
       this.llmConfig = { ...this.llmConfig, ...config }
-      this.isConfigured = this.llmConfig.apiKey.length > 0
+      this.isConfigured = this.llmConfig.apiKey.length > 0 || this.llmConfig.provider === 'mock'
 
       try {
         if (config.apiKey !== undefined) {

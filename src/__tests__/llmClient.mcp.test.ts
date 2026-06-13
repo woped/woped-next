@@ -4,6 +4,7 @@ import type { BrowserMcpServer, McpTool, McpToolCall } from '@/types/mcp'
 import type { LLMConfig } from '@/types/chat'
 
 const config: LLMConfig = {
+  provider: 'openai',
   apiKey: 'test-key',
   model: 'test-model',
   maxTokens: 100,

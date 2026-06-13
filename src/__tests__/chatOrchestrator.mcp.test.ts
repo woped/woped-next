@@ -10,6 +10,7 @@ vi.mock('@/services/modelSerializer', () => ({
 }))
 
 const config: LLMConfig = {
+  provider: 'openai',
   apiKey: 'test-key',
   model: 'test-model',
   maxTokens: 100,
