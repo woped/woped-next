@@ -13,10 +13,13 @@
     "typecheck": "tsc --noEmit -p jsconfig.json"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@vueuse/core": "^14.2.0",
     "dagre": "^0.8.5",
     "konva": "^10.2.0",
+    "llm-harness": "^0.3.1",
     "nanoid": "^5.1.6",
+    "openai": "^6.42.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.24",
     "vue-i18n": "^11.2.8",

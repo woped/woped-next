@@ -1,24 +1,41 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { AVAILABLE_MODELS } from '@/types/chat'
+import { AVAILABLE_MODELS_BY_PROVIDER } from '@/types/chat'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
 
+const selectedProvider = ref('openai')
 const apiKey = ref('')
 const selectedModel = ref('gpt-4o')
 const isValidating = ref(false)
 const validationError = ref('')
 
+const isMock = computed(() => selectedProvider.value === 'mock')
+const availableModels = computed(() => AVAILABLE_MODELS_BY_PROVIDER[selectedProvider.value] ?? [])
+
 onMounted(() => {
+  selectedProvider.value = chatStore.llmConfig.provider ?? 'openai'
   apiKey.value = chatStore.llmConfig.apiKey
   selectedModel.value = chatStore.llmConfig.model
 })
 
+function onProviderChange() {
+  selectedModel.value = availableModels.value[0]?.id ?? ''
+  apiKey.value = ''
+  validationError.value = ''
+}
+
 async function handleSave() {
+  if (isMock.value) {
+    chatStore.saveConfig({ provider: 'mock', apiKey: '', model: 'mock' })
+    chatStore.closeApiKeyDialog()
+    return
+  }
+
   if (!apiKey.value.trim()) {
     validationError.value = t('chat.apiKey.required')
     return
@@ -28,13 +45,14 @@ async function handleSave() {
   validationError.value = ''
 
   try {
-    const valid = await LLMClient.validateApiKey(apiKey.value.trim())
+    const valid = await LLMClient.validateApiKey(apiKey.value.trim(), selectedProvider.value)
     if (!valid) {
       validationError.value = t('chat.apiKey.invalid')
       return
     }
 
     chatStore.saveConfig({
+      provider: selectedProvider.value,
       apiKey: apiKey.value.trim(),
       model: selectedModel.value,
     })
@@ -58,20 +76,29 @@ function handleCancel() {
       <p class="dialog-description">{{ t('chat.apiKey.description') }}</p>
 
       <div class="form-group">
+        <label class="form-label">Provider</label>
+        <select v-model="selectedProvider" class="form-select" @change="onProviderChange">
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="mock">Mock (Demo – no key required)</option>
+        </select>
+      </div>
+
+      <div v-if="!isMock" class="form-group">
         <label class="form-label">{{ t('chat.apiKey.label') }}</label>
         <input
           v-model="apiKey"
           type="password"
           class="form-input"
-          placeholder="sk-..."
+          :placeholder="selectedProvider === 'gemini' ? 'AIza...' : 'sk-...'"
           @keydown.enter="handleSave"
         />
       </div>
 
-      <div class="form-group">
+      <div v-if="!isMock" class="form-group">
         <label class="form-label">{{ t('chat.apiKey.model') }}</label>
         <select v-model="selectedModel" class="form-select">
-          <option v-for="model in AVAILABLE_MODELS" :key="model.id" :value="model.id">
+          <option v-for="model in availableModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
