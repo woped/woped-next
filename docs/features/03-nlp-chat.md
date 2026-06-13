@@ -465,3 +465,49 @@ No additional npm dependencies required. The implementation uses the native `fet
 | Tools | Test each tool individually: T2P conversion, P2T description, analysis, modify |
 | Integration | Orchestrator with mocked OpenAI API, tool call loop |
 | E2E | Full chat flow: enter key, send message, tool call, display response |
+
+---
+
+## Multi-Provider LLM Support
+
+### Background
+
+The NLP Chat currently only supports OpenAI. To allow users to choose alternative providers (e.g. Gemini, Anthropic, OpenRouter), a TypeScript-compatible multi-provider abstraction is needed. LiteLLM — the de-facto standard in Python — has no direct equivalent for TypeScript/browser environments.
+
+### Candidate Evaluation
+
+Three npm packages were evaluated as potential TypeScript alternatives to LiteLLM:
+
+| Criterion | `llm-harness` | `@sschepis/llm-wrapper` | `priorai` |
+|---|---|---|---|
+| **Version** | 0.3.1 | 0.3.5 | 0.4.0 |
+| **Last published** | 2026-05-15 | 2026-05-12 | 2026-04-27 |
+| **Unpacked size** | 140 KB | 651 KB | 4.1 MB |
+| **Required dependencies** | none (peer only) | zod | AWS crypto libs |
+| **Node.js required** | >=18 | >=18 | >=18 |
+| **Browser / Web support** | ✅ ReadableStream for Web (Next.js, Hono, Workers) | ❌ Node.js only | ❌ Node.js only |
+| **Supported providers** | OpenAI, Anthropic, Google (Gemini), Ollama, any OpenAI-compatible | OpenAI, Anthropic, Gemini, Vertex AI, OpenRouter, DeepSeek, LM Studio, Ollama (9 total) | 72 providers (incl. AWS Bedrock, Azure, Firebase) |
+| **Tool / Function calling** | ✅ unified across all providers | ✅ unified | ✅ |
+| **Streaming** | ✅ async generators + ReadableStream | ✅ AsyncIterable | ✅ |
+| **Failover / circuit breaker** | ✅ | ✅ | ✅ |
+| **TypeScript** | ✅ first-class | ✅ Zod-based | ✅ |
+
+Sources: npm registry (`npm info <package> --json`), GitHub READMEs for `brandonkorous/llm-harness`, `sschepis/llm-wrapper`, and `xandersbell/priorai`.
+
+### Recommendation: `llm-harness`
+
+**`llm-harness` is the recommended library** for adding multi-provider support to the NLP Chat.
+
+**Reasons:**
+
+1. **Only browser-compatible candidate** — `llm-harness` explicitly supports `ReadableStream` for web environments (Next.js, Hono, Cloudflare Workers, Fetch API). The other two candidates are Node.js-only and would require a backend proxy, which contradicts the existing frontend-only / BYOK architecture.
+2. **Smallest bundle** — At 140 KB with zero required dependencies, it fits the project's lean bundle philosophy (currently using native `fetch` with no LLM SDK).
+3. **Covers the required providers** — OpenAI (existing) and Google Gemini (PoC target) are both supported out of the box.
+4. **Unified tool calling** — Tool definitions work identically across all providers, so `chatOrchestrator.ts` requires minimal changes.
+5. **Auto-detection** — Routes to the correct provider based on the model name (e.g. `gemini-2.5-flash` → Google), reducing configuration overhead.
+
+**Trade-offs:**
+
+- Smaller community than `@sschepis/llm-wrapper` (15 vs. 86 weekly downloads) — the library is relatively new.
+- Fewer providers than `priorai` (5+ vs. 72) — sufficient for the current scope (OpenAI + Gemini + Anthropic + Ollama).
+- If a backend is introduced in the future, `@sschepis/llm-wrapper` becomes a viable alternative due to its broader provider coverage and routing strategies.
