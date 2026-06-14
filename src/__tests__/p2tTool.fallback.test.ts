@@ -12,6 +12,7 @@ vi.mock("@/services/tools/toolConfig", () => ({
 }));
 
 const llmConfig: LLMConfig = {
+  provider: "openai",
   apiKey: "test-key",
   model: "gemini-2.5-flash",
   maxTokens: 256,
