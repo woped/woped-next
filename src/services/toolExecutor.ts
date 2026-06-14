@@ -7,6 +7,7 @@ import { modelInfoTool } from './tools/modelInfoTool'
 import { modifyTool } from './tools/modifyTool'
 import { helpTool } from './tools/helpTool'
 import { modelSerializer } from './modelSerializer'
+import { extractPnmlContent } from '@/utils/petriNetNormalize'
 
 export const toolDefinitions = [
   t2pTool.definition,
@@ -32,11 +33,20 @@ export async function executeToolCall(
           llmConfig,
         )
         try {
-          const parsed = JSON.parse(content)
-          if (parsed.pnml) {
-            commands.push({ type: 'import_net', params: { pnml: parsed.pnml } })
+          const parsed = JSON.parse(content) as { pnml?: string; result?: string }
+          const rawPnml = parsed.pnml || parsed.result
+          if (rawPnml) {
+            const pnml = extractPnmlContent(rawPnml)
+            if (pnml) {
+              commands.push({ type: 'import_net', params: { pnml } })
+            }
           }
-        } catch { /* response wasn't JSON, pass through */ }
+        } catch {
+          const pnml = extractPnmlContent(content)
+          if (pnml.includes('<pnml') || pnml.includes('<net')) {
+            commands.push({ type: 'import_net', params: { pnml } })
+          }
+        }
         break
       }
       case 'p2t_describe': {

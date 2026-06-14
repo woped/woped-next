@@ -34,6 +34,9 @@ export const t2pTool = {
     const language = args.language || 'en'
 
     if (!TOOL_ENDPOINTS.t2p) {
+      if (llmConfig?.apiKey) {
+        return await llmFallbackT2P(llmConfig, args.text, language)
+      }
       return JSON.stringify({
         error: 'T2P endpoint is not configured.',
       })

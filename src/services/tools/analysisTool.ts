@@ -1,5 +1,6 @@
 import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness } from '@/services/analysis'
+import { normalizePetriNet } from '@/utils/petriNetNormalize'
 
 export const analysisTool = {
   definition: {
@@ -27,13 +28,14 @@ export const analysisTool = {
 
   execute(args: { checks?: string[] }): string {
     const store = usePetriNetStore()
-    const net = store.net
+    const rawNet = store.net
 
-    if (!net) {
+    if (!rawNet) {
       return JSON.stringify({ error: 'No active Petri net model' })
     }
 
-    const checks = args.checks || ['all']
+    const { net } = normalizePetriNet(rawNet)
+    const checks = Array.isArray(args.checks) ? args.checks : ['all']
     const results: Record<string, unknown> = {}
 
     if (checks.includes('all') || checks.includes('workflow')) {

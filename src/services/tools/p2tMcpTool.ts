@@ -14,7 +14,7 @@ export type P2TArgs = z.infer<typeof p2tArgsSchema>
 export const p2tMcpTool: McpTool = {
   name: 'p2t_describe',
   description:
-    'Convert the given Petri net model (PNML) to a natural language description using the P2T service.',
+    'Describe the given Petri net model (PNML) in natural language. Uses the P2T service when configured, otherwise falls back to the configured LLM.',
   inputSchema: {
     type: 'object',
     properties: {

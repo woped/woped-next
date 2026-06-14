@@ -21,6 +21,10 @@ export const analysisMcpTool: McpTool = {
       checks: {
         type: 'array',
         description: 'Which analyses to run. Defaults to ["all"].',
+        items: {
+          type: 'string',
+          enum: ['workflow', 'soundness', 'all'],
+        },
       },
     },
     additionalProperties: false,

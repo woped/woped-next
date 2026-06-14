@@ -35,7 +35,11 @@ export const modifyMcpTool: McpTool = {
     type: 'object',
     properties: {
       action: { type: 'string', description: 'The modification action to perform' },
-      params: { type: 'object', description: 'Parameters for the action' },
+      params: {
+        type: 'object',
+        description: 'Parameters for the action',
+        properties: {},
+      },
     },
     required: ['action', 'params'],
     additionalProperties: false,
