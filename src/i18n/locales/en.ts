@@ -556,6 +556,7 @@ export default {
       modelUnavailable: 'The selected model is not available with your API key. Please choose another model.',
       modelsLoadFailed: 'Could not load models from the provider. Check your API key and connection.',
       modelsEmpty: 'No chat models are available with this API key.',
+      modelsFallback: 'Could not load models from the provider — showing a default list of current models.',
     },
     commands: {
       addPlace: 'Add place "{name}"',

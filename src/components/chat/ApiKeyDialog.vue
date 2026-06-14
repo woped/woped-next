@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
+import { curateModels, getFallbackModels } from '@/services/modelCuration'
 import { PROVIDER_OPTIONS } from '@/types/chat'
 import type { LLMModelOption, LLMProvider } from '@/types/chat'
 
@@ -17,6 +18,7 @@ const isValidating = ref(false)
 const isLoadingModels = ref(false)
 const validationError = ref('')
 const modelsError = ref('')
+const usedFallback = ref(false)
 
 function ensureSelectedModelInList() {
   const models = availableModels.value
@@ -37,24 +39,28 @@ async function loadAvailableModels() {
     availableModels.value = []
     selectedModel.value = ''
     modelsError.value = ''
+    usedFallback.value = false
     return
   }
 
   isLoadingModels.value = true
   modelsError.value = ''
+  usedFallback.value = false
   availableModels.value = []
 
   try {
     const models = await LLMClient.listModels(key, selectedProvider.value)
-    availableModels.value = models
-    if (models.length === 0) {
+    availableModels.value = curateModels(models, selectedProvider.value)
+    if (availableModels.value.length === 0) {
       modelsError.value = t('chat.apiKey.modelsEmpty')
     }
     ensureSelectedModelInList()
   } catch {
-    availableModels.value = []
-    selectedModel.value = ''
-    modelsError.value = t('chat.apiKey.modelsLoadFailed')
+    // Fall back to a static current list so the dropdown is never empty.
+    availableModels.value = getFallbackModels(selectedProvider.value)
+    usedFallback.value = availableModels.value.length > 0
+    modelsError.value = usedFallback.value ? '' : t('chat.apiKey.modelsLoadFailed')
+    ensureSelectedModelInList()
   } finally {
     isLoadingModels.value = false
   }
@@ -181,6 +187,7 @@ function handleCancel() {
         </select>
         <p v-if="modelsError" class="hint-text">{{ modelsError }}</p>
         <p v-else-if="isLoadingModels" class="hint-text">{{ t('chat.apiKey.loadingModels') }}</p>
+        <p v-else-if="usedFallback" class="hint-text">{{ t('chat.apiKey.modelsFallback') }}</p>
         <p v-else-if="!apiKey.trim()" class="hint-text">{{ t('chat.apiKey.enterKeyForModels') }}</p>
       </div>
 
