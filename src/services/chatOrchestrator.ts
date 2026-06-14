@@ -19,6 +19,8 @@ Guidelines:
 - When asked to describe the model, use p2t_describe with the provided PNML
 - When asked about model properties (soundness, deadlocks, etc.), use analyze_model
 - When asked to modify the model, use modify_model with the appropriate action
+- For modify_model arcs, use element IDs from get_model_info (source_id, target_id), not display names
+- When adding multiple arcs, call modify_model once per arc
 - Always explain what you did after performing an action
 - Respond in the same language the user writes in`
 
@@ -82,6 +84,7 @@ export class ChatOrchestrator {
           role: 'assistant',
           content: response.message.content,
           tool_calls: response.message.tool_calls,
+          gemini_model_parts: response.message.gemini_model_parts,
         })
 
         for (const toolCall of toolCalls) {
@@ -95,6 +98,7 @@ export class ChatOrchestrator {
             role: 'tool',
             content: result.content,
             tool_call_id: result.toolCallId,
+            tool_name: toolCall.providerFunctionName ?? toolCall.name,
           })
         }
 

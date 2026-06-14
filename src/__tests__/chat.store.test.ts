@@ -56,6 +56,7 @@ describe('Chat Store', () => {
 
     const parsedConfig = JSON.parse(rawConfig!)
     expect(parsedConfig).toEqual({
+      provider: 'openai',
       model: 'gpt-4o-mini',
       maxTokens: 2048,
       temperature: 0.2,
@@ -79,6 +80,7 @@ describe('Chat Store', () => {
     store.loadConfig()
 
     expect(store.llmConfig).toEqual({
+      provider: 'openai',
       apiKey: 'restored-key',
       model: 'gpt-4o-mini',
       maxTokens: 1024,
