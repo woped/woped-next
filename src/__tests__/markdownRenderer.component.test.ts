@@ -74,6 +74,19 @@ describe('MarkdownRenderer', () => {
       expect(wrapper.find('code').text()).toContain('const x = 1')
     })
 
+    it('highlights fenced code with a language tag', async () => {
+      const wrapper = mountMarkdown('```js\nconst x = 1\n```')
+      await flushPromises()
+      expect(wrapper.find('code.hljs.language-javascript').exists()).toBe(true)
+      expect(wrapper.find('.hljs-keyword').text()).toBe('const')
+    })
+
+    it('does not highlight fenced code without a language tag', async () => {
+      const wrapper = mountMarkdown('```\nplain text\n```')
+      await flushPromises()
+      expect(wrapper.find('code.hljs').exists()).toBe(false)
+    })
+
     it('does not add copy button for inline code', async () => {
       const wrapper = mountMarkdown('Use `npm run dev`')
       await flushPromises()
@@ -101,7 +114,7 @@ describe('MarkdownRenderer', () => {
       await flushPromises()
       await wrapper.find('.copy-code-btn').trigger('click')
       await flushPromises()
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1\n')
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1')
     })
   })
 
