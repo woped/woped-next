@@ -1,8 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
+import MarkdownRenderer from './MarkdownRenderer.vue'
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -32,7 +30,7 @@ const timeFormatted = computed(() => {
         <span>{{ message.error }}</span>
       </div>
       <div v-else class="message-content">
-        {{ message.content }}
+        <MarkdownRenderer :source="message.content" />
       </div>
       <div class="message-time">{{ timeFormatted }}</div>
     </div>
@@ -79,7 +77,6 @@ const timeFormatted = computed(() => {
   border-radius: 12px;
   font-size: 13px;
   line-height: 1.5;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
