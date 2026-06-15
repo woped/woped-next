@@ -532,6 +532,8 @@ export default {
     modelChanges: 'Modelländerungen',
     applyChanges: 'Änderungen anwenden',
     changesApplied: 'Änderungen angewendet',
+    copyCode: 'Kopieren',
+    copied: 'Kopiert!',
     suggestions: {
       describe: 'Beschreibe mein Modell',
       analyze: 'Ist mein Netz sound?',

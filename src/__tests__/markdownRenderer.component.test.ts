@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import MarkdownRenderer from '@/components/chat/MarkdownRenderer.vue'
+import { i18n } from '@/i18n'
 
 function mountMarkdown(source: string) {
-  return mount(MarkdownRenderer, { props: { source } })
+  return mount(MarkdownRenderer, {
+    props: { source },
+    global: { plugins: [i18n] },
+  })
 }
 
 describe('MarkdownRenderer', () => {
@@ -68,6 +72,36 @@ describe('MarkdownRenderer', () => {
     it('renders fenced code block content', () => {
       const wrapper = mountMarkdown('```\nconst x = 1\n```')
       expect(wrapper.find('code').text()).toContain('const x = 1')
+    })
+
+    it('does not add copy button for inline code', async () => {
+      const wrapper = mountMarkdown('Use `npm run dev`')
+      await flushPromises()
+      expect(wrapper.find('.copy-code-btn').exists()).toBe(false)
+    })
+  })
+
+  describe('copy button', () => {
+    beforeEach(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn().mockResolvedValue(undefined) },
+        configurable: true,
+      })
+    })
+
+    it('adds copy button to fenced code blocks', async () => {
+      const wrapper = mountMarkdown('```\nconst x = 1\n```')
+      await flushPromises()
+      expect(wrapper.find('.copy-code-btn').exists()).toBe(true)
+      expect(wrapper.find('.copy-code-btn').text()).toBe('Copy')
+    })
+
+    it('copies code block content on click', async () => {
+      const wrapper = mountMarkdown('```\nconst x = 1\n```')
+      await flushPromises()
+      await wrapper.find('.copy-code-btn').trigger('click')
+      await flushPromises()
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('const x = 1\n')
     })
   })
 
