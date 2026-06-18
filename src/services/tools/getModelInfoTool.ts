@@ -14,6 +14,13 @@ export const getModelInfoArgsSchema = z.object({}).strict()
 
 export type GetModelInfoArgs = z.infer<typeof getModelInfoArgsSchema>
 
+export interface ModelInfoElement {
+  id: string
+  name: string
+  type: 'place' | 'transition' | 'operator' | 'subprocess'
+  operatorType?: string
+}
+
 export interface ModelInfoSummary {
   netName: string
   placesCount: number
@@ -22,6 +29,7 @@ export interface ModelInfoSummary {
   operatorsCount: number
   subProcessesCount: number
   elementNames: string[]
+  elements: ModelInfoElement[]
 }
 
 export const getModelInfoTool: McpTool = {
@@ -36,12 +44,31 @@ export const getModelInfoTool: McpTool = {
 }
 
 export function buildModelInfoSummary(net: PetriNet): ModelInfoSummary {
-  const elementNames = [
-    ...net.places.map((p) => p.name),
-    ...net.transitions.map((t) => t.name),
-    ...net.operators.map((o) => o.name),
-    ...net.subProcesses.map((s) => s.name),
+  const elements: ModelInfoElement[] = [
+    ...net.places.map((place) => ({
+      id: place.id,
+      name: place.name || place.id,
+      type: 'place' as const,
+    })),
+    ...net.transitions.map((transition) => ({
+      id: transition.id,
+      name: transition.name || transition.id,
+      type: 'transition' as const,
+    })),
+    ...net.operators.map((operator) => ({
+      id: operator.id,
+      name: operator.name || operator.label || operator.id,
+      type: 'operator' as const,
+      operatorType: operator.operatorType,
+    })),
+    ...net.subProcesses.map((subProcess) => ({
+      id: subProcess.id,
+      name: subProcess.name || subProcess.id,
+      type: 'subprocess' as const,
+    })),
   ]
+
+  const elementNames = elements.map((element) => element.name)
 
   return {
     netName: net.name,
@@ -51,6 +78,7 @@ export function buildModelInfoSummary(net: PetriNet): ModelInfoSummary {
     operatorsCount: net.operators.length,
     subProcessesCount: net.subProcesses.length,
     elementNames,
+    elements,
   }
 }
 

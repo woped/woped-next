@@ -19,7 +19,9 @@ Guidelines:
 - When asked to describe the model, use p2t_describe with the provided PNML
 - When asked about model properties (soundness, deadlocks, etc.), use analyze_model
 - When asked to modify the model, use modify_model with the appropriate action
-- For modify_model arcs, use element IDs from get_model_info (source_id, target_id), not display names
+- For modify_model arcs, call get_model_info first and use element id values in source_id/target_id (or source_name/target_name). Arcs must alternate place ↔ transition/operator.
+- When inserting elements into an existing flow, create places/transitions first, then add_arc commands connecting them to existing element ids from the model context
+- When prepending before an existing place P: create new place → new transition → add_arc newPlace→transition → add_arc transition→P using P's id from get_model_info
 - When adding multiple arcs, call modify_model once per arc
 - Always explain what you did after performing an action
 - Respond in the same language the user writes in`

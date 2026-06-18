@@ -83,13 +83,19 @@ export const modelSerializer = {
       return 'The model is currently empty.'
     }
 
+    const elements = this.getModelElements()
+    const elementSummary = elements
+      .slice(0, 25)
+      .map((element) => `${element.name} [${element.type}] id=${element.id}`)
+      .join('; ')
+
     return [
       `Current model: ${summary.placesCount} places, ${summary.transitionsCount} transitions, ${summary.arcsCount} arcs.`,
       summary.operatorTypes.length > 0
         ? `Operators: ${summary.operatorTypes.join(', ')}.`
         : '',
       summary.hasSubprocesses ? 'Contains subprocesses.' : '',
-      `Elements: ${summary.elementNames.slice(0, 20).join(', ')}${summary.elementNames.length > 20 ? '...' : ''}.`,
+      `Elements (name, type, id): ${elementSummary}${elements.length > 25 ? '...' : ''}.`,
     ]
       .filter(Boolean)
       .join(' ')

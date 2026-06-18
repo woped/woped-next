@@ -65,7 +65,17 @@ export function extractPnmlContent(raw: string): string {
     }
   }
 
-  content = content.replace(/^```(?:xml)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  const fenceMatch = content.match(/```(?:xml|pnml)?\s*\n?([\s\S]*?)```/i)
+  if (fenceMatch) {
+    content = fenceMatch[1].trim()
+  } else {
+    content = content.replace(/^```(?:xml|pnml)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  }
+
+  const pnmlMatch = content.match(/<pnml[\s\S]*<\/pnml>/i)
+  if (pnmlMatch) {
+    return pnmlMatch[0]
+  }
 
   const start = content.indexOf('<')
   const end = content.lastIndexOf('>')
@@ -73,5 +83,5 @@ export function extractPnmlContent(raw: string): string {
     content = content.slice(start, end + 1)
   }
 
-  return content
+  return content.trim()
 }

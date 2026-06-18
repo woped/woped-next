@@ -4,10 +4,17 @@ import { ChatOrchestrator } from '@/services/chatOrchestrator'
 import { chatLogger } from '@/services/chatLogger'
 import { usePetriNetStore } from './petriNet'
 import { fileService } from '@/services/file/fileService'
-import type { ChatMessage, ModelCommand, LLMConfig } from '@/types/chat'
+import type { ChatMessage, ModelCommand, LLMConfig, ModelCommandType } from '@/types/chat'
 import { DEFAULT_LLM_CONFIG } from '@/types/chat'
 import { extractPnmlContent } from '@/utils/petriNetNormalize'
-import { resolveArcEndpoints, resolveElementId } from '@/utils/chatElementResolve'
+import {
+  resolveArcEndpoints,
+  resolveElementId,
+  pickElementRef,
+  createResolveContext,
+  pickEndpointRef,
+  type ResolveContext,
+} from '@/utils/chatElementResolve'
 
 const LLM_CONFIG_STORAGE_KEY = 'woped_llm_config'
 const OPENAI_API_KEY_STORAGE_KEY = 'woped_openai_api_key'
@@ -24,6 +31,83 @@ interface ChatState {
 }
 
 let activeOrchestrator: ChatOrchestrator | null = null
+
+const MODIFY_COMMAND_ORDER: ModelCommandType[] = [
+  'add_place',
+  'add_transition',
+  'rename_element',
+  'set_tokens',
+  'add_arc',
+  'remove_element',
+]
+
+function sortModifyCommands(commands: ModelCommand[]): ModelCommand[] {
+  const order = new Map(MODIFY_COMMAND_ORDER.map((type, index) => [type, index]))
+  return [...commands].sort(
+    (left, right) => (order.get(left.type) ?? 99) - (order.get(right.type) ?? 99),
+  )
+}
+
+function bridgeOrphanBatchTransitions(
+  commands: ModelCommand[],
+  context: ResolveContext,
+): void {
+  const petriNetStore = usePetriNetStore()
+  const net = petriNetStore.net
+  if (!net || context.createdInBatch.size === 0) return
+
+  const failedArcs = commands.filter((cmd) => cmd.type === 'add_arc' && !cmd.executed)
+
+  for (const transition of net.transitions) {
+    if (!context.createdInBatch.has(transition.id)) continue
+
+    const hasOutgoingToExisting = net.arcs.some(
+      (arc) =>
+        arc.sourceId === transition.id &&
+        context.knownElementIds.has(arc.targetId) &&
+        !context.createdInBatch.has(arc.targetId),
+    )
+    if (hasOutgoingToExisting) continue
+
+    const hasIncoming = net.arcs.some((arc) => arc.targetId === transition.id)
+    if (!hasIncoming) continue
+
+    const hasAnyOutgoing = net.arcs.some((arc) => arc.sourceId === transition.id)
+    if (hasAnyOutgoing) continue
+
+    for (const arcCommand of failedArcs) {
+      const targetRef = pickEndpointRef(arcCommand.params, 'target')
+      const targetId = targetRef ? resolveElementId(net, targetRef, context) : null
+      if (!targetId) continue
+      if (!context.knownElementIds.has(targetId) || context.createdInBatch.has(targetId)) continue
+      if (!net.places.some((place) => place.id === targetId)) continue
+
+      const arc = petriNetStore.addArc(transition.id, targetId)
+      if (arc) {
+        arcCommand.executed = true
+        arcCommand.error = undefined
+        break
+      }
+    }
+
+    if (failedArcs.some((cmd) => cmd.executed)) continue
+
+    if (failedArcs.length === 0) continue
+
+    const preExistingPlaces = net.places.filter(
+      (place) =>
+        context.knownElementIds.has(place.id) && !context.createdInBatch.has(place.id),
+    )
+    if (preExistingPlaces.length !== 1) continue
+
+    const arc = petriNetStore.addArc(transition.id, preExistingPlaces[0].id)
+    if (arc) {
+      chatLogger.warn(
+        `auto-bridge: connected ${transition.name || transition.id} → ${preExistingPlaces[0].name || preExistingPlaces[0].id}`,
+      )
+    }
+  }
+}
 
 export const useChatStore = defineStore('chat', {
   state: (): ChatState => ({
@@ -229,44 +313,61 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    executeCommand(command: ModelCommand) {
+    executeCommand(command: ModelCommand, context?: ResolveContext): boolean {
       const petriNetStore = usePetriNetStore()
       chatLogger.command(command.type, command.params)
+      command.error = undefined
+
+      let success = false
 
       switch (command.type) {
         case 'add_place': {
           const pos = (command.params.position as { x: number; y: number }) || this.getNextPosition()
-          petriNetStore.addPlace(pos, (command.params.name as string) || '')
+          const place = petriNetStore.addPlace(pos, (command.params.name as string) || '')
+          context?.createdInBatch.add(place.id)
+          success = true
           break
         }
         case 'add_transition': {
           const pos = (command.params.position as { x: number; y: number }) || this.getNextPosition()
-          petriNetStore.addTransition(pos, (command.params.name as string) || '')
+          const transition = petriNetStore.addTransition(
+            pos,
+            (command.params.name as string) || '',
+          )
+          context?.createdInBatch.add(transition.id)
+          success = true
           break
         }
         case 'add_arc': {
           const net = petriNetStore.net
           if (!net) break
-          const { sourceId, targetId } = resolveArcEndpoints(net, command.params)
+          const { sourceId, targetId } = resolveArcEndpoints(net, command.params, context)
           if (sourceId && targetId) {
             const arc = petriNetStore.addArc(sourceId, targetId)
-            if (!arc) {
+            if (arc) {
+              success = true
+            } else {
               chatLogger.warn(`add_arc skipped: invalid arc ${sourceId} → ${targetId}`)
+              command.error = 'chat.commandErrors.addArcInvalidType'
             }
           } else {
             chatLogger.warn(
               `add_arc skipped: could not resolve source or target (${JSON.stringify(command.params)})`,
             )
+            command.error = 'chat.commandErrors.addArcFailed'
           }
           break
         }
         case 'remove_element': {
           const net = petriNetStore.net
           const elementId = net
-            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            ? resolveElementId(net, pickElementRef(command.params), context)
             : null
           if (elementId) {
             petriNetStore.deleteElement(elementId)
+            success = true
+          } else {
+            command.error = 'chat.commandErrors.removeElementFailed'
           }
           break
         }
@@ -274,17 +375,18 @@ export const useChatStore = defineStore('chat', {
           const net = petriNetStore.net
           const name = command.params.name as string
           const elementId = net
-            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            ? resolveElementId(net, pickElementRef(command.params), context)
             : null
-          if (elementId && name) {
-            if (net) {
-              const isPlace = net.places.some((p) => p.id === elementId)
-              if (isPlace) {
-                petriNetStore.updatePlace(elementId, { name })
-              } else {
-                petriNetStore.updateTransition(elementId, { name })
-              }
+          if (elementId && name && net) {
+            const isPlace = net.places.some((p) => p.id === elementId)
+            if (isPlace) {
+              petriNetStore.updatePlace(elementId, { name })
+            } else {
+              petriNetStore.updateTransition(elementId, { name })
             }
+            success = true
+          } else {
+            command.error = 'chat.commandErrors.renameElementFailed'
           }
           break
         }
@@ -292,61 +394,108 @@ export const useChatStore = defineStore('chat', {
           const net = petriNetStore.net
           const tokens = command.params.tokens as number
           const elementId = net
-            ? resolveElementId(net, command.params.element_id ?? command.params.elementId)
+            ? resolveElementId(net, pickElementRef(command.params), context)
             : null
           if (elementId && tokens !== undefined) {
             petriNetStore.updatePlace(elementId, { tokens })
+            success = true
+          } else {
+            command.error = 'chat.commandErrors.setTokensFailed'
           }
           break
         }
         case 'import_net': {
           const rawPnml = command.params.pnml as string
-          if (rawPnml) {
-            try {
-              const pnml = extractPnmlContent(rawPnml)
-              if (!pnml) {
-                chatLogger.error('Import net from chat', new Error('Empty PNML content'))
-                break
-              }
-              const result = fileService.importFromString(pnml, 'pnml')
-              if (!result.net) {
-                chatLogger.error(
-                  'Import net from chat',
-                  new Error(result.errors.map((e) => e.message).join('; ') || 'Import failed'),
-                )
-                break
-              }
-              if (result.subNets && result.subNets.size > 0) {
-                const nets: Record<string, typeof result.net> = {
-                  [result.net.id]: result.net,
-                }
-                for (const [id, subNet] of result.subNets) {
-                  nets[id] = subNet
-                }
-                petriNetStore.loadNets(nets, result.net.id)
-              } else {
-                petriNetStore.loadNet(result.net)
-              }
-              if (!result.success && result.warnings.length > 0) {
-                chatLogger.warn(`Import warnings: ${result.warnings.join('; ')}`)
-              }
-            } catch (e) {
-              chatLogger.error('Import net from chat', e)
+          if (!rawPnml) {
+            command.error = 'chat.commandErrors.missingPnml'
+            break
+          }
+
+          try {
+            const pnml = extractPnmlContent(rawPnml)
+            if (!pnml) {
+              chatLogger.error('Import net from chat', new Error('Empty PNML content'))
+              command.error = 'chat.commandErrors.emptyPnml'
+              break
             }
+
+            const result = fileService.importFromString(pnml, 'pnml')
+            if (!result.net) {
+              chatLogger.error(
+                'Import net from chat',
+                new Error(result.errors.map((e) => e.message).join('; ') || 'Import failed'),
+              )
+              command.error = 'chat.commandErrors.importFailed'
+              break
+            }
+
+            if (result.subNets && result.subNets.size > 0) {
+              const nets: Record<string, typeof result.net> = {
+                [result.net.id]: result.net,
+              }
+              for (const [id, subNet] of result.subNets) {
+                nets[id] = subNet
+              }
+              petriNetStore.loadNets(nets, result.net.id)
+            } else {
+              petriNetStore.loadNet(result.net)
+            }
+
+            if (!result.success && result.warnings.length > 0) {
+              chatLogger.warn(`Import warnings: ${result.warnings.join('; ')}`)
+            }
+
+            success = true
+          } catch (e) {
+            chatLogger.error('Import net from chat', e)
+            command.error = 'chat.commandErrors.importFailed'
           }
           break
         }
       }
 
-      command.executed = true
+      command.executed = success
+      return success
     },
 
     executeAllCommands(commands: ModelCommand[]) {
-      for (const cmd of commands) {
-        if (!cmd.executed) {
-          this.executeCommand(cmd)
+      const petriNetStore = usePetriNetStore()
+      const pending = commands.filter((cmd) => !cmd.executed)
+      const importCommands = pending.filter((cmd) => cmd.type === 'import_net')
+      const modifyCommands = pending.filter((cmd) => cmd.type !== 'import_net')
+
+      if (importCommands.length > 0) {
+        for (const cmd of modifyCommands) {
+          cmd.executed = false
+          cmd.error = 'chat.commandErrors.skippedForImport'
+        }
+
+        if (importCommands.length > 1) {
+          for (const cmd of importCommands.slice(0, -1)) {
+            cmd.executed = false
+            cmd.error = 'chat.commandErrors.duplicateImportSkipped'
+          }
+        }
+
+        this.executeCommand(importCommands[importCommands.length - 1])
+        return
+      }
+
+      const context = createResolveContext(petriNetStore.net)
+      const sorted = sortModifyCommands(modifyCommands)
+
+      for (const cmd of sorted) {
+        this.executeCommand(cmd, context)
+      }
+
+      for (const cmd of sorted) {
+        if (cmd.type === 'add_arc' && !cmd.executed && cmd.error === 'chat.commandErrors.addArcFailed') {
+          cmd.error = undefined
+          this.executeCommand(cmd, context)
         }
       }
+
+      bridgeOrphanBatchTransitions(sorted, context)
     },
 
     clearMessages() {

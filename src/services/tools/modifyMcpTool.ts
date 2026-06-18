@@ -30,7 +30,7 @@ export type ModifyArgs = z.infer<typeof modifyArgsSchema>
 export const modifyMcpTool: McpTool = {
   name: 'modify_model',
   description:
-    'Generate a command to modify the current Petri net model. Supported actions: add_place, add_transition, add_arc, remove_element, rename_element, set_tokens.',
+    'Generate a command to modify the current Petri net model. Supported actions: add_place, add_transition, add_arc, remove_element, rename_element, set_tokens. For add_arc use source_id/target_id (or source_name, target_name) from get_model_info elements. Arcs must connect a place to a transition/operator (not two places or two transitions).',
   inputSchema: {
     type: 'object',
     properties: {

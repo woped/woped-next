@@ -10,6 +10,19 @@ const props = defineProps({
 
 const emit = defineEmits(['execute'])
 
+const SKIPPED_ERRORS = new Set([
+  'chat.commandErrors.skippedForImport',
+  'chat.commandErrors.duplicateImportSkipped',
+])
+
+function isSkipped(cmd) {
+  return cmd.error && SKIPPED_ERRORS.has(cmd.error)
+}
+
+function isFailed(cmd) {
+  return cmd.error && !SKIPPED_ERRORS.has(cmd.error)
+}
+
 const commandDescriptions = computed(() => {
   return props.commands.map((cmd) => {
     const params = cmd.params || {}
@@ -34,7 +47,13 @@ const commandDescriptions = computed(() => {
   })
 })
 
-const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
+const hasPending = computed(() => props.commands.some((cmd) => !cmd.executed && !isSkipped(cmd)))
+
+const hasFailures = computed(() => props.commands.some((cmd) => isFailed(cmd)))
+
+const applyComplete = computed(() =>
+  props.commands.every((cmd) => cmd.executed || isSkipped(cmd)),
+)
 </script>
 
 <template>
@@ -46,21 +65,39 @@ const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
       <li
         v-for="(desc, i) in commandDescriptions"
         :key="i"
-        :class="['command-item', { executed: commands[i].executed }]"
+        :class="[
+          'command-item',
+          {
+            executed: commands[i].executed,
+            failed: isFailed(commands[i]),
+            skipped: isSkipped(commands[i]),
+          },
+        ]"
       >
         <span class="command-icon">{{ desc.icon }}</span>
-        <span class="command-text">{{ desc.text }}</span>
+        <span class="command-text">
+          {{ desc.text }}
+          <span v-if="commands[i].error" class="command-error">
+            — {{ t(commands[i].error) }}
+          </span>
+        </span>
         <span v-if="commands[i].executed" class="command-done">✓</span>
+        <span v-else-if="isFailed(commands[i])" class="command-failed">✕</span>
       </li>
     </ul>
     <button
-      v-if="!allExecuted"
+      v-if="hasPending"
       class="execute-btn"
       @click="emit('execute', commands)"
     >
       {{ t('chat.applyChanges') }}
     </button>
-    <span v-else class="applied-badge">{{ t('chat.changesApplied') }}</span>
+    <span v-else-if="applyComplete && !hasFailures" class="applied-badge">
+      {{ t('chat.changesApplied') }}
+    </span>
+    <span v-else-if="hasFailures" class="failed-badge">
+      {{ t('chat.changesPartiallyFailed') }}
+    </span>
   </div>
 </template>
 
@@ -99,7 +136,7 @@ const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
 
 .command-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -109,6 +146,15 @@ const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
 .command-item.executed {
   opacity: 0.6;
   text-decoration: line-through;
+}
+
+.command-item.skipped {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.command-item.failed {
+  color: var(--color-error);
 }
 
 .command-icon {
@@ -122,8 +168,20 @@ const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
   flex: 1;
 }
 
+.command-error {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+  text-decoration: none;
+}
+
 .command-done {
   color: var(--color-success);
+  font-weight: 600;
+}
+
+.command-failed {
+  color: var(--color-error);
   font-weight: 600;
 }
 
@@ -150,6 +208,14 @@ const allExecuted = computed(() => props.commands.every((cmd) => cmd.executed))
   margin-top: 6px;
   font-size: 11px;
   color: var(--color-success);
+  font-weight: 500;
+}
+
+.failed-badge {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-error);
   font-weight: 500;
 }
 </style>

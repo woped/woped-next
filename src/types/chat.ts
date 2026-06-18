@@ -21,6 +21,8 @@ export interface ModelCommand {
   type: ModelCommandType
   params: Record<string, unknown>
   executed?: boolean
+  /** i18n key when the command failed or was skipped */
+  error?: string
 }
 
 export interface ModelSummary {
