@@ -15,7 +15,7 @@ const emit = defineEmits(['close'])
 
 const { t } = useI18n()
 const configStore = useConfigStore()
-const { general, editor, tokenGame, analysis, language } = storeToRefs(configStore)
+const { general, editor, tokenGame, analysis, language, services } = storeToRefs(configStore)
 
 // Active tab
 const activeTab = ref('general')
@@ -25,6 +25,7 @@ const tabs = computed(() => [
   { id: 'editor', label: t('settings.editor') },
   { id: 'simulation', label: t('settings.simulation') },
   { id: 'analysis', label: t('settings.analysis') },
+  { id: 'services', label: t('settings.services') },
 ])
 
 // Local copies for editing
@@ -33,6 +34,7 @@ const localEditor = ref({ ...editor.value })
 const localTokenGame = ref({ ...tokenGame.value })
 const localAnalysis = ref({ ...analysis.value })
 const localLanguage = ref({ ...language.value })
+const localServices = ref({ ...services.value })
 
 // Store original settings when dialog opens (for cancel restore)
 const originalTheme = ref(null)
@@ -48,6 +50,7 @@ watch(
       localTokenGame.value = { ...tokenGame.value }
       localAnalysis.value = { ...analysis.value }
       localLanguage.value = { ...language.value }
+      localServices.value = { ...services.value }
       originalTheme.value = general.value.theme
       originalLocale.value = language.value.locale
     }
@@ -60,6 +63,7 @@ const saveSettings = () => {
   configStore.updateEditor(localEditor.value)
   configStore.updateTokenGame(localTokenGame.value)
   configStore.updateAnalysis(localAnalysis.value)
+  configStore.updateServices(localServices.value)
   configStore.updateLanguage(localLanguage.value)
   emit('close')
 }
@@ -83,6 +87,7 @@ const resetDefaults = () => {
   localTokenGame.value = { ...tokenGame.value }
   localAnalysis.value = { ...analysis.value }
   localLanguage.value = { ...language.value }
+  localServices.value = { ...services.value }
 }
 
 // Preview theme immediately when changed
@@ -304,6 +309,41 @@ const handleKeydown = (e) => {
               </div>
             </div>
           </div>
+
+          <!-- Services Tab -->
+          <div v-show="activeTab === 'services'" class="tab-content">
+            <div class="setting-group">
+              <h3>{{ $t('settings.t2pService') }}</h3>
+              <div class="setting-row">
+                <label>{{ $t('settings.t2pEnabled') }}</label>
+                <input type="checkbox" v-model="localServices.t2pEnabled" />
+              </div>
+              <div class="setting-row">
+                <label>{{ $t('settings.t2pEndpoint') }}</label>
+                <input
+                  type="text"
+                  v-model="localServices.t2pEndpoint"
+                  class="endpoint-input"
+                />
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <h3>{{ $t('settings.p2tService') }}</h3>
+              <div class="setting-row">
+                <label>{{ $t('settings.p2tEnabled') }}</label>
+                <input type="checkbox" v-model="localServices.p2tEnabled" />
+              </div>
+              <div class="setting-row">
+                <label>{{ $t('settings.p2tEndpoint') }}</label>
+                <input
+                  type="text"
+                  v-model="localServices.p2tEndpoint"
+                  class="endpoint-input"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -488,6 +528,23 @@ const handleKeydown = (e) => {
   font-size: 13px;
   background: var(--color-bg-tertiary);
   color: var(--color-text);
+}
+
+.setting-row input[type='text'].endpoint-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.setting-row input[type='text'].endpoint-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .setting-row input[type='number']:focus,
