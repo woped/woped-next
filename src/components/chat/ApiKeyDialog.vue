@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chat'
 import { LLMClient } from '@/services/llmClient'
-import { curateModels, getFallbackModels } from '@/services/modelCuration'
+import { sortModelsByRecency, getFallbackModels, VISIBLE_MODELS_COUNT } from '@/services/modelOrdering'
 import { PROVIDER_OPTIONS } from '@/types/chat'
 import type { LLMModelOption, LLMProvider } from '@/types/chat'
 
@@ -14,11 +14,20 @@ const apiKey = ref('')
 const selectedProvider = ref<LLMProvider>('openai')
 const selectedModel = ref('')
 const availableModels = ref<LLMModelOption[]>([])
+const showAllModels = ref(false)
 const isValidating = ref(false)
 const isLoadingModels = ref(false)
 const validationError = ref('')
 const modelsError = ref('')
 const usedFallback = ref(false)
+
+// Show the newest few models by default; "show more" reveals the rest.
+const displayedModels = computed(() =>
+  showAllModels.value
+    ? availableModels.value
+    : availableModels.value.slice(0, VISIBLE_MODELS_COUNT),
+)
+const hasMoreModels = computed(() => availableModels.value.length > VISIBLE_MODELS_COUNT)
 
 function ensureSelectedModelInList() {
   const models = availableModels.value
@@ -27,9 +36,12 @@ function ensureSelectedModelInList() {
     return
   }
 
-  const exists = models.some((model) => model.id === selectedModel.value)
-  if (!exists) {
+  const index = models.findIndex((model) => model.id === selectedModel.value)
+  if (index === -1) {
     selectedModel.value = models[0].id
+  } else if (index >= VISIBLE_MODELS_COUNT) {
+    // Keep a previously selected (older) model visible.
+    showAllModels.value = true
   }
 }
 
@@ -46,18 +58,19 @@ async function loadAvailableModels() {
   isLoadingModels.value = true
   modelsError.value = ''
   usedFallback.value = false
+  showAllModels.value = false
   availableModels.value = []
 
   try {
     const models = await LLMClient.listModels(key, selectedProvider.value)
-    availableModels.value = curateModels(models, selectedProvider.value)
+    availableModels.value = sortModelsByRecency(models)
     if (availableModels.value.length === 0) {
       modelsError.value = t('chat.apiKey.modelsEmpty')
     }
     ensureSelectedModelInList()
   } catch {
     // Fall back to a static current list so the dropdown is never empty.
-    availableModels.value = getFallbackModels(selectedProvider.value)
+    availableModels.value = sortModelsByRecency(getFallbackModels(selectedProvider.value))
     usedFallback.value = availableModels.value.length > 0
     modelsError.value = usedFallback.value ? '' : t('chat.apiKey.modelsLoadFailed')
     ensureSelectedModelInList()
@@ -77,6 +90,7 @@ watch(selectedProvider, async () => {
   availableModels.value = []
   selectedModel.value = ''
   modelsError.value = ''
+  showAllModels.value = false
   await loadAvailableModels()
 })
 
@@ -181,10 +195,18 @@ function handleCancel() {
                   : t('chat.apiKey.noModels')
             }}
           </option>
-          <option v-for="model in availableModels" :key="model.id" :value="model.id">
+          <option v-for="model in displayedModels" :key="model.id" :value="model.id">
             {{ model.name }}
           </option>
         </select>
+        <button
+          v-if="hasMoreModels && !showAllModels"
+          type="button"
+          class="show-more-btn"
+          @click="showAllModels = true"
+        >
+          {{ t('chat.apiKey.showMore') }}
+        </button>
         <p v-if="modelsError" class="hint-text">{{ modelsError }}</p>
         <p v-else-if="isLoadingModels" class="hint-text">{{ t('chat.apiKey.loadingModels') }}</p>
         <p v-else-if="usedFallback" class="hint-text">{{ t('chat.apiKey.modelsFallback') }}</p>
@@ -308,6 +330,20 @@ function handleCancel() {
 .refresh-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.show-more-btn {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.show-more-btn:hover {
+  text-decoration: underline;
 }
 
 .hint-text {

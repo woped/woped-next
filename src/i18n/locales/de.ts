@@ -557,6 +557,7 @@ export default {
       modelsLoadFailed: 'Modelle konnten nicht geladen werden. API-Schlüssel und Verbindung prüfen.',
       modelsEmpty: 'Mit diesem API-Schlüssel sind keine Chat-Modelle verfügbar.',
       modelsFallback: 'Modelle konnten nicht geladen werden — es wird eine Standardliste aktueller Modelle angezeigt.',
+      showMore: 'Mehr Modelle anzeigen',
     },
     commands: {
       addPlace: 'Stelle "{name}" hinzufügen',
