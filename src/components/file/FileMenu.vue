@@ -79,7 +79,7 @@ const handleOpenRecent = (rf) => {
 // New file
 const handleNew = () => {
   if (confirm('Create a new empty net? Unsaved changes will be lost.')) {
-    store.newNet()
+    store.clearSaved()
   }
   showMenu.value = false
 }
