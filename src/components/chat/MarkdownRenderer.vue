@@ -1,8 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
+import { renderMarkdownHtml } from '@/utils/markdownHighlight'
 
 const { t } = useI18n()
 
@@ -12,19 +11,31 @@ const props = defineProps({
 
 const containerRef = ref(null)
 
-marked.setOptions({ gfm: true, breaks: true })
+const sanitizedHtml = computed(() => renderMarkdownHtml(props.source))
 
-const sanitizedHtml = computed(() =>
-  DOMPurify.sanitize(marked.parse(props.source, { async: false })),
-)
+function isFencedCodeElement(code) {
+  if (code.closest('pre')) return false
+  if (code.closest('p')) return false
+
+  const parent = code.parentElement
+  if (!parent?.classList.contains('markdown-body') && !parent?.classList.contains('code-block-wrapper')) {
+    return false
+  }
+
+  const hasTextSibling = [...parent.childNodes].some(
+    (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+  )
+  if (hasTextSibling) return false
+
+  const elementChildren = [...parent.children].filter((child) => child.tagName !== 'BR')
+  return elementChildren.length === 1 && elementChildren[0] === code
+}
 
 function getCodeBlockElements(container) {
   const preBlocks = [...container.querySelectorAll('pre')]
   if (preBlocks.length > 0) return preBlocks
 
-  return [...container.querySelectorAll('code')].filter(
-    (code) => !code.closest('p') && (code.textContent ?? '').includes('\n'),
-  )
+  return [...container.querySelectorAll('code')].filter(isFencedCodeElement)
 }
 
 function createCopyButton() {
@@ -52,7 +63,7 @@ function attachCopyButtons() {
   }
 }
 
-watch(() => props.source, () => nextTick(attachCopyButtons))
+watch(sanitizedHtml, () => nextTick(attachCopyButtons), { flush: 'post' })
 onMounted(() => nextTick(attachCopyButtons))
 
 async function handleContainerClick(event) {
@@ -123,7 +134,7 @@ async function handleContainerClick(event) {
 .markdown-body :deep(h2) { font-size: 1.1em; }
 .markdown-body :deep(h3) { font-size: 1.05em; }
 
-.markdown-body :deep(code) {
+.markdown-body :deep(:not(pre) > code) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
   padding: 0.1em 0.35em;
@@ -144,11 +155,69 @@ async function handleContainerClick(event) {
   overflow-x: auto;
   background: color-mix(in srgb, currentColor 10%, transparent);
   font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.markdown-body :deep(pre:has(code.hljs)),
+.markdown-body :deep(.code-block-wrapper > code.hljs) {
+  background: #1e2030;
+  color: #e6e9f0;
 }
 
 .markdown-body :deep(pre code) {
   padding: 0;
   background: none;
+}
+
+.markdown-body :deep(pre code.hljs) {
+  display: block;
+  color: #e6e9f0;
+}
+
+.markdown-body :deep(.hljs-keyword),
+.markdown-body :deep(.hljs-selector-tag) {
+  color: #7eb6ff;
+  font-weight: 600;
+}
+
+.markdown-body :deep(.hljs-built_in),
+.markdown-body :deep(.hljs-title),
+.markdown-body :deep(.hljs-function) {
+  color: #e8a8ff;
+}
+
+.markdown-body :deep(.hljs-string),
+.markdown-body :deep(.hljs-attr),
+.markdown-body :deep(.hljs-attribute) {
+  color: #8fd694;
+}
+
+.markdown-body :deep(.hljs-number),
+.markdown-body :deep(.hljs-literal),
+.markdown-body :deep(.hljs-symbol) {
+  color: #f2c97d;
+}
+
+.markdown-body :deep(.hljs-comment),
+.markdown-body :deep(.hljs-quote) {
+  color: #8b93a8;
+  font-style: italic;
+}
+
+.markdown-body :deep(.hljs-meta),
+.markdown-body :deep(.hljs-tag),
+.markdown-body :deep(.hljs-name) {
+  color: #f0a8d8;
+}
+
+.markdown-body :deep(.code-block-wrapper:has(.hljs) .copy-code-btn) {
+  border-color: color-mix(in srgb, #e6e9f0 30%, transparent);
+  background: color-mix(in srgb, #e6e9f0 12%, transparent);
+  color: #e6e9f0;
+}
+
+.markdown-body :deep(.code-block-wrapper:has(.hljs) .copy-code-btn:hover) {
+  background: color-mix(in srgb, #e6e9f0 20%, transparent);
 }
 
 .markdown-body :deep(.copy-code-btn) {
