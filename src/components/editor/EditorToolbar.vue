@@ -7,6 +7,7 @@ import { useConfigStore } from '@/stores/config'
 import { OperatorType, OPERATOR_INFO } from '@/types/petri-net'
 import FileMenu from '@/components/file/FileMenu.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
+import OperatorAalstIcon from '@/components/editor/OperatorAalstIcon.vue'
 import { useHelpStore } from '@/stores/help'
 
 const { t } = useI18n()
@@ -14,6 +15,9 @@ const store = usePetriNetStore()
 const configStore = useConfigStore()
 const helpStore = useHelpStore()
 const { tool, canUndo, canRedo, viewport, selectedOperatorType } = storeToRefs(store)
+const { operatorNotation } = storeToRefs(configStore)
+
+const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
 
 const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
 
@@ -189,7 +193,10 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
             :title="`${t.label} (${t.shortcut})`"
             @click.stop="handleToolClick('operator')"
           >
-            <span class="tool-icon">{{ currentOperatorInfo()?.symbol || t.icon }}</span>
+            <span class="tool-icon">
+              <OperatorAalstIcon v-if="isVanDerAalst" :type="selectedOperatorType" />
+              <template v-else>{{ currentOperatorInfo()?.symbol || t.icon }}</template>
+            </span>
             <span class="tool-label">{{ currentOperatorInfo()?.label || t.label }}</span>
             <span class="dropdown-arrow">▾</span>
           </button>
@@ -203,7 +210,10 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
               :class="['operator-option', { selected: selectedOperatorType === op.type }]"
               @click="selectOperatorType(op.type)"
             >
-              <span class="op-icon">{{ op.icon }}</span>
+              <span class="op-icon">
+                <OperatorAalstIcon v-if="isVanDerAalst" :type="op.type" />
+                <template v-else>{{ op.icon }}</template>
+              </span>
               <span class="op-label">{{ op.label }}</span>
             </button>
           </div>
