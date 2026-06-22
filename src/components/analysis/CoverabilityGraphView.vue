@@ -253,6 +253,61 @@ function formatMarking(marking) {
     .join(', ')
 }
 
+// Multiset (Multimengen) representation of a marking.
+// `marking` is sparse (zero-token places omitted); resolve all place names from the net.
+function markingEntries(marking) {
+  return (net.value.places || []).map((p) => {
+    const raw = marking?.[p.id]
+    const count = raw === undefined ? 0 : raw
+    return { id: p.id, label: p.name || p.id, count }
+  })
+}
+
+// e.g. M = {s1, s1, s2} — omits zero-token places, repeats per token count
+function formatMultisetBraces(marking) {
+  const parts = []
+  for (const { label, count } of markingEntries(marking)) {
+    if (count === 'omega') {
+      parts.push(`${label}^ω`)
+    } else {
+      for (let i = 0; i < count; i++) parts.push(label)
+    }
+  }
+  return parts.length ? `{${parts.join(', ')}}` : '∅'
+}
+
+// e.g. M = 2·s1 + 1·s2 + 0·s3 — includes every place
+function formatMultisetSum(marking) {
+  const entries = markingEntries(marking)
+  if (entries.length === 0) return '∅'
+  return entries
+    .map(({ label, count }) => `${count === 'omega' ? 'ω' : count}·${label}`)
+    .join(' + ')
+}
+
+// Marking detail on hover (transient) or click (pinned)
+const hoverNodeId = ref(null)
+const pinnedNodeId = ref(null)
+
+const detailNode = computed(() => {
+  const id = hoverNodeId.value ?? pinnedNodeId.value
+  if (id == null || !graph.value) return null
+  return graph.value.nodes.find((n) => n.id === id) || null
+})
+
+const detailStyle = computed(() => {
+  if (!detailNode.value) return { display: 'none' }
+  const pos = nodePositions.value.get(detailNode.value.id)
+  if (!pos) return { display: 'none' }
+  const screenX = transform.x + pos.x * transform.scale
+  const screenY = transform.y + (pos.y - NODE_RADIUS) * transform.scale
+  return { left: `${screenX}px`, top: `${screenY}px` }
+})
+
+function toggleNode(id) {
+  pinnedNodeId.value = pinnedNodeId.value === id ? null : id
+}
+
 function onMouseDown(e) {
   if (e.button !== 0) return
   isPanning.value = true
@@ -467,9 +522,13 @@ onBeforeUnmount(() => {
               :cy="nodePositions.get(node.id)?.y"
               :r="NODE_RADIUS"
               :fill="nodeColor(node)"
-              fill-opacity="0.15"
+              :fill-opacity="pinnedNodeId === node.id ? 0.3 : 0.15"
               :stroke="nodeStroke(node)"
-              stroke-width="2.5"
+              :stroke-width="pinnedNodeId === node.id ? 4 : 2.5"
+              class="cg-node-hit"
+              @mouseenter="hoverNodeId = node.id"
+              @mouseleave="hoverNodeId = null"
+              @click.stop="toggleNode(node.id)"
             />
             <text
               :x="nodePositions.get(node.id)?.x"
@@ -492,6 +551,15 @@ onBeforeUnmount(() => {
           </g>
         </g>
       </svg>
+
+      <div v-if="detailNode" class="cg-marking-popover" :style="detailStyle">
+        <div class="cg-marking-title">
+          {{ $t('analysis.marking') }} ({{ detailNode.id }})
+          <span v-if="pinnedNodeId === detailNode.id" class="cg-marking-pin">📌</span>
+        </div>
+        <div class="cg-marking-row">M = {{ formatMultisetBraces(detailNode.marking) }}</div>
+        <div class="cg-marking-row">M = {{ formatMultisetSum(detailNode.marking) }}</div>
+      </div>
     </div>
 
     <div v-if="!graph" class="cg-empty">
@@ -718,6 +786,50 @@ onBeforeUnmount(() => {
 
 .cg-viewport svg {
   display: block;
+}
+
+.cg-node-hit {
+  cursor: pointer;
+  transition: fill-opacity 0.1s ease;
+}
+
+.cg-node-hit:hover {
+  fill-opacity: 0.3;
+}
+
+.cg-marking-popover {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 10;
+  max-width: 260px;
+  padding: 8px 10px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text);
+  pointer-events: none;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.cg-marking-title {
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.cg-marking-pin {
+  font-size: 10px;
+}
+
+.cg-marking-row {
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .cg-node-id {

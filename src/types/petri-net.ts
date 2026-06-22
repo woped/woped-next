@@ -244,6 +244,33 @@ export const VISUAL = {
 } as const
 
 /**
+ * Effective transition box size for a given operator notation.
+ * The authentic van der Aalst (WoPeD) notation renders transitions as squares,
+ * while the modern notation keeps the wider rectangle.
+ */
+export function getTransitionSize(
+  notation: 'vanDerAalst' | 'modern'
+): { width: number; height: number } {
+  if (notation === 'vanDerAalst') {
+    return { width: VISUAL.transition.width, height: VISUAL.transition.width }
+  }
+  return { width: VISUAL.transition.width, height: VISUAL.transition.height }
+}
+
+/**
+ * Effective subprocess box size for a given operator notation.
+ * Square in the van der Aalst notation, wider rectangle in the modern notation.
+ */
+export function getSubProcessSize(
+  notation: 'vanDerAalst' | 'modern'
+): { width: number; height: number } {
+  if (notation === 'vanDerAalst') {
+    return { width: VISUAL.subprocess.height, height: VISUAL.subprocess.height }
+  }
+  return { width: VISUAL.subprocess.width, height: VISUAL.subprocess.height }
+}
+
+/**
  * Operator display info
  */
 export const OPERATOR_INFO: Record<OperatorType, { label: string; symbol: string; color: string }> = {

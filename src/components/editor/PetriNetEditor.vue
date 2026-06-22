@@ -82,6 +82,10 @@ const handleDrop = async (e) => {
 // Right panel tab
 const rightPanelTab = ref('properties')
 
+// Conference: Quantitative Simulation UI disabled (engine/panel preserved and
+// can be re-enabled by flipping this flag back to true).
+const SHOW_SIMULATION = false
+
 // Right panel collapsed state (start expanded by default)
 const rightPanelCollapsed = ref(false)
 
@@ -300,6 +304,7 @@ onMounted(() => {
               <span v-if="showTabLabels" class="tab-label">{{ $t('analysis.title') }}</span>
             </button>
             <button
+              v-if="SHOW_SIMULATION"
               :class="['tab-btn', { active: rightPanelTab === 'simulation' }]"
               @click="rightPanelTab = 'simulation'"
               :title="$t('simulation.title')"
@@ -322,7 +327,7 @@ onMounted(() => {
               <TokenGameControls />
             </div>
             <AnalysisPanel v-else-if="rightPanelTab === 'analysis'" />
-            <SimulationPanel v-else-if="rightPanelTab === 'simulation'" />
+            <SimulationPanel v-else-if="SHOW_SIMULATION && rightPanelTab === 'simulation'" />
             <ChatPanel v-else-if="rightPanelTab === 'chat'" />
           </div>
         </template>

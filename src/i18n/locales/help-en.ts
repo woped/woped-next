@@ -316,12 +316,12 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'State Space Graphs',
+      title: 'State Space Analysis',
       description: 'Explore all reachable states with the Reachability or Coverability Graph.',
       steps: {
         tab: {
           title: 'Analysis Tab',
-          content: 'Open the Analysis tab and scroll down to the "State Space Graphs" section.',
+          content: 'Open the Analysis tab and scroll down to the "State Space Analysis" section.',
         },
         section: {
           title: 'Choose Graph Type',
@@ -688,8 +688,8 @@ You can set the default strategy in Settings → Simulation → Conflict Resolut
     },
 
     analysisCoverability: {
-      title: 'State Space Graphs',
-      content: `The **State Space Graphs** section provides two complementary views of your Petri net's behavior:
+      title: 'State Space Analysis',
+      content: `The **State Space Analysis** section provides two complementary views of your Petri net's behavior:
 
 **Reachability Graph** — enumerates all *exact* reachable markings. Every node contains concrete token counts, enabling precise reachability queries ("Can marking M be reached?") and full liveness analysis. Only works for **bounded** nets (finite state space). If the net is unbounded, the construction automatically falls back to the coverability graph.
 

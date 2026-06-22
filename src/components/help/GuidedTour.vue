@@ -15,6 +15,7 @@ const step = computed(() => helpStore.activeTourCurrentStep)
 const stepIndex = computed(() => helpStore.activeTourStep)
 const totalSteps = computed(() => tour.value?.steps.length ?? 0)
 const isLastStep = computed(() => stepIndex.value >= totalSteps.value - 1)
+const isWelcomeStart = computed(() => tour.value?.id === 'welcome' && stepIndex.value === 0)
 
 function positionHighlight() {
   if (!step.value) {
@@ -152,6 +153,12 @@ onUnmounted(() => {
 
       <!-- Popover -->
       <div class="tour-popover" :style="popoverStyle">
+        <img
+          v-if="isWelcomeStart"
+          class="tour-logo"
+          src="/woped-logo.svg"
+          alt="WoPeD"
+        />
         <div class="tour-popover-header">
           <h4>{{ step ? $t(step.titleKey) : '' }}</h4>
           <span class="tour-step-count">
@@ -229,6 +236,14 @@ onUnmounted(() => {
   pointer-events: auto;
   z-index: 2001;
   transition: all 0.3s ease;
+}
+
+.tour-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  margin: 0 auto 14px;
+  border-radius: 6px;
 }
 
 .tour-popover-header {

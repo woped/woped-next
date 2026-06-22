@@ -1,5 +1,7 @@
 import type { Position } from '@/types/petri-net'
-import { VISUAL } from '@/types/petri-net'
+import { VISUAL, getTransitionSize, getSubProcessSize } from '@/types/petri-net'
+
+type OperatorNotation = 'vanDerAalst' | 'modern'
 
 /**
  * Calculate distance between two points
@@ -81,10 +83,14 @@ export function calculateArcEndpoints(
   sourcePos: Position,
   targetPos: Position,
   sourceType: 'place' | 'transition' | 'subprocess',
-  targetType: 'place' | 'transition' | 'subprocess'
+  targetType: 'place' | 'transition' | 'subprocess',
+  notation: OperatorNotation = 'modern'
 ): { start: Position; end: Position } {
   const ang = angle(sourcePos, targetPos)
   const reverseAng = angle(targetPos, sourcePos)
+
+  const transitionSize = getTransitionSize(notation)
+  const subProcessSize = getSubProcessSize(notation)
 
   let start: Position
   let end: Position
@@ -94,15 +100,15 @@ export function calculateArcEndpoints(
   } else if (sourceType === 'subprocess') {
     start = pointOnRectangle(
       sourcePos,
-      VISUAL.subprocess.width,
-      VISUAL.subprocess.height,
+      subProcessSize.width,
+      subProcessSize.height,
       ang
     )
   } else {
     start = pointOnRectangle(
       sourcePos,
-      VISUAL.transition.width,
-      VISUAL.transition.height,
+      transitionSize.width,
+      transitionSize.height,
       ang
     )
   }
@@ -112,15 +118,15 @@ export function calculateArcEndpoints(
   } else if (targetType === 'subprocess') {
     end = pointOnRectangle(
       targetPos,
-      VISUAL.subprocess.width,
-      VISUAL.subprocess.height,
+      subProcessSize.width,
+      subProcessSize.height,
       reverseAng
     )
   } else {
     end = pointOnRectangle(
       targetPos,
-      VISUAL.transition.width,
-      VISUAL.transition.height,
+      transitionSize.width,
+      transitionSize.height,
       reverseAng
     )
   }

@@ -9,6 +9,7 @@ import type {
   RecentFile,
   ThemeMode,
   Locale,
+  OperatorNotation,
 } from '@/types/config'
 import {
   DEFAULT_CONFIG,
@@ -68,6 +69,15 @@ export const useConfigStore = defineStore('config', {
      */
     gridSize(): number {
       return this.editor.gridSize
+    },
+
+    /**
+     * Active operator notation style
+     * Note: Getter ensures proper reactivity for nested state access.
+     * Use with storeToRefs() in components for reactive binding.
+     */
+    operatorNotation(): OperatorNotation {
+      return this.editor.operatorNotation
     },
   },
 
@@ -168,6 +178,16 @@ export const useConfigStore = defineStore('config', {
      */
     toggleSnapToGrid() {
       this.editor.snapToGrid = !this.editor.snapToGrid
+      this.save()
+    },
+
+    /**
+     * Set the operator notation style
+     * Direct mutation ensures proper Pinia reactivity for nested state.
+     * Automatically persists change to localStorage.
+     */
+    setOperatorNotation(notation: OperatorNotation) {
+      this.editor.operatorNotation = notation
       this.save()
     },
 

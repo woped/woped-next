@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
 import { usePetriNetStore } from '@/stores/petriNet'
-import { VISUAL } from '@/types/petri-net'
+import { VISUAL, getSubProcessSize } from '@/types/petri-net'
 import SubprocessPreview from '@/components/editor/SubprocessPreview.vue'
 
 const { t } = useI18n()
@@ -38,13 +38,35 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'dblclick', 'dragend'])
 
-const { width, height, strokeWidth, innerOffset, cornerRadius } = VISUAL.subprocess
+const { strokeWidth, innerOffset, cornerRadius } = VISUAL.subprocess
 
 // Theme colors
 const configStore = useConfigStore()
+const { operatorNotation } = storeToRefs(configStore)
+
+const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
+
+// Square in van der Aalst notation, wider rectangle in modern notation.
+const dims = computed(() => getSubProcessSize(operatorNotation.value))
+const width = computed(() => dims.value.width)
+const height = computed(() => dims.value.height)
 
 const colors = computed(() => {
   const dark = configStore.isDarkMode
+  // van der Aalst notation: a subprocess is a transition refinement, so it uses
+  // the neutral transition palette instead of the BPMN-style blue.
+  if (isVanDerAalst.value) {
+    return {
+      fill: dark ? '#1f2937' : '#ffffff',
+      stroke: dark ? '#9ca3af' : '#374151',
+      innerStroke: dark ? '#6b7280' : '#9ca3af',
+      selectedStroke: '#3b82f6',
+      enabledStroke: '#22c55e',
+      enabledFill: dark ? '#166534' : '#dcfce7',
+      labelFill: dark ? '#e5e7eb' : '#374151',
+      iconFill: dark ? '#9ca3af' : '#6b7280',
+    }
+  }
   return {
     fill: dark ? '#1e3a5f' : '#eff6ff',
     stroke: dark ? '#60a5fa' : '#3b82f6',
@@ -56,6 +78,10 @@ const colors = computed(() => {
     iconFill: dark ? '#93c5fd' : '#3b82f6',
   }
 })
+
+// Sharp corners for the van der Aalst transition look, rounded for BPMN style.
+const outerCornerRadius = computed(() => (isVanDerAalst.value ? 0 : cornerRadius))
+const innerCornerRadius = computed(() => (isVanDerAalst.value ? 0 : cornerRadius - 2))
 
 // Determine stroke color based on state
 const strokeColor = computed(() => {
@@ -72,26 +98,26 @@ const fillColor = computed(() => {
 
 // Outer rectangle config
 const outerRectConfig = computed(() => ({
-  x: props.subprocess.position.x - width / 2,
-  y: props.subprocess.position.y - height / 2,
-  width,
-  height,
+  x: props.subprocess.position.x - width.value / 2,
+  y: props.subprocess.position.y - height.value / 2,
+  width: width.value,
+  height: height.value,
   fill: fillColor.value,
   stroke: strokeColor.value,
   strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
-  cornerRadius,
+  cornerRadius: outerCornerRadius.value,
 }))
 
 // Inner rectangle config (for double-border effect)
 const innerRectConfig = computed(() => ({
-  x: props.subprocess.position.x - width / 2 + innerOffset,
-  y: props.subprocess.position.y - height / 2 + innerOffset,
-  width: width - innerOffset * 2,
-  height: height - innerOffset * 2,
+  x: props.subprocess.position.x - width.value / 2 + innerOffset,
+  y: props.subprocess.position.y - height.value / 2 + innerOffset,
+  width: width.value - innerOffset * 2,
+  height: height.value - innerOffset * 2,
   fill: 'transparent',
   stroke: colors.value.innerStroke,
   strokeWidth: 1,
-  cornerRadius: cornerRadius - 2,
+  cornerRadius: innerCornerRadius.value,
 }))
 
 // Group config for dragging
@@ -150,7 +176,7 @@ const miniPreviewShapes = computed(() => {
   const rangeX = maxX - minX || 1
   const rangeY = maxY - minY || 1
 
-  const areaW = width - 16
+  const areaW = width.value - 16
   const areaH = 16
   const baseY = props.subprocess.position.y + 6
   const baseX = props.subprocess.position.x - areaW / 2
@@ -177,7 +203,7 @@ const expandIconConfig = computed(() => ({
 // Hint text below
 const hintConfig = computed(() => ({
   x: props.subprocess.position.x,
-  y: props.subprocess.position.y + height / 2 + 12,
+  y: props.subprocess.position.y + height.value / 2 + 12,
   text: t('subprocess.doubleClickHint'),
   fontSize: 9,
   fontFamily: 'system-ui, sans-serif',
@@ -248,8 +274,8 @@ const handleDragEnd = (e) => {
       </template>
     </template>
 
-    <!-- Expand icon (when no preview content) -->
-    <v-text v-else :config="expandIconConfig" />
+    <!-- Expand icon (when no preview content) — BPMN-style only -->
+    <v-text v-else-if="!isVanDerAalst" :config="expandIconConfig" />
 
     <!-- Hint (shown when selected) -->
     <v-text v-if="isSelected" :config="hintConfig" />

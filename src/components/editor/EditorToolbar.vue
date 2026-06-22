@@ -159,6 +159,9 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
 
 <template>
   <div class="editor-toolbar">
+    <!-- WoPeD logo -->
+    <img class="toolbar-logo" src="/woped-logo.svg" alt="WoPeD" />
+
     <!-- File menu -->
     <FileMenu />
 
@@ -318,6 +321,14 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
   background-color: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
   gap: 8px;
+}
+
+.toolbar-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .toolbar-group {

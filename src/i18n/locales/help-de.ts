@@ -316,12 +316,12 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'Zustandsraumgraphen',
+      title: 'Zustandsraumanalyse',
       description: 'Erkunde alle erreichbaren Zustände mit dem Erreichbarkeits- oder Überdeckungsgraphen.',
       steps: {
         tab: {
           title: 'Analyse-Tab',
-          content: 'Öffne den Analyse-Tab und scrolle nach unten zum Bereich "Zustandsraumgraphen".',
+          content: 'Öffne den Analyse-Tab und scrolle nach unten zum Bereich "Zustandsraumanalyse".',
         },
         section: {
           title: 'Graphtyp wählen',
@@ -688,8 +688,8 @@ Du kannst die Standardstrategie in Einstellungen → Simulation → Konfliktlös
     },
 
     analysisCoverability: {
-      title: 'Zustandsraumgraphen',
-      content: `Der Bereich **Zustandsraumgraphen** bietet zwei komplementäre Ansichten des Verhaltens deines Petri-Netzes:
+      title: 'Zustandsraumanalyse',
+      content: `Der Bereich **Zustandsraumanalyse** bietet zwei komplementäre Ansichten des Verhaltens deines Petri-Netzes:
 
 **Erreichbarkeitsgraph** — zählt alle *exakt* erreichbaren Markierungen auf. Jeder Knoten enthält konkrete Token-Zahlen, was präzise Erreichbarkeitsabfragen ("Kann Markierung M erreicht werden?") und vollständige Lebendigkeitsanalyse ermöglicht. Funktioniert nur für **beschränkte** Netze (endlicher Zustandsraum). Bei unbeschränkten Netzen wird automatisch auf den Überdeckungsgraphen zurückgefallen.
 

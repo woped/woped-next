@@ -139,6 +139,7 @@ function renderContent(text) {
       <div class="help-dialog" role="dialog" aria-labelledby="help-title">
         <!-- Header -->
         <div class="help-header">
+          <img class="help-logo" src="/woped-logo.svg" alt="WoPeD" />
           <h2 id="help-title">{{ $t('help.title') }}</h2>
           <div class="help-search">
             <span class="search-icon">🔍</span>
@@ -272,6 +273,14 @@ function renderContent(text) {
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg);
+  flex-shrink: 0;
+}
+
+.help-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 
