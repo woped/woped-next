@@ -96,7 +96,7 @@ export default {
         },
         canvas: {
           title: 'Canvas',
-          content: 'This is your workspace. Click on the canvas to place elements, drag to move them, and use the mouse wheel to zoom. Right-click for the context menu.',
+          content: 'This is your workspace. Click on the canvas to place elements, drag elements to move them, drag empty areas to pan, and use the mouse wheel to zoom. Right-click for the context menu.',
         },
         panels: {
           title: 'Side Panels',
@@ -491,7 +491,7 @@ Tip: Press F1 at any time to open this help dialog.`,
       title: 'Editor Tools',
       content: `The toolbar provides the following tools:
 
-**Select (V)** — Click to select elements, drag to move. Hold Shift to select multiple elements. Press Escape to deselect all.
+**Select (V)** — Click to select elements, drag to move. Hold Shift and drag on empty canvas to box-select multiple elements. Press Escape to deselect all.
 
 **Place (P)** — Click on the canvas to create a new place. Places are shown as circles and hold tokens.
 
@@ -512,7 +512,7 @@ Use **Undo (Ctrl+Z)** and **Redo (Ctrl+Y / Ctrl+Shift+Z)** to reverse changes.`,
       title: 'Canvas Navigation',
       content: `**Zoom:** Use the mouse wheel or the zoom buttons (+/−) in the view toolbar. Click "Fit" to zoom so all elements are visible.
 
-**Pan:** Click and drag on an empty area of the canvas to pan the view.
+**Pan:** Click and drag on an empty area of the canvas to pan the view. You can also use the middle mouse button. Hold Shift and drag to box-select multiple elements.
 
 **Rotation:** Use the rotation buttons (↺ ↻) in the view toolbar to rotate the view by 90°.
 

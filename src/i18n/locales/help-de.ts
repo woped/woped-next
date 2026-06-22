@@ -96,7 +96,7 @@ export default {
         },
         canvas: {
           title: 'Zeichenfläche',
-          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe sie um sie zu verschieben, und nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü.',
+          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe Elemente um sie zu verschieben, ziehe leere Bereiche um die Ansicht zu verschieben, und nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü.',
         },
         panels: {
           title: 'Seitenpanels',
@@ -491,7 +491,7 @@ Tipp: Drücke jederzeit F1 um diesen Hilfe-Dialog zu öffnen.`,
       title: 'Editor-Werkzeuge',
       content: `Die Werkzeugleiste bietet folgende Werkzeuge:
 
-**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Halte Shift um mehrere Elemente auszuwählen. Drücke Escape um alles abzuwählen.
+**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Halte Umschalt und ziehe auf leerer Fläche um mehrere Elemente per Rahmen auszuwählen. Drücke Escape um alles abzuwählen.
 
 **Stelle (P)** — Klicke auf die Zeichenfläche um eine neue Stelle zu erstellen. Stellen werden als Kreise dargestellt und halten Token.
 
@@ -512,7 +512,7 @@ Nutze **Rückgängig (Strg+Z)** und **Wiederholen (Strg+Y / Strg+Umschalt+Z)** u
       title: 'Canvas-Navigation',
       content: `**Zoom:** Nutze das Mausrad oder die Zoom-Buttons (+/−) in der Ansichts-Werkzeugleiste. Klicke "Einpassen" um alle Elemente sichtbar zu machen.
 
-**Verschieben:** Klicke und ziehe auf einem leeren Bereich der Zeichenfläche um die Ansicht zu verschieben.
+**Verschieben:** Klicke und ziehe auf einem leeren Bereich der Zeichenfläche um die Ansicht zu verschieben. Alternativ funktioniert auch die mittlere Maustaste. Halte Umschalt und ziehe um mehrere Elemente per Rahmen auszuwählen.
 
 **Rotation:** Nutze die Rotations-Buttons (↺ ↻) in der Ansichts-Werkzeugleiste um die Ansicht um 90° zu drehen.
 

@@ -6,6 +6,8 @@ import { useHelpStore } from '@/stores/help'
 const { t } = useI18n()
 const helpStore = useHelpStore()
 
+const WOPED_WEBSITE_URL = 'https://woped.dhbw-karlsruhe.de'
+
 const highlightRect = ref({ top: 0, left: 0, width: 0, height: 0 })
 const popoverStyle = ref({})
 const visible = ref(false)
@@ -153,12 +155,17 @@ onUnmounted(() => {
 
       <!-- Popover -->
       <div class="tour-popover" :style="popoverStyle">
-        <img
+        <a
           v-if="isWelcomeStart"
-          class="tour-logo"
-          src="/woped-logo.svg"
-          alt="WoPeD"
-        />
+          class="tour-logo-link"
+          :href="WOPED_WEBSITE_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+          :title="t('common.visitWopedWebsite')"
+          :aria-label="t('common.visitWopedWebsite')"
+        >
+          <img class="tour-logo" src="/woped-logo.svg" alt="WoPeD" />
+        </a>
         <div class="tour-popover-header">
           <h4>{{ step ? $t(step.titleKey) : '' }}</h4>
           <span class="tour-step-count">
@@ -238,11 +245,23 @@ onUnmounted(() => {
   transition: all 0.3s ease;
 }
 
+.tour-logo-link {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 14px;
+  line-height: 0;
+  border-radius: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.tour-logo-link:hover {
+  opacity: 0.85;
+}
+
 .tour-logo {
   display: block;
   height: 40px;
   width: auto;
-  margin: 0 auto 14px;
   border-radius: 6px;
 }
 

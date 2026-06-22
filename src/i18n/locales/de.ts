@@ -19,6 +19,7 @@ export default {
     info: 'Info',
     success: 'Erfolg',
     more: 'weitere',
+    visitWopedWebsite: 'WoPeD-Website besuchen',
   },
 
   // Menu

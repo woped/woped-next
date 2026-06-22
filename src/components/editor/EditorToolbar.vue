@@ -20,6 +20,7 @@ const { operatorNotation } = storeToRefs(configStore)
 const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
 
 const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
+const WOPED_WEBSITE_URL = 'https://woped.dhbw-karlsruhe.de'
 
 // Settings dialog state
 const showSettings = ref(false)
@@ -168,7 +169,16 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
 <template>
   <div class="editor-toolbar">
     <!-- WoPeD logo -->
-    <img class="toolbar-logo" src="/woped-logo.svg" alt="WoPeD" />
+    <a
+      class="toolbar-logo-link"
+      :href="WOPED_WEBSITE_URL"
+      target="_blank"
+      rel="noopener noreferrer"
+      :title="$t('common.visitWopedWebsite')"
+      :aria-label="$t('common.visitWopedWebsite')"
+    >
+      <img class="toolbar-logo" src="/woped-logo.svg" alt="WoPeD" />
+    </a>
 
     <!-- File menu -->
     <FileMenu />
@@ -337,12 +347,23 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
   gap: 8px;
 }
 
+.toolbar-logo-link {
+  display: flex;
+  flex-shrink: 0;
+  line-height: 0;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.toolbar-logo-link:hover {
+  opacity: 0.85;
+}
+
 .toolbar-logo {
   height: 28px;
   width: auto;
   display: block;
   border-radius: 4px;
-  flex-shrink: 0;
 }
 
 .toolbar-group {

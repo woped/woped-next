@@ -92,7 +92,21 @@ const marquee = ref({
   currentX: 0,
   currentY: 0,
 })
+const pan = ref({
+  pending: false,
+  active: false,
+  startX: 0,
+  startY: 0,
+  currentX: 0,
+  currentY: 0,
+  startViewportX: 0,
+  startViewportY: 0,
+})
 const suppressStageClick = ref(false)
+
+const isPlacementTool = computed(() =>
+  ['place', 'transition', 'operator', 'subprocess'].includes(tool.value)
+)
 
 const marqueeStyle = computed(() => {
   if (!marquee.value.active) return null
@@ -108,6 +122,31 @@ const marqueeStyle = computed(() => {
 function resetMarquee() {
   marquee.value.pending = false
   marquee.value.active = false
+}
+
+function resetPan() {
+  pan.value.pending = false
+  pan.value.active = false
+}
+
+function beginMarquee(x, y) {
+  marquee.value.pending = true
+  marquee.value.active = false
+  marquee.value.startX = x
+  marquee.value.startY = y
+  marquee.value.currentX = x
+  marquee.value.currentY = y
+}
+
+function beginPan(x, y) {
+  pan.value.pending = true
+  pan.value.active = false
+  pan.value.startX = x
+  pan.value.startY = y
+  pan.value.currentX = x
+  pan.value.currentY = y
+  pan.value.startViewportX = viewport.value.x
+  pan.value.startViewportY = viewport.value.y
 }
 
 function updateMarqueePointer(x, y) {
@@ -142,39 +181,98 @@ function finishMarquee(shiftKey = false) {
   resetMarquee()
 }
 
+function finishPan() {
+  if (!pan.value.pending && !pan.value.active) return
+
+  const { startX, startY, currentX, currentY, active } = pan.value
+  const dx = Math.abs(currentX - startX)
+  const dy = Math.abs(currentY - startY)
+  const didPan = active || dx >= MARQUEE_THRESHOLD || dy >= MARQUEE_THRESHOLD
+
+  if (didPan) {
+    suppressStageClick.value = true
+  }
+
+  resetPan()
+}
+
+function updatePanPointer(x, y) {
+  if (!pan.value.pending && !pan.value.active) return
+
+  pan.value.currentX = x
+  pan.value.currentY = y
+  const dx = x - pan.value.startX
+  const dy = y - pan.value.startY
+
+  if (pan.value.pending && !pan.value.active) {
+    if (Math.abs(dx) >= MARQUEE_THRESHOLD || Math.abs(dy) >= MARQUEE_THRESHOLD) {
+      pan.value.active = true
+    }
+  }
+
+  if (pan.value.active) {
+    store.setViewport({
+      x: pan.value.startViewportX + dx,
+      y: pan.value.startViewportY + dy,
+    })
+  }
+}
+
 function handleStageMouseDown(e) {
-  if (tool.value !== 'select' || isTokenGameActive.value) return
   if (e.target !== e.target.getStage()) return
-  if (e.evt.button !== 0) return
 
   const stage = e.target.getStage()
   const pos = stage.getPointerPosition()
   if (!pos) return
 
-  marquee.value.pending = true
-  marquee.value.active = false
-  marquee.value.startX = pos.x
-  marquee.value.startY = pos.y
-  marquee.value.currentX = pos.x
-  marquee.value.currentY = pos.y
+  const button = e.evt.button
+
+  if (button === 1) {
+    e.evt.preventDefault()
+    beginPan(pos.x, pos.y)
+    return
+  }
+
+  if (button !== 0) return
+
+  if (tool.value === 'select' && e.evt.shiftKey && !isTokenGameActive.value) {
+    beginMarquee(pos.x, pos.y)
+    return
+  }
+
+  beginPan(pos.x, pos.y)
 }
 
 function handleStageMouseUp(e) {
-  if (!marquee.value.pending && !marquee.value.active) return
-  finishMarquee(e.evt.shiftKey)
+  finishPan()
+  if (marquee.value.pending || marquee.value.active) {
+    finishMarquee(e.evt.shiftKey)
+  }
 }
 
 function handleWindowMouseMove(e) {
-  if (!marquee.value.pending && !marquee.value.active) return
   const stage = stageRef.value?.getStage()
   if (!stage) return
+
+  const isPointerActive =
+    pan.value.pending ||
+    pan.value.active ||
+    marquee.value.pending ||
+    marquee.value.active
+  if (!isPointerActive) return
+
   const rect = stage.container().getBoundingClientRect()
-  updateMarqueePointer(e.clientX - rect.left, e.clientY - rect.top)
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+  updatePanPointer(x, y)
+  updateMarqueePointer(x, y)
 }
 
 function handleWindowMouseUp(e) {
-  if (!marquee.value.pending && !marquee.value.active) return
-  finishMarquee(e.shiftKey)
+  finishPan()
+  if (marquee.value.pending || marquee.value.active) {
+    finishMarquee(e.shiftKey)
+  }
 }
 
 // Canvas dimensions
@@ -282,24 +380,23 @@ const handleStageClick = (e) => {
   }
 }
 
-// Handle mouse move for arc creation preview and marquee selection
+// Handle mouse move for arc creation preview, pan, and marquee selection
 const handleMouseMove = (e) => {
-  if (marquee.value.pending || marquee.value.active) {
-    const stage = e.target.getStage()
-    const pos = stage.getPointerPosition()
-    if (pos) updateMarqueePointer(pos.x, pos.y)
+  const stage = e.target.getStage()
+  const pos = stage.getPointerPosition()
+  if (pos) {
+    updatePanPointer(pos.x, pos.y)
+    if (marquee.value.pending || marquee.value.active) {
+      updateMarqueePointer(pos.x, pos.y)
+    }
   }
 
   if (!arcCreation.value.isCreating) return
-
-  const stage = e.target.getStage()
-  const pointerPos = stage.getPointerPosition()
-  
-  if (!pointerPos) return
+  if (!pos) return
 
   const worldPos = {
-    x: (pointerPos.x - viewport.value.x) / viewport.value.scale,
-    y: (pointerPos.y - viewport.value.y) / viewport.value.scale,
+    x: (pos.x - viewport.value.x) / viewport.value.scale,
+    y: (pos.y - viewport.value.y) / viewport.value.scale,
   }
 
   store.updateArcTempEnd(worldPos)
@@ -417,7 +514,11 @@ defineExpose({
   <div
     ref="containerRef"
     class="editor-canvas"
-    :class="{ 'is-select-tool': tool === 'select' && !isTokenGameActive }"
+    :class="{
+      'is-select-tool': tool === 'select' && !isTokenGameActive,
+      'is-panning': pan.active,
+      'is-placement-tool': isPlacementTool && !isTokenGameActive,
+    }"
   >
     <div
       v-if="marqueeStyle"
@@ -548,11 +649,19 @@ defineExpose({
   flex: 1;
   background-color: var(--color-canvas);
   overflow: hidden;
+  cursor: grab;
+}
+
+.editor-canvas.is-placement-tool {
   cursor: crosshair;
 }
 
-.editor-canvas.is-select-tool {
-  cursor: default;
+.editor-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.editor-canvas.is-select-tool:not(.is-panning):not(.is-placement-tool) {
+  cursor: grab;
 }
 
 .marquee-selection {
