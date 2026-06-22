@@ -45,6 +45,13 @@ export default {
     openSubprocess: 'Open Subprocess',
   },
 
+  quickConnect: {
+    place: 'Add place',
+    transition: 'Add transition',
+    operator: 'Add operator',
+    subprocess: 'Add subprocess',
+  },
+
   // Templates
   templates: {
     categoryBasic: 'Basic Patterns',

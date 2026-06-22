@@ -14,7 +14,7 @@ const { t } = useI18n()
 const store = usePetriNetStore()
 const configStore = useConfigStore()
 const helpStore = useHelpStore()
-const { tool, canUndo, canRedo, viewport, selectedOperatorType } = storeToRefs(store)
+const { tool, canUndo, canRedo, viewport, selectedOperatorType, selectedIds } = storeToRefs(store)
 const { operatorNotation } = storeToRefs(configStore)
 
 const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
@@ -58,6 +58,10 @@ const handleToolClick = (toolId) => {
   if (toolId === 'operator') {
     showOperatorMenu.value = !showOperatorMenu.value
     store.setTool('operator')
+  } else if (toolId === 'delete' && selectedIds.value.length > 0) {
+    showOperatorMenu.value = false
+    store.deleteSelected()
+    store.setTool('select')
   } else {
     showOperatorMenu.value = false
     store.setTool(toolId)

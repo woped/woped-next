@@ -15,6 +15,13 @@ import type {
   PetriNetElement,
 } from '@/types/petri-net'
 import { DEFAULTS, OperatorType } from '@/types/petri-net'
+import {
+  computeQuickConnectPosition,
+  isValidQuickConnect,
+  type QuickConnectTarget,
+} from '@/utils/quickConnect'
+import { snapToGrid } from '@/utils/geometry'
+import { useConfigStore } from '@/stores/config'
 
 interface PetriNetState {
   // Multi-net support
@@ -525,6 +532,107 @@ export const usePetriNetStore = defineStore('petriNet', {
     },
 
     /**
+     * Add a successor element and connect it with an arc (Camunda-style quick connect).
+     * Single undo step for element + arc creation.
+     */
+    quickConnectAdd(
+      sourceId: string,
+      targetKind: QuickConnectTarget,
+      operatorType?: OperatorType,
+    ): string | null {
+      const net = this.nets[this.activeNetId]
+      const getType = this.getElementType
+      const sourceType = getType(sourceId)
+      if (!sourceType || sourceType === 'arc') return null
+      if (!isValidQuickConnect(sourceType, targetKind)) return null
+
+      const sourceEl = this.getElementById(sourceId)
+      if (!sourceEl || !('position' in sourceEl)) return null
+
+      const outgoingCount = net.arcs.filter((a) => a.sourceId === sourceId).length
+      let position = computeQuickConnectPosition(
+        sourceEl.position,
+        sourceType,
+        targetKind,
+        outgoingCount,
+      )
+
+      const configStore = useConfigStore()
+      if (configStore.$state.editor.snapToGrid) {
+        position = snapToGrid(position, configStore.$state.editor.gridSize)
+      }
+
+      this.saveToHistory()
+
+      let newId: string
+
+      switch (targetKind) {
+        case 'place': {
+          const place: Place = {
+            id: nanoid(),
+            name: `P${net.places.length + 1}`,
+            position,
+            tokens: DEFAULTS.place.tokens,
+            capacity: DEFAULTS.place.capacity,
+          }
+          net.places.push(place)
+          newId = place.id
+          break
+        }
+        case 'transition': {
+          const transition: Transition = {
+            id: nanoid(),
+            name: `T${net.transitions.length + 1}`,
+            position,
+          }
+          net.transitions.push(transition)
+          newId = transition.id
+          break
+        }
+        case 'operator': {
+          const operator: OperatorTransition = {
+            id: nanoid(),
+            name: `Op${net.operators.length + 1}`,
+            position,
+            operatorType: operatorType ?? this.selectedOperatorType,
+          }
+          net.operators.push(operator)
+          newId = operator.id
+          break
+        }
+        case 'subprocess': {
+          if (!net.subProcesses) net.subProcesses = []
+          const defaultName = `Sub ${net.subProcesses.length + 1}`
+          const subNetId = nanoid()
+          this.nets[subNetId] = createEmptyNet(subNetId, defaultName, this.activeNetId)
+          const subprocess: SubProcess = {
+            id: nanoid(),
+            name: defaultName,
+            position,
+            subNetId,
+            collapsed: true,
+          }
+          net.subProcesses.push(subprocess)
+          newId = subprocess.id
+          break
+        }
+        default:
+          return null
+      }
+
+      net.arcs.push({
+        id: nanoid(),
+        sourceId,
+        targetId: newId,
+        weight: DEFAULTS.arc.weight,
+        waypoints: [],
+      })
+
+      this.select(newId, false)
+      return newId
+    },
+
+    /**
      * Update an arc
      */
     updateArc(id: string, updates: Partial<Omit<Arc, 'id'>>) {
@@ -700,8 +808,13 @@ export const usePetriNetStore = defineStore('petriNet', {
     /**
      * Select multiple elements
      */
-    selectMultiple(ids: string[]) {
-      this.selectedIds = ids
+    selectMultiple(ids: string[], additive = false) {
+      if (additive) {
+        const merged = new Set([...this.selectedIds, ...ids])
+        this.selectedIds = [...merged]
+      } else {
+        this.selectedIds = ids
+      }
     },
 
     // ========== Tool Management ==========

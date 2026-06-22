@@ -7,6 +7,13 @@ import { useConfigStore } from '@/stores/config'
 import { useViewport } from '@/composables/useViewport'
 import { VISUAL, DEFAULTS } from '@/types/petri-net'
 import { snapToGrid } from '@/utils/geometry'
+import { quickConnectPadScreenPosition } from '@/utils/quickConnect'
+import {
+  normalizeBounds,
+  findElementsInMarquee,
+  screenToWorld,
+} from '@/utils/marqueeSelection'
+import QuickConnectPad from '@/components/editor/QuickConnectPad.vue'
 import PlaceNode from '@/components/canvas/PlaceNode.vue'
 import TransitionNode from '@/components/canvas/TransitionNode.vue'
 import OperatorNode from '@/components/canvas/OperatorNode.vue'
@@ -18,13 +25,12 @@ import EditorGrid from '@/components/canvas/EditorGrid.vue'
 const emit = defineEmits(['resize', 'contextmenu'])
 
 const store = usePetriNetStore()
+const configStore = useConfigStore()
 const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcCreation, selectedIds } = storeToRefs(store)
+const { operatorNotation } = storeToRefs(configStore)
 
 // Viewport composable for fit to view functionality
 const { fitToView } = useViewport()
-
-// Config store for editor settings
-const configStore = useConfigStore()
 
 // Grid settings from config store
 // Note: Using $state explicitly ensures proper Vue reactivity tracking
@@ -52,9 +58,124 @@ const getTokenCount = (placeId) => {
   return null
 }
 
+// Quick connect (Camunda-style successor menu)
+const quickConnectTarget = computed(() => {
+  if (isTokenGameActive.value || tool.value !== 'select') return null
+  if (selectedIds.value.length !== 1) return null
+
+  const id = selectedIds.value[0]
+  const type = store.getElementType(id)
+  if (!type || type === 'arc') return null
+
+  const el = store.getElementById(id)
+  if (!el || !('position' in el)) return null
+
+  return { id, type, position: el.position }
+})
+
+const quickConnectScreenPos = computed(() => {
+  if (!quickConnectTarget.value) return null
+  const { type, position } = quickConnectTarget.value
+  return quickConnectPadScreenPosition(position, type, viewport.value)
+})
+
 // Canvas container ref
 const containerRef = ref(null)
 const stageRef = ref(null)
+
+const MARQUEE_THRESHOLD = 4
+const marquee = ref({
+  pending: false,
+  active: false,
+  startX: 0,
+  startY: 0,
+  currentX: 0,
+  currentY: 0,
+})
+const suppressStageClick = ref(false)
+
+const marqueeStyle = computed(() => {
+  if (!marquee.value.active) return null
+  const { startX, startY, currentX, currentY } = marquee.value
+  return {
+    left: `${Math.min(startX, currentX)}px`,
+    top: `${Math.min(startY, currentY)}px`,
+    width: `${Math.abs(currentX - startX)}px`,
+    height: `${Math.abs(currentY - startY)}px`,
+  }
+})
+
+function resetMarquee() {
+  marquee.value.pending = false
+  marquee.value.active = false
+}
+
+function updateMarqueePointer(x, y) {
+  marquee.value.currentX = x
+  marquee.value.currentY = y
+  if (marquee.value.pending && !marquee.value.active) {
+    const dx = Math.abs(x - marquee.value.startX)
+    const dy = Math.abs(y - marquee.value.startY)
+    if (dx >= MARQUEE_THRESHOLD || dy >= MARQUEE_THRESHOLD) {
+      marquee.value.active = true
+    }
+  }
+}
+
+function finishMarquee(shiftKey = false) {
+  if (!marquee.value.pending && !marquee.value.active) return
+
+  const { startX, startY, currentX, currentY, active } = marquee.value
+  const dx = Math.abs(currentX - startX)
+  const dy = Math.abs(currentY - startY)
+  const didDrag = active || dx >= MARQUEE_THRESHOLD || dy >= MARQUEE_THRESHOLD
+
+  if (didDrag) {
+    const worldStart = screenToWorld(startX, startY, viewport.value)
+    const worldEnd = screenToWorld(currentX, currentY, viewport.value)
+    const bounds = normalizeBounds(worldStart.x, worldStart.y, worldEnd.x, worldEnd.y)
+    const ids = findElementsInMarquee(store.net, bounds, operatorNotation.value)
+    store.selectMultiple(ids, shiftKey)
+    suppressStageClick.value = true
+  }
+
+  resetMarquee()
+}
+
+function handleStageMouseDown(e) {
+  if (tool.value !== 'select' || isTokenGameActive.value) return
+  if (e.target !== e.target.getStage()) return
+  if (e.evt.button !== 0) return
+
+  const stage = e.target.getStage()
+  const pos = stage.getPointerPosition()
+  if (!pos) return
+
+  marquee.value.pending = true
+  marquee.value.active = false
+  marquee.value.startX = pos.x
+  marquee.value.startY = pos.y
+  marquee.value.currentX = pos.x
+  marquee.value.currentY = pos.y
+}
+
+function handleStageMouseUp(e) {
+  if (!marquee.value.pending && !marquee.value.active) return
+  finishMarquee(e.evt.shiftKey)
+}
+
+function handleWindowMouseMove(e) {
+  if (!marquee.value.pending && !marquee.value.active) return
+  const stage = stageRef.value?.getStage()
+  if (!stage) return
+  const rect = stage.container().getBoundingClientRect()
+  updateMarqueePointer(e.clientX - rect.left, e.clientY - rect.top)
+}
+
+function handleWindowMouseUp(e) {
+  if (!marquee.value.pending && !marquee.value.active) return
+  finishMarquee(e.shiftKey)
+}
 
 // Canvas dimensions
 const stageConfig = ref({
@@ -93,6 +214,8 @@ const updateSize = () => {
 onMounted(() => {
   updateSize()
   window.addEventListener('resize', updateSize)
+  window.addEventListener('mousemove', handleWindowMouseMove)
+  window.addEventListener('mouseup', handleWindowMouseUp)
   store.initialize()
   
   // Fit to view after canvas is fully rendered
@@ -106,6 +229,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateSize)
+  window.removeEventListener('mousemove', handleWindowMouseMove)
+  window.removeEventListener('mouseup', handleWindowMouseUp)
 })
 
 // Handle stage click
@@ -130,6 +255,10 @@ const handleStageClick = (e) => {
     // Clicked on empty space
     switch (tool.value) {
       case 'select':
+        if (suppressStageClick.value) {
+          suppressStageClick.value = false
+          break
+        }
         store.clearSelection()
         break
       case 'place':
@@ -153,8 +282,14 @@ const handleStageClick = (e) => {
   }
 }
 
-// Handle mouse move for arc creation preview
+// Handle mouse move for arc creation preview and marquee selection
 const handleMouseMove = (e) => {
+  if (marquee.value.pending || marquee.value.active) {
+    const stage = e.target.getStage()
+    const pos = stage.getPointerPosition()
+    if (pos) updateMarqueePointer(pos.x, pos.y)
+  }
+
   if (!arcCreation.value.isCreating) return
 
   const stage = e.target.getStage()
@@ -279,10 +414,30 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="editor-canvas">
+  <div
+    ref="containerRef"
+    class="editor-canvas"
+    :class="{ 'is-select-tool': tool === 'select' && !isTokenGameActive }"
+  >
+    <div
+      v-if="marqueeStyle"
+      class="marquee-selection"
+      :style="marqueeStyle"
+    />
+
+    <QuickConnectPad
+      v-if="quickConnectTarget && quickConnectScreenPos"
+      :element-id="quickConnectTarget.id"
+      :element-type="quickConnectTarget.type"
+      :screen-x="quickConnectScreenPos.x"
+      :screen-y="quickConnectScreenPos.y"
+    />
+
     <v-stage
       ref="stageRef"
       :config="stageConfig"
+      @mousedown="handleStageMouseDown"
+      @mouseup="handleStageMouseUp"
       @click="handleStageClick"
       @mousemove="handleMouseMove"
       @wheel="handleWheel"
@@ -389,9 +544,22 @@ defineExpose({
 
 <style scoped>
 .editor-canvas {
+  position: relative;
   flex: 1;
   background-color: var(--color-canvas);
   overflow: hidden;
   cursor: crosshair;
+}
+
+.editor-canvas.is-select-tool {
+  cursor: default;
+}
+
+.marquee-selection {
+  position: absolute;
+  z-index: 15;
+  border: 1px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  pointer-events: none;
 }
 </style>

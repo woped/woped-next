@@ -45,6 +45,13 @@ export default {
     openSubprocess: 'Subprozess öffnen',
   },
 
+  quickConnect: {
+    place: 'Stelle hinzufügen',
+    transition: 'Transition hinzufügen',
+    operator: 'Operator hinzufügen',
+    subprocess: 'Subprozess hinzufügen',
+  },
+
   // Templates (Vorlagen)
   templates: {
     categoryBasic: 'Grundmuster',
