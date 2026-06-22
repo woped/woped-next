@@ -93,7 +93,7 @@ export interface AppConfig {
  */
 export const DEFAULT_CONFIG: AppConfig = {
   general: {
-    theme: 'system',
+    theme: 'light',
     autoSave: false,
     autoSaveInterval: 60000,
     showWelcome: true,

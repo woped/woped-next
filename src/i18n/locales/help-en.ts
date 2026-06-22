@@ -14,6 +14,7 @@ export default {
   tourPrev: 'Back',
   tourFinish: 'Finish',
   tourSkip: 'Skip Tour',
+  welcomeDiscordHint: 'Connect with the WoPeD community on Discord for support, updates, and discussion.',
 
   // Tooltip
   tooltipMore: 'More info...',
@@ -90,9 +91,13 @@ export default {
       title: 'Welcome to WoPeD Next',
       description: 'A quick overview of the application interface.',
       steps: {
+        splash: {
+          title: 'Welcome to WoPeD Next',
+          content: 'Design, analyze, and simulate workflow Petri nets in your browser. This quick tour introduces the main areas of the editor.',
+        },
         toolbar: {
           title: 'Toolbar',
-          content: 'This is the main toolbar. Here you find the file menu, editing tools for places, transitions, arcs and operators, undo/redo buttons, and zoom controls.',
+          content: 'This is the main toolbar. Here you find the file menu, editing tools for places, transitions, arcs and operators, undo/redo buttons, zoom controls, and the Discord community link.',
         },
         canvas: {
           title: 'Canvas',

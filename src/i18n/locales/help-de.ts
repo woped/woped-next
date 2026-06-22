@@ -14,6 +14,7 @@ export default {
   tourPrev: 'Zurück',
   tourFinish: 'Fertig',
   tourSkip: 'Tour überspringen',
+  welcomeDiscordHint: 'Tritt der WoPeD-Community auf Discord bei – für Support, Updates und Austausch mit anderen Nutzern.',
 
   // Tooltip
   tooltipMore: 'Mehr Infos...',
@@ -90,9 +91,13 @@ export default {
       title: 'Willkommen bei WoPeD Next',
       description: 'Ein kurzer Überblick über die Anwendungsoberfläche.',
       steps: {
+        splash: {
+          title: 'Willkommen bei WoPeD Next',
+          content: 'Modelliere, analysiere und simuliere Workflow-Petri-Netze im Browser. Diese kurze Tour führt dich durch die wichtigsten Bereiche des Editors.',
+        },
         toolbar: {
           title: 'Werkzeugleiste',
-          content: 'Das ist die Hauptwerkzeugleiste. Hier findest du das Datei-Menü, Bearbeitungswerkzeuge für Stellen, Transitionen, Kanten und Operatoren, Rückgängig/Wiederholen-Buttons und Zoom-Steuerung.',
+          content: 'Das ist die Hauptwerkzeugleiste. Hier findest du das Datei-Menü, Bearbeitungswerkzeuge für Stellen, Transitionen, Kanten und Operatoren, Rückgängig/Wiederholen-Buttons, Zoom-Steuerung und den Discord-Community-Link.',
         },
         canvas: {
           title: 'Zeichenfläche',
