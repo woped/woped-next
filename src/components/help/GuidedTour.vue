@@ -11,6 +11,7 @@ const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
 const highlightRect = ref({ top: 0, left: 0, width: 0, height: 0 })
 const popoverStyle = ref({})
 const visible = ref(false)
+const popoverRef = ref(null)
 
 const tour = computed(() => helpStore.activeTour)
 const step = computed(() => helpStore.activeTourCurrentStep)
@@ -19,22 +20,17 @@ const totalSteps = computed(() => tour.value?.steps.length ?? 0)
 const isLastStep = computed(() => stepIndex.value >= totalSteps.value - 1)
 const isSplashStep = computed(() => step.value?.variant === 'splash')
 
-function positionHighlight() {
+async function positionHighlight() {
   if (!step.value) {
     visible.value = false
     return
   }
 
-  if (step.value.variant === 'splash') {
-    visible.value = true
-    highlightRect.value = { top: 0, left: 0, width: 0, height: 0 }
-    popoverStyle.value = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-    return
-  }
+  visible.value = true
 
-  const el = document.querySelector(step.value.targetSelector)
+  const el = step.value.variant === 'splash' ? null : document.querySelector(step.value.targetSelector)
+
   if (!el) {
-    visible.value = true
     highlightRect.value = { top: 0, left: 0, width: 0, height: 0 }
     popoverStyle.value = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     return
@@ -50,30 +46,43 @@ function positionHighlight() {
     height: rect.height + pad * 2,
   }
 
-  const popover = {}
+  // Measure the popover so its placement can be clamped to the viewport.
+  // Width/height are independent of the (possibly stale) position, so the
+  // measurement is valid even before the final coordinates are applied.
+  await nextTick()
+  const popEl = popoverRef.value
+  const popWidth = popEl?.offsetWidth ?? 340
+  const popHeight = popEl?.offsetHeight ?? 220
+
   const gap = 16
+  const margin = 12
+  const vw = window.innerWidth
+  const vh = window.innerHeight
   const placement = step.value.placement
 
-  if (placement === 'bottom') {
-    popover.top = `${rect.bottom + gap}px`
-    popover.left = `${rect.left + rect.width / 2}px`
-    popover.transform = 'translateX(-50%)'
-  } else if (placement === 'top') {
-    popover.bottom = `${window.innerHeight - rect.top + gap}px`
-    popover.left = `${rect.left + rect.width / 2}px`
-    popover.transform = 'translateX(-50%)'
+  let left
+  let top
+
+  if (placement === 'top') {
+    top = rect.top - gap - popHeight
+    left = rect.left + rect.width / 2 - popWidth / 2
   } else if (placement === 'left') {
-    popover.top = `${rect.top + rect.height / 2}px`
-    popover.right = `${window.innerWidth - rect.left + gap}px`
-    popover.transform = 'translateY(-50%)'
+    left = rect.left - gap - popWidth
+    top = rect.top + rect.height / 2 - popHeight / 2
   } else if (placement === 'right') {
-    popover.top = `${rect.top + rect.height / 2}px`
-    popover.left = `${rect.right + gap}px`
-    popover.transform = 'translateY(-50%)'
+    left = rect.right + gap
+    top = rect.top + rect.height / 2 - popHeight / 2
+  } else {
+    // default: bottom
+    top = rect.bottom + gap
+    left = rect.left + rect.width / 2 - popWidth / 2
   }
 
-  popoverStyle.value = popover
-  visible.value = true
+  // Keep the popover fully inside the viewport.
+  left = Math.max(margin, Math.min(left, vw - popWidth - margin))
+  top = Math.max(margin, Math.min(top, vh - popHeight - margin))
+
+  popoverStyle.value = { top: `${top}px`, left: `${left}px` }
 }
 
 function handleNext() {
@@ -162,6 +171,7 @@ onUnmounted(() => {
 
       <!-- Popover -->
       <div
+        ref="popoverRef"
         class="tour-popover"
         :class="{ 'tour-popover-splash': isSplashStep }"
         :style="popoverStyle"
