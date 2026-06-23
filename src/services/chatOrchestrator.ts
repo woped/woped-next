@@ -1,9 +1,15 @@
-import { LLMClient } from './llmClient'
-import type { ChatMessage } from './llmClient'
-import { createNlpMcpServer } from './mcp/createNlpMcpServer'
-import { modelSerializer } from './modelSerializer'
-import { chatLogger } from './chatLogger'
-import type { LLMConfig, OrchestratorResponse, ModelCommand, ToolCall } from '@/types/chat'
+import { LLMClient } from "./llmClient";
+import type { ChatMessage } from "./llmClient";
+import { createNlpMcpServer } from "./mcp/createNlpMcpServer";
+import { modelSerializer } from "./modelSerializer";
+import { chatLogger } from "./chatLogger";
+import type {
+  LLMConfig,
+  OrchestratorResponse,
+  ModelCommand,
+  ToolCall,
+} from "@/types/chat";
+import type { ServicesConfig } from "@/types/config";
 
 const SYSTEM_PROMPT = `You are a helpful Petri net modeling assistant in WoPeD (Workflow Petri Net Designer). You help users with:
 - Creating Petri nets from natural language descriptions (use t2p_convert)
@@ -22,113 +28,128 @@ Guidelines:
 - For modify_model arcs, use element IDs from get_model_info (source_id, target_id), not display names
 - When adding multiple arcs, call modify_model once per arc
 - Always explain what you did after performing an action
-- Respond in the same language the user writes in`
+- Respond in the same language the user writes in`;
 
-const MAX_TOOL_ITERATIONS = 5
+const MAX_TOOL_ITERATIONS = 5;
 
 export class ChatOrchestrator {
-  private client: LLMClient
+  private client: LLMClient;
 
-  constructor(config: LLMConfig) {
-    this.client = new LLMClient(config, createNlpMcpServer(config))
+  constructor(config: LLMConfig, servicesConfig?: ServicesConfig) {
+    this.client = new LLMClient(
+      config,
+      createNlpMcpServer(config, servicesConfig),
+    );
   }
 
   abort() {
-    this.client.abort()
+    this.client.abort();
   }
 
   async sendMessage(
     userMessage: string,
     history: Array<{ role: string; content: string }>,
   ): Promise<OrchestratorResponse> {
-    const modelContext = modelSerializer.getModelContext()
-    const modelPnml = modelSerializer.getModelPnml()
+    const modelContext = modelSerializer.getModelContext();
+    const modelPnml = modelSerializer.getModelPnml();
 
     const pnmlContext = modelPnml
       ? `\n\nCurrent PNML (for p2t_describe if needed):\n${modelPnml.substring(0, 4000)}`
-      : ''
+      : "";
 
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT },
       {
-        role: 'system',
+        role: "system",
         content: `Current model context: ${modelContext}${pnmlContext}`,
       },
-    ]
+    ];
 
     for (const msg of history.slice(-10)) {
       messages.push({
-        role: msg.role as 'user' | 'assistant',
+        role: msg.role as "user" | "assistant",
         content: msg.content,
-      })
+      });
     }
 
-    messages.push({ role: 'user', content: userMessage })
-    chatLogger.message('sent', userMessage)
+    messages.push({ role: "user", content: userMessage });
+    chatLogger.message("sent", userMessage);
 
-    const allCommands: ModelCommand[] = []
-    const tools = this.client.getToolsForCompletion()
-    let iterations = 0
+    const allCommands: ModelCommand[] = [];
+    const tools = this.client.getToolsForCompletion();
+    let iterations = 0;
 
     while (iterations < MAX_TOOL_ITERATIONS) {
-      iterations++
+      iterations++;
 
-      const response = await this.client.chatCompletion(messages, tools)
+      const response = await this.client.chatCompletion(messages, tools);
 
-      const hasToolCalls = response.message.tool_calls && response.message.tool_calls.length > 0
+      const hasToolCalls =
+        response.message.tool_calls && response.message.tool_calls.length > 0;
 
       if (hasToolCalls) {
-        const toolCalls = this.client.parseToolCalls(response.message.tool_calls)
+        const toolCalls = this.client.parseToolCalls(
+          response.message.tool_calls,
+        );
 
         messages.push({
-          role: 'assistant',
+          role: "assistant",
           content: response.message.content,
           tool_calls: response.message.tool_calls,
           gemini_model_parts: response.message.gemini_model_parts,
-        })
+        });
 
         for (const toolCall of toolCalls) {
-          const executableToolCall = this.withModelContext(toolCall, modelPnml)
-          chatLogger.toolCall(executableToolCall.name, executableToolCall.arguments)
-          const { result, commands } = await this.client.executeMcpToolCall(executableToolCall)
-          chatLogger.toolResult(toolCall.name, result.content.substring(0, 120))
-          allCommands.push(...commands)
+          const executableToolCall = this.withModelContext(toolCall, modelPnml);
+          chatLogger.toolCall(
+            executableToolCall.name,
+            executableToolCall.arguments,
+          );
+          const { result, commands } =
+            await this.client.executeMcpToolCall(executableToolCall);
+          chatLogger.toolResult(
+            toolCall.name,
+            result.content.substring(0, 120),
+          );
+          allCommands.push(...commands);
 
           messages.push({
-            role: 'tool',
+            role: "tool",
             content: result.content,
             tool_call_id: result.toolCallId,
             tool_name: toolCall.providerFunctionName ?? toolCall.name,
-          })
+          });
         }
 
-        continue
+        continue;
       }
 
-      const responseText = response.message.content || 'I could not generate a response.'
-      chatLogger.message('received', responseText)
+      const responseText =
+        response.message.content || "I could not generate a response.";
+      chatLogger.message("received", responseText);
       if (allCommands.length > 0) {
-        chatLogger.warn(`${allCommands.length} model command(s) generated`)
+        chatLogger.warn(`${allCommands.length} model command(s) generated`);
       }
 
       return {
         message: responseText,
         commands: allCommands,
-      }
+      };
     }
 
-    chatLogger.warn(`Max iterations (${MAX_TOOL_ITERATIONS}) reached`)
+    chatLogger.warn(`Max iterations (${MAX_TOOL_ITERATIONS}) reached`);
     return {
-      message: 'The request required too many processing steps. Please try a simpler request.',
+      message:
+        "The request required too many processing steps. Please try a simpler request.",
       commands: allCommands,
-    }
+    };
   }
 
   private withModelContext(toolCall: ToolCall, modelPnml: string): ToolCall {
     if (
-      toolCall.name === 'p2t_describe' &&
+      toolCall.name === "p2t_describe" &&
       modelPnml &&
-      typeof toolCall.arguments.pnml !== 'string'
+      typeof toolCall.arguments.pnml !== "string"
     ) {
       return {
         ...toolCall,
@@ -136,9 +157,9 @@ export class ChatOrchestrator {
           ...toolCall.arguments,
           pnml: modelPnml,
         },
-      }
+      };
     }
 
-    return toolCall
+    return toolCall;
   }
 }

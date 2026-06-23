@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatOrchestrator } from "@/services/chatOrchestrator";
 import type { LLMConfig } from "@/types/chat";
+import type { ServicesConfig } from "@/types/config";
 
 vi.mock("@/services/modelSerializer", () => ({
   modelSerializer: {
@@ -15,6 +16,13 @@ const config: LLMConfig = {
   model: "test-model",
   maxTokens: 100,
   temperature: 0,
+};
+
+const servicesConfig: ServicesConfig = {
+  t2pEndpoint: "http://test-t2p",
+  p2tEndpoint: "http://test-p2t",
+  t2pEnabled: true,
+  p2tEnabled: true,
 };
 
 describe("ChatOrchestrator MCP integration", () => {
@@ -78,7 +86,7 @@ describe("ChatOrchestrator MCP integration", () => {
   });
 
   it("passes MCP tools to the LLM and returns MCP tool results to the chat loop", async () => {
-    const orchestrator = new ChatOrchestrator(config);
+    const orchestrator = new ChatOrchestrator(config, servicesConfig);
     const response = await orchestrator.sendMessage(
       "How do I model parallelism?",
       [],

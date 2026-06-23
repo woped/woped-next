@@ -1,99 +1,109 @@
-import type { LLMConfig } from '@/types/chat'
-import { TOOL_ENDPOINTS } from '@/services/tools/toolConfig'
-import { llmFallbackP2T, llmFallbackT2P } from './llmFallback'
+import type { LLMConfig } from "@/types/chat";
+import type { ServicesConfig } from "@/types/config";
+import { getToolEndpoints } from "@/services/tools/toolConfig";
+import { llmFallbackP2T, llmFallbackT2P } from "./llmFallback";
 
 /** True when we can call the LLM provider directly (bypass T2P/P2T). */
 function canUseLlmBypass(llmConfig?: LLMConfig): boolean {
-  return Boolean(llmConfig?.apiKey?.trim())
+  return Boolean(llmConfig?.apiKey?.trim());
 }
 
 /**
- * Text → PNML: try T2P service first; on failure, bypass service and use LLM + prompt.
+ * Text → PNML: try T2P service first; on failure or when disabled, bypass service and use LLM + prompt.
  */
 export async function runT2P(
   args: { text: string; language?: string },
   llmConfig?: LLMConfig,
+  servicesConfig?: ServicesConfig,
 ): Promise<string> {
-  const language = args.language || 'en'
+  const language = args.language || "en";
+  const endpoints = getToolEndpoints(servicesConfig);
 
-  if (!TOOL_ENDPOINTS.t2p) {
+  if (!endpoints.t2p) {
     if (canUseLlmBypass(llmConfig)) {
-      return llmFallbackT2P(llmConfig!, args.text, language)
+      return llmFallbackT2P(llmConfig!, args.text, language);
     }
-    return JSON.stringify({ error: 'T2P endpoint is not configured.' })
+    return JSON.stringify({
+      error: "T2P endpoint is not configured or disabled.",
+    });
   }
 
   try {
-    const body: Record<string, string> = { text: args.text, language }
+    const body: Record<string, string> = { text: args.text, language };
     if (llmConfig?.apiKey) {
-      body.api_key = llmConfig.apiKey
+      body.api_key = llmConfig.apiKey;
     }
 
-    const response = await fetch(TOOL_ENDPOINTS.t2p, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch(endpoints.t2p, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    })
+    });
 
     if (!response.ok) {
       if (canUseLlmBypass(llmConfig)) {
-        return llmFallbackT2P(llmConfig!, args.text, language)
+        return llmFallbackT2P(llmConfig!, args.text, language);
       }
       return JSON.stringify({
         error: `T2P service returned ${response.status}. The service may not be available.`,
-      })
+      });
     }
 
-    const data = await response.json()
-    return JSON.stringify({ pnml: data.result || data.pnml || '' })
+    const data = await response.json();
+    return JSON.stringify({ pnml: data.result || data.pnml || "" });
   } catch {
     if (canUseLlmBypass(llmConfig)) {
-      return llmFallbackT2P(llmConfig!, args.text, language)
+      return llmFallbackT2P(llmConfig!, args.text, language);
     }
     return JSON.stringify({
-      error: 'T2P service unreachable and no LLM fallback available.',
-    })
+      error: "T2P service unreachable and no LLM fallback available.",
+    });
   }
 }
 
 /**
- * PNML → text: try P2T service first; on failure, bypass service and use LLM + prompt.
+ * PNML → text: try P2T service first; on failure or when disabled, bypass service and use LLM + prompt.
  */
 export async function runP2T(
   args: { pnml: string },
   llmConfig?: LLMConfig,
+  servicesConfig?: ServicesConfig,
 ): Promise<string> {
-  if (!TOOL_ENDPOINTS.p2t) {
+  const endpoints = getToolEndpoints(servicesConfig);
+
+  if (!endpoints.p2t) {
     if (canUseLlmBypass(llmConfig)) {
-      return llmFallbackP2T(llmConfig!, args.pnml)
+      return llmFallbackP2T(llmConfig!, args.pnml);
     }
-    return JSON.stringify({ error: 'P2T endpoint is not configured.' })
+    return JSON.stringify({
+      error: "P2T endpoint is not configured or disabled.",
+    });
   }
 
   try {
-    const response = await fetch(TOOL_ENDPOINTS.p2t, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/xml' },
+    const response = await fetch(endpoints.p2t, {
+      method: "POST",
+      headers: { "Content-Type": "application/xml" },
       body: args.pnml,
-    })
+    });
 
     if (!response.ok) {
       if (canUseLlmBypass(llmConfig)) {
-        return llmFallbackP2T(llmConfig!, args.pnml)
+        return llmFallbackP2T(llmConfig!, args.pnml);
       }
       return JSON.stringify({
         error: `P2T service returned ${response.status}. The service may not be available.`,
-      })
+      });
     }
 
-    const text = await response.text()
-    return JSON.stringify({ description: text })
+    const text = await response.text();
+    return JSON.stringify({ description: text });
   } catch {
     if (canUseLlmBypass(llmConfig)) {
-      return llmFallbackP2T(llmConfig!, args.pnml)
+      return llmFallbackP2T(llmConfig!, args.pnml);
     }
     return JSON.stringify({
-      error: 'P2T service unreachable and no LLM fallback available.',
-    })
+      error: "P2T service unreachable and no LLM fallback available.",
+    });
   }
 }

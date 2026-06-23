@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LLMConfig } from "@/types/chat";
+import type { ServicesConfig } from "@/types/config";
 import type { McpTool, McpToolResult } from "@/types/mcp";
 import { jsonStringToMcpResult } from "./mcpJsonResult";
 import { runT2P } from "./t2pP2tCore";
@@ -41,7 +42,8 @@ export function parseT2PArgs(raw: unknown): T2PArgs {
 export async function executeT2P(
   args: T2PArgs,
   llmConfig?: LLMConfig,
+  servicesConfig?: ServicesConfig,
 ): Promise<McpToolResult> {
-  const json = await runT2P(args, llmConfig);
+  const json = await runT2P(args, llmConfig, servicesConfig);
   return jsonStringToMcpResult(json);
 }
