@@ -120,6 +120,22 @@ export class PNMLParser {
   }
 
   /**
+   * Collect child elements of a given tag directly under the container as well
+   * as inside its (top-level) <page> containers. Standard PNML 2009 nests all
+   * net elements inside a <page>, while WoPeD writes them directly under <net>;
+   * supporting both keeps imports robust. Subprocess pages live inside a
+   * <transition> and are therefore not descended into here.
+   */
+  private collectChildElements(container: Element, tag: string): Element[] {
+    const elements: Element[] = Array.from(container.querySelectorAll(`:scope > ${tag}`))
+    const pages = container.querySelectorAll(':scope > page')
+    pages.forEach((page) => {
+      elements.push(...this.collectChildElements(page, tag))
+    })
+    return elements
+  }
+
+  /**
    * Parse all place elements
    */
   private parsePlaces(
@@ -128,7 +144,7 @@ export class PNMLParser {
     warnings: string[]
   ): Place[] {
     const places: Place[] = []
-    const placeElements = netElement.querySelectorAll(':scope > place')
+    const placeElements = this.collectChildElements(netElement, 'place')
 
     placeElements.forEach((placeEl, index) => {
       const id = placeEl.getAttribute('id')
@@ -174,7 +190,7 @@ export class PNMLParser {
   } {
     const transitions: Transition[] = []
     const subProcesses: SubProcess[] = []
-    const transitionElements = netElement.querySelectorAll(':scope > transition')
+    const transitionElements = this.collectChildElements(netElement, 'transition')
 
     // Legacy WoPeD exports a single operator (e.g. an XOR split) as several
     // overlapping inner transitions that share one <operator id="...">.
@@ -297,7 +313,7 @@ export class PNMLParser {
     operatorMemberMap?: Map<string, string>
   ): Arc[] {
     const arcs: Arc[] = []
-    const arcElements = netElement.querySelectorAll(':scope > arc')
+    const arcElements = this.collectChildElements(netElement, 'arc')
 
     // Track source/target pairs so that arcs collapsed onto a merged operator
     // (e.g. both p2->t5_op_1 and p2->t5_op_2 becoming p2->t5) are not duplicated.

@@ -142,6 +142,28 @@ describe('File Services', () => {
       expect(outputs).toHaveLength(2)
     })
 
+    it('should parse standard PNML 2009 with a <page> wrapper', () => {
+      // Standard PNML (and many LLM-generated nets) nest all elements in a
+      // <page> container instead of placing them directly under <net>.
+      const pnml = `<?xml version="1.0"?>
+<pnml><net id="n" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+  <page id="page1">
+    <place id="p1"><graphics><position x="0" y="0"/></graphics><initialMarking><text>1</text></initialMarking></place>
+    <transition id="t1"><graphics><position x="100" y="0"/></graphics></transition>
+    <place id="p2"><graphics><position x="200" y="0"/></graphics></place>
+    <arc id="a1" source="p1" target="t1"/>
+    <arc id="a2" source="t1" target="p2"/>
+  </page>
+</net></pnml>`
+      const result = pnmlParser.parse(pnml)
+
+      expect(result.success).toBe(true)
+      expect(result.net!.places).toHaveLength(2)
+      expect(result.net!.transitions).toHaveLength(1)
+      expect(result.net!.arcs).toHaveLength(2)
+      expect(result.net!.places.find(p => p.id === 'p1')!.tokens).toBe(1)
+    })
+
     it('should merge legacy expanded operator members into one operator', () => {
       // Legacy WoPeD: one XOR split exported as two overlapping transitions
       // (t5_op_1, t5_op_2) sharing <operator id="t5">.
