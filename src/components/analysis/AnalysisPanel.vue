@@ -27,7 +27,7 @@ const isAnalyzing = ref(false)
 
 // Collapsed states
 const showStatistics = ref(false)
-const showSoundness = ref(false)
+const showFreeChoice = ref(false)
 const showCoverability = ref(false)
 const showProcessTree = ref(false)
 const showCustomMetrics = ref(false)
@@ -193,18 +193,14 @@ const formatDuration = (ms) => {
       @run="runSoundnessAnalysis"
     />
 
-    <!-- Soundness properties -->
+    <!-- Free Choice (coming soon) -->
     <div class="section">
-      <div class="section-header" @click="showSoundness = !showSoundness">
-        <span class="toggle">{{ showSoundness ? '▼' : '▶' }}</span>
-        <span class="section-title">{{ $t('analysis.soundnessCheck') }}</span>
+      <div class="section-header" @click="showFreeChoice = !showFreeChoice">
+        <span class="toggle">{{ showFreeChoice ? '▼' : '▶' }}</span>
+        <span class="section-title">{{ $t('analysis.freeChoice') }}</span>
       </div>
-      <div v-if="showSoundness" class="section-content">
-        <div class="stat-props">
-          <div class="prop" :class="{ active: statistics.freeChoice }">
-            {{ $t('analysis.freeChoice') }}: {{ statistics.freeChoice ? $t('common.yes') : $t('common.no') }}
-          </div>
-        </div>
+      <div v-if="showFreeChoice" class="section-content">
+        <p class="coming-soon">{{ $t('common.comingSoon') }}</p>
       </div>
     </div>
 
@@ -583,6 +579,17 @@ const formatDuration = (ms) => {
   border-radius: 4px;
   font-size: 12px;
   padding: 12px;
+}
+
+.coming-soon {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+  text-align: center;
 }
 
 :global(.dark) .no-issues {

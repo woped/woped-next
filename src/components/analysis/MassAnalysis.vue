@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness, metricsCalculator } from '@/services/analysis'
+import { getAnalysisBadge } from '@/utils/analysisBadge'
 
 const petriNetStore = usePetriNetStore()
 
@@ -199,13 +200,13 @@ function severityClass(severity) {
               </td>
               <td class="col-name">{{ r.name }}</td>
               <td class="col-badge">
-                <span :class="['badge', r.data.workflow.valid ? 'valid' : 'invalid']">
-                  {{ r.data.workflow.valid ? '✓' : '✗' }}
+                <span :class="['badge', getAnalysisBadge(r.data.workflow.issues).kind]">
+                  {{ getAnalysisBadge(r.data.workflow.issues).icon }}
                 </span>
               </td>
               <td class="col-badge">
-                <span :class="['badge', r.data.soundness.valid ? 'valid' : 'invalid']">
-                  {{ r.data.soundness.valid ? '✓' : '✗' }}
+                <span :class="['badge', getAnalysisBadge(r.data.soundness.issues).kind]">
+                  {{ getAnalysisBadge(r.data.soundness.issues).icon }}
                 </span>
               </td>
               <td class="col-num">{{ issueCount(r.data) }}</td>
@@ -485,6 +486,16 @@ function severityClass(severity) {
   color: #991b1b;
 }
 
+.badge.warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.badge.info {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 :global(.dark) .badge.valid {
   background: rgba(34, 197, 94, 0.2);
   color: #4ade80;
@@ -493,6 +504,16 @@ function severityClass(severity) {
 :global(.dark) .badge.invalid {
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
+}
+
+:global(.dark) .badge.warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+:global(.dark) .badge.info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
 }
 
 /* --- Detail row --- */

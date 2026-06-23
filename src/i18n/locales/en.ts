@@ -13,6 +13,7 @@ export default {
     ok: 'OK',
     yes: 'Yes',
     no: 'No',
+    comingSoon: 'Coming soon',
     loading: 'Loading...',
     error: 'Error',
     warning: 'Warning',
