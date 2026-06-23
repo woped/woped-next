@@ -77,15 +77,15 @@ const tokenPositions = computed(() => {
   if (tokens === 1) {
     positions.push({ x: centerX, y: centerY })
   } else if (tokens === 2) {
-    positions.push({ x: centerX - 6, y: centerY })
-    positions.push({ x: centerX + 6, y: centerY })
+    positions.push({ x: centerX - 5, y: centerY })
+    positions.push({ x: centerX + 5, y: centerY })
   } else if (tokens === 3) {
-    positions.push({ x: centerX, y: centerY - 6 })
-    positions.push({ x: centerX - 6, y: centerY + 4 })
-    positions.push({ x: centerX + 6, y: centerY + 4 })
+    positions.push({ x: centerX, y: centerY - 5 })
+    positions.push({ x: centerX - 5, y: centerY + 3 })
+    positions.push({ x: centerX + 5, y: centerY + 3 })
   } else if (tokens <= 5) {
     // Square pattern
-    const offset = 6
+    const offset = 5
     positions.push({ x: centerX - offset, y: centerY - offset })
     positions.push({ x: centerX + offset, y: centerY - offset })
     positions.push({ x: centerX - offset, y: centerY + offset })

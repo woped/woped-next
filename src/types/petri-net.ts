@@ -210,11 +210,14 @@ export const DEFAULTS = {
 /**
  * Visual constants for rendering
  */
+const OPERATOR_EDGE = 40
+
 export const VISUAL = {
   place: {
-    radius: 25,
+    // Place diameter matches the operator square edge length
+    radius: OPERATOR_EDGE / 2,
     strokeWidth: 2,
-    tokenRadius: 4,
+    tokenRadius: 3.5,
   },
   transition: {
     width: 40,
@@ -222,7 +225,7 @@ export const VISUAL = {
     strokeWidth: 2,
   },
   operator: {
-    size: 40, // Size of the operator shape
+    size: OPERATOR_EDGE,
     strokeWidth: 2,
     innerOffset: 8, // Offset for inner shape in combined operators
   },
