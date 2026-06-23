@@ -36,7 +36,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dblclick', 'dragend'])
+const emit = defineEmits(['click', 'dblclick', 'dragend', 'contextmenu'])
 
 const { strokeWidth, innerOffset, cornerRadius } = VISUAL.subprocess
 
@@ -98,6 +98,8 @@ const fillColor = computed(() => {
 
 // Outer rectangle config
 const outerRectConfig = computed(() => ({
+  id: props.subprocess.id,
+  name: props.subprocess.id,
   x: props.subprocess.position.x - width.value / 2,
   y: props.subprocess.position.y - height.value / 2,
   width: width.value,
@@ -122,6 +124,8 @@ const innerRectConfig = computed(() => ({
 
 // Group config for dragging
 const groupConfig = computed(() => ({
+  id: props.subprocess.id,
+  name: props.subprocess.id,
   x: 0,
   y: 0,
   draggable: props.draggable,
@@ -221,6 +225,10 @@ const handleDblClick = (e) => {
   emit('dblclick', e)
 }
 
+const handleContextMenu = (e) => {
+  emit('contextmenu', e)
+}
+
 const handleDragEnd = (e) => {
   // Calculate new center position from group position
   const newX = e.target.x() + props.subprocess.position.x
@@ -246,6 +254,7 @@ const handleDragEnd = (e) => {
     @click="handleClick"
     @dblclick="handleDblClick"
     @dragend="handleDragEnd"
+    @contextmenu="handleContextMenu"
   >
     <!-- Outer rectangle (main border) -->
     <v-rect :config="outerRectConfig" />

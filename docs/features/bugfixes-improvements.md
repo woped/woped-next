@@ -17,6 +17,15 @@ Legend: 🐛 Bug | 🔧 Adjustment | 💅 UI/UX | ⚡ Performance | 🧹 Refacto
 | # | Category | Description | Completed |
 |---|----------|-------------|-----------|
 | B-001 | 💅 UI/UX | van der Aalst operator notation (transition box with directional chevron) as a switchable rendering mode | 2026-06-15 |
+| B-002 | 💅 UI/UX | van der Aalst chevron glyphs in the operator toolbar dropdown (matches canvas notation) | 2026-06-22 |
+| B-003 | 💅 UI/UX | Quick Connect pad on right-click (Camunda-style successor menu) | 2026-06-22 |
+| B-004 | 💅 UI/UX | Marquee box selection on empty canvas (left drag; Shift additive) | 2026-06-22 |
+| B-005 | 🐛 Bug | Toolbar/properties Delete button works for multi-selection (not only keyboard Delete) | 2026-06-22 |
+| B-006 | 💅 UI/UX | WoPeD logos in toolbar, help dialog, and welcome tour link to https://woped.dhbw-karlsruhe.de | 2026-06-22 |
+| B-007 | 💅 UI/UX | Canvas pan via middle mouse button (select tool uses left drag for marquee) | 2026-06-22 |
+| B-010 | 💅 UI/UX | Remove element context menu; duplicate/open/delete via properties panel & shortcuts | 2026-06-22 |
+| B-008 | 💅 UI/UX | Welcome splash screen with WoPeD image and Discord community CTA on first visit | 2026-06-22 |
+| B-009 | 🔧 Adjustment | Default theme set to light instead of system | 2026-06-22 |
 
 ## Feature Details
 
@@ -72,6 +81,103 @@ places (`P_CENTER_{id}`) for byte-level compatibility with legacy WoPeD files. T
 a separate file-interoperability concern; operators are currently stored as a single
 transition with `<toolspecific><operator>`.
 
+### B-002 — Operator Menu-glyphs (van der Aalst)
+
+The operator tool dropdown in the toolbar now uses notation-aware icons instead of
+modern diamond/X symbols when van der Aalst notation is active.
+
+| Area | File |
+|------|------|
+| SVG chevron icon component | [src/components/editor/OperatorAalstIcon.vue](../../src/components/editor/OperatorAalstIcon.vue) |
+| Toolbar integration | [src/components/editor/EditorToolbar.vue](../../src/components/editor/EditorToolbar.vue) |
+
+### B-003 — Quick Connect
+
+Right-click a place, transition, operator, or subprocess in select mode to open a
+floating pad with logical next elements. Choosing an option creates the element and
+connects it with an arc automatically. When adding an operator from a place, a
+submenu lets the user pick the operator type. Replaces the former right-click context
+menu (2026-06-22).
+
+| Area | File |
+|------|------|
+| Option logic & positioning | [src/utils/quickConnect.ts](../../src/utils/quickConnect.ts) |
+| Store action | [src/stores/petriNet.ts](../../src/stores/petriNet.ts) (`quickConnectAdd`) |
+| UI component | [src/components/editor/QuickConnectPad.vue](../../src/components/editor/QuickConnectPad.vue) |
+| Canvas wiring | [src/components/editor/EditorCanvas.vue](../../src/components/editor/EditorCanvas.vue) |
+| Tests | [src/__tests__/quickConnect.test.ts](../../src/__tests__/quickConnect.test.ts) |
+
+### B-004 — Marquee Selection
+
+With the select tool, left drag on empty canvas draws a selection rectangle and
+selects all elements whose bounds intersect it. Hold Shift to add to the existing
+selection. Middle mouse button drag pans the viewport instead. Hold Space and drag to pan as well (works on trackpads).
+
+| Area | File |
+|------|------|
+| Bounds & hit testing | [src/utils/marqueeSelection.ts](../../src/utils/marqueeSelection.ts) |
+| Canvas interaction | [src/components/editor/EditorCanvas.vue](../../src/components/editor/EditorCanvas.vue) |
+| Multi-select store API | [src/stores/petriNet.ts](../../src/stores/petriNet.ts) (`selectMultiple`) |
+| Tests | [src/__tests__/marqueeSelection.test.ts](../../src/__tests__/marqueeSelection.test.ts) |
+
+### B-005 — Multi-delete Fix
+
+The Delete tool in the toolbar and the delete button in the properties panel now
+delete the current selection when `selectedIds.length > 0`, matching keyboard
+Delete/Backspace behaviour.
+
+| Area | File |
+|------|------|
+| Toolbar | [src/components/editor/EditorToolbar.vue](../../src/components/editor/EditorToolbar.vue) |
+| Properties panel | [src/components/editor/PropertiesPanel.vue](../../src/components/editor/PropertiesPanel.vue) |
+
+### B-006 — WoPeD Logo Links
+
+WoPeD logos in the toolbar, help dialog header, and welcome tour link to the
+official site in a new tab (`rel="noopener noreferrer"`). Tooltip/aria-label via
+`common.visitWopedWebsite` (EN/DE).
+
+| Area | File |
+|------|------|
+| Toolbar | [src/components/editor/EditorToolbar.vue](../../src/components/editor/EditorToolbar.vue) |
+| Help dialog | [src/components/help/HelpDialog.vue](../../src/components/help/HelpDialog.vue) |
+| Guided tour | [src/components/help/GuidedTour.vue](../../src/components/help/GuidedTour.vue) |
+| i18n | [src/i18n/locales/en.ts](../../src/i18n/locales/en.ts), [src/i18n/locales/de.ts](../../src/i18n/locales/de.ts) |
+
+### B-007 — Canvas Pan
+
+Middle mouse button drag or Space + left drag pans the viewport (grab/grabbing cursor while
+panning). With the select tool, left drag on empty canvas performs marquee selection (B-004).
+Right-click an element opens Quick Connect (B-003). Other tools still pan on empty left drag.
+
+| Area | File |
+|------|------|
+| Canvas interaction | [src/components/editor/EditorCanvas.vue](../../src/components/editor/EditorCanvas.vue) |
+| Help copy | [src/i18n/locales/help-en.ts](../../src/i18n/locales/help-en.ts), [src/i18n/locales/help-de.ts](../../src/i18n/locales/help-de.ts) |
+
+### B-008 — Welcome Splash Screen
+
+First visit (or cleared `woped-help` localStorage) shows a centered splash step
+before the guided UI tour: WoPeD splash image, welcome text, and Discord community
+link/button.
+
+| Area | File |
+|------|------|
+| Splash asset | [public/woped-splash.jpg](../../public/woped-splash.jpg) |
+| Tour step definition | [src/help/tours.ts](../../src/help/tours.ts) (`variant: 'splash'`) |
+| Tour UI | [src/components/help/GuidedTour.vue](../../src/components/help/GuidedTour.vue) |
+| i18n | [src/i18n/locales/help-en.ts](../../src/i18n/locales/help-en.ts), [src/i18n/locales/help-de.ts](../../src/i18n/locales/help-de.ts) |
+
+### B-009 — Light Theme Default
+
+New sessions default to light theme (`general.theme: 'light'`) instead of following
+the OS via `system`. Existing saved config in localStorage is unchanged.
+
+| Area | File |
+|------|------|
+| Default config | [src/types/config.ts](../../src/types/config.ts) |
+| Tests | [src/__tests__/config.store.test.ts](../../src/__tests__/config.store.test.ts) |
+
 ## Template
 
 New entries use the following format in the table:
@@ -92,11 +198,10 @@ When completed, entries are moved from "Open Items" to "Completed Items" with th
 
 | # | Category | Description | Priority | Status |
 |---|----------|-------------|----------|--------|
-| B-001 | 🐛 Bug | Arc weight not displayed correctly at negative zoom | P2 | 🔜 Planned |
-| B-002 | 💅 UI/UX | Tooltip delay too long in dark mode | P3 | 🚧 In Progress |
+| B-010 | 🐛 Bug | Arc weight not displayed correctly at negative zoom | P2 | 🔜 Planned |
 
 **Completed:**
 
 | # | Category | Description | Completed |
 |---|----------|-------------|-----------|
-| B-003 | 🔧 Adjustment | Changed default grid size from 20px to 25px | 2026-05-03 |
+| B-011 | 🔧 Adjustment | Changed default grid size from 20px to 25px | 2026-05-03 |

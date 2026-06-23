@@ -26,7 +26,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dragend', 'contextmenu'])
 
 const { radius, strokeWidth, tokenRadius } = VISUAL.place
 
@@ -54,6 +54,8 @@ const effectiveTokens = computed(() => {
 
 // Circle config
 const circleConfig = computed(() => ({
+  id: props.place.id,
+  name: props.place.id,
   x: props.place.position.x,
   y: props.place.position.y,
   radius,
@@ -134,6 +136,10 @@ const handleClick = (e) => {
 const handleDragEnd = (e) => {
   emit('dragend', e)
 }
+
+const handleContextMenu = (e) => {
+  emit('contextmenu', e)
+}
 </script>
 
 <template>
@@ -143,6 +149,7 @@ const handleDragEnd = (e) => {
       :config="circleConfig"
       @click="handleClick"
       @dragend="handleDragEnd"
+      @contextmenu="handleContextMenu"
     />
 
     <!-- Tokens (dots) -->

@@ -73,6 +73,7 @@ function handleOperatorConnect(type) {
     :style="{ left: `${screenX}px`, top: `${screenY}px` }"
     @mousedown.stop
     @click.stop
+    @contextmenu.prevent.stop
   >
     <div
       v-for="opt in options"

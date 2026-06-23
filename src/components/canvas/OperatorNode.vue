@@ -131,6 +131,8 @@ const orientation = computed(() => {
 
 // Rectangle for the van der Aalst operator box.
 const rectConfig = computed(() => ({
+  id: props.operator.id,
+  name: props.operator.id,
   x: topLeft.value.x,
   y: topLeft.value.y,
   width: size,
@@ -236,6 +238,8 @@ const typeIndicatorConfig = computed(() => ({
 
 // Group config for dragging
 const groupConfig = computed(() => ({
+  id: props.operator.id,
+  name: props.operator.id,
   x: 0,
   y: 0,
   draggable: props.draggable,

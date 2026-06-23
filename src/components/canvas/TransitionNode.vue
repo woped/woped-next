@@ -28,7 +28,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dragend', 'contextmenu'])
 
 const { strokeWidth } = VISUAL.transition
 
@@ -62,6 +62,8 @@ const fillColor = computed(() => {
 })
 
 const rectConfig = computed(() => ({
+  id: props.transition.id,
+  name: props.transition.id,
   x: props.transition.position.x - dims.value.width / 2,
   y: props.transition.position.y - dims.value.height / 2,
   width: dims.value.width,
@@ -72,6 +74,8 @@ const rectConfig = computed(() => ({
 }))
 
 const groupConfig = computed(() => ({
+  id: props.transition.id,
+  name: props.transition.id,
   x: 0,
   y: 0,
   draggable: props.draggable,
@@ -152,6 +156,10 @@ const handleDragEnd = (e) => {
     },
   })
 }
+
+const handleContextMenu = (e) => {
+  emit('contextmenu', e)
+}
 </script>
 
 <template>
@@ -159,6 +167,7 @@ const handleDragEnd = (e) => {
     :config="groupConfig"
     @click="handleClick"
     @dragend="handleDragEnd"
+    @contextmenu="handleContextMenu"
   >
     <!-- Main rectangle -->
     <v-rect :config="rectConfig" />

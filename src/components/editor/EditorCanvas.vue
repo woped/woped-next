@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { useTokenGameStore } from '@/stores/tokenGame'
@@ -22,7 +22,7 @@ import ArcEdge from '@/components/canvas/ArcEdge.vue'
 import TokenAnimation from '@/components/canvas/TokenAnimation.vue'
 import EditorGrid from '@/components/canvas/EditorGrid.vue'
 
-const emit = defineEmits(['resize', 'contextmenu'])
+const emit = defineEmits(['resize'])
 
 const store = usePetriNetStore()
 const configStore = useConfigStore()
@@ -58,12 +58,14 @@ const getTokenCount = (placeId) => {
   return null
 }
 
-// Quick connect (Camunda-style successor menu)
+// Quick connect — shown on right-click (Camunda-style successor menu)
+const quickConnectElementId = ref(null)
+
 const quickConnectTarget = computed(() => {
   if (isTokenGameActive.value || tool.value !== 'select') return null
-  if (selectedIds.value.length !== 1) return null
+  if (!quickConnectElementId.value) return null
 
-  const id = selectedIds.value[0]
+  const id = quickConnectElementId.value
   const type = store.getElementType(id)
   if (!type || type === 'arc') return null
 
@@ -103,9 +105,10 @@ const pan = ref({
   startViewportY: 0,
 })
 const suppressStageClick = ref(false)
+const spaceHeld = ref(false)
 
-const isPlacementTool = computed(() =>
-  ['place', 'transition', 'operator', 'subprocess'].includes(tool.value)
+const canDragElements = computed(
+  () => tool.value === 'select' && !isTokenGameActive.value && !spaceHeld.value
 )
 
 const marqueeStyle = computed(() => {
@@ -147,6 +150,7 @@ function beginPan(x, y) {
   pan.value.currentY = y
   pan.value.startViewportX = viewport.value.x
   pan.value.startViewportY = viewport.value.y
+  applyCanvasCursor()
 }
 
 function updateMarqueePointer(x, y) {
@@ -194,6 +198,7 @@ function finishPan() {
   }
 
   resetPan()
+  applyCanvasCursor()
 }
 
 function updatePanPointer(x, y) {
@@ -207,6 +212,7 @@ function updatePanPointer(x, y) {
   if (pan.value.pending && !pan.value.active) {
     if (Math.abs(dx) >= MARQUEE_THRESHOLD || Math.abs(dy) >= MARQUEE_THRESHOLD) {
       pan.value.active = true
+      applyCanvasCursor()
     }
   }
 
@@ -219,8 +225,6 @@ function updatePanPointer(x, y) {
 }
 
 function handleStageMouseDown(e) {
-  if (e.target !== e.target.getStage()) return
-
   const stage = e.target.getStage()
   const pos = stage.getPointerPosition()
   if (!pos) return
@@ -235,7 +239,17 @@ function handleStageMouseDown(e) {
 
   if (button !== 0) return
 
-  if (tool.value === 'select' && e.evt.shiftKey && !isTokenGameActive.value) {
+  if (spaceHeld.value) {
+    e.evt.preventDefault()
+    e.cancelBubble = true
+    beginPan(pos.x, pos.y)
+    return
+  }
+
+  if (e.target !== stage) return
+
+  if (tool.value === 'select' && !isTokenGameActive.value) {
+    clearQuickConnect()
     beginMarquee(pos.x, pos.y)
     return
   }
@@ -266,6 +280,9 @@ function handleWindowMouseMove(e) {
   const y = e.clientY - rect.top
   updatePanPointer(x, y)
   updateMarqueePointer(x, y)
+  if (pan.value.active) {
+    applyCanvasCursor()
+  }
 }
 
 function handleWindowMouseUp(e) {
@@ -314,7 +331,15 @@ onMounted(() => {
   window.addEventListener('resize', updateSize)
   window.addEventListener('mousemove', handleWindowMouseMove)
   window.addEventListener('mouseup', handleWindowMouseUp)
+  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('keyup', handleKeyup)
+  window.addEventListener('blur', handleWindowBlur)
   store.initialize()
+
+  nextTick(() => {
+    const stage = stageRef.value?.getStage()
+    stage?.on('contextmenu', handleStageContextMenu)
+  })
   
   // Fit to view after canvas is fully rendered
   // Use nextTick to ensure DOM is updated, then slight delay for Konva rendering
@@ -329,10 +354,58 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateSize)
   window.removeEventListener('mousemove', handleWindowMouseMove)
   window.removeEventListener('mouseup', handleWindowMouseUp)
+  window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('keyup', handleKeyup)
+  window.removeEventListener('blur', handleWindowBlur)
+  const stage = stageRef.value?.getStage()
+  stage?.off('contextmenu', handleStageContextMenu)
+})
+
+function clearQuickConnect() {
+  quickConnectElementId.value = null
+}
+
+function isTypingTarget(e) {
+  const target = e.target
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  return target.isContentEditable
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Escape') {
+    clearQuickConnect()
+  }
+
+  if (e.code === 'Space' && !isTypingTarget(e)) {
+    e.preventDefault()
+    spaceHeld.value = true
+  }
+}
+
+function handleKeyup(e) {
+  if (e.code === 'Space') {
+    spaceHeld.value = false
+    applyCanvasCursor()
+  }
+}
+
+function handleWindowBlur() {
+  spaceHeld.value = false
+  applyCanvasCursor()
+}
+
+watch([tool, isTokenGameActive], () => {
+  clearQuickConnect()
+  applyCanvasCursor()
 })
 
 // Handle stage click
 const handleStageClick = (e) => {
+  if (isRightClick(e)) return
+  if (spaceHeld.value) return
+
   // Get click position relative to stage
   const stage = e.target.getStage()
   const pointerPos = stage.getPointerPosition()
@@ -357,6 +430,7 @@ const handleStageClick = (e) => {
           suppressStageClick.value = false
           break
         }
+        clearQuickConnect()
         store.clearSelection()
         break
       case 'place':
@@ -380,7 +454,7 @@ const handleStageClick = (e) => {
   }
 }
 
-// Handle mouse move for arc creation preview, pan, and marquee selection
+// Handle mouse move for arc creation preview, pan, marquee selection, and cursor
 const handleMouseMove = (e) => {
   const stage = e.target.getStage()
   const pos = stage.getPointerPosition()
@@ -390,6 +464,8 @@ const handleMouseMove = (e) => {
       updateMarqueePointer(pos.x, pos.y)
     }
   }
+
+  applyCanvasCursor()
 
   if (!arcCreation.value.isCreating) return
   if (!pos) return
@@ -430,20 +506,75 @@ const handleWheel = (e) => {
   })
 }
 
-// Handle right-click context menu
-const handleContextMenu = (id, type, e) => {
-  const nativeEvt = e.evt || e
-  nativeEvt.preventDefault?.()
-  emit('contextmenu', {
-    x: nativeEvt.clientX || nativeEvt.pageX || 0,
-    y: nativeEvt.clientY || nativeEvt.pageY || 0,
-    elementId: id,
-    elementType: type,
-  })
+function findElementIdFromKonvaNode(node) {
+  let current = node
+  while (current && current.getType?.() !== 'Stage') {
+    const id = current.id?.() || current.name?.()
+    if (id && store.getElementType(id)) return id
+    current = current.getParent?.()
+  }
+  return null
+}
+
+function resolveCanvasCursor() {
+  if (pan.value.active || pan.value.pending) return 'grabbing'
+  return 'default'
+}
+
+function applyCanvasCursor() {
+  const stage = stageRef.value?.getStage?.()
+  if (!stage) return
+
+  const cursor = resolveCanvasCursor()
+  stage.container().style.cursor = cursor
+  if (containerRef.value) {
+    containerRef.value.style.cursor = cursor
+  }
+}
+
+function handleCanvasMouseLeave() {
+  const stage = stageRef.value?.getStage()
+  if (stage) stage.container().style.cursor = 'default'
+  if (containerRef.value) containerRef.value.style.cursor = 'default'
+}
+
+function isRightClick(e) {
+  return e.evt?.button === 2
+}
+
+// Right-click opens quick connect on the element (handled at stage level for Konva bubbling)
+function handleStageContextMenu(e) {
+  e.evt.preventDefault()
+
+  if (isTokenGameActive.value || tool.value !== 'select') return
+
+  const stage = e.target.getStage()
+  if (e.target === stage) {
+    clearQuickConnect()
+    return
+  }
+
+  const elementId = findElementIdFromKonvaNode(e.target)
+  if (!elementId) return
+
+  const type = store.getElementType(elementId)
+  if (!type || type === 'arc') return
+
+  e.cancelBubble = true
+
+  store.select(elementId, e.evt.shiftKey)
+  quickConnectElementId.value = elementId
 }
 
 // Handle element click
 const handleElementClick = (id, type, e) => {
+  if (isRightClick(e)) return
+  if (spaceHeld.value) return
+  if (suppressStageClick.value) {
+    suppressStageClick.value = false
+    return
+  }
+
   e.cancelBubble = true
 
   // If token game is active
@@ -466,6 +597,7 @@ const handleElementClick = (id, type, e) => {
 
   switch (tool.value) {
     case 'select':
+      clearQuickConnect()
       store.select(id, e.evt.shiftKey)
       break
     case 'delete':
@@ -514,11 +646,7 @@ defineExpose({
   <div
     ref="containerRef"
     class="editor-canvas"
-    :class="{
-      'is-select-tool': tool === 'select' && !isTokenGameActive,
-      'is-panning': pan.active,
-      'is-placement-tool': isPlacementTool && !isTokenGameActive,
-    }"
+    @mouseleave="handleCanvasMouseLeave"
   >
     <div
       v-if="marqueeStyle"
@@ -585,11 +713,10 @@ defineExpose({
           :key="place.id"
           :place="place"
           :is-selected="selectedIds.includes(place.id)"
-          :draggable="tool === 'select' && !isTokenGameActive"
+          :draggable="canDragElements"
           :token-override="getTokenCount(place.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(place.id, 'place', e)"
-          @contextmenu="(e) => handleContextMenu(place.id, 'place', e)"
           @dragend="(e) => handleElementDragEnd(place.id, e)"
         />
 
@@ -599,11 +726,10 @@ defineExpose({
           :key="transition.id"
           :transition="transition"
           :is-selected="selectedIds.includes(transition.id)"
-          :draggable="tool === 'select' && !isTokenGameActive"
+          :draggable="canDragElements"
           :is-enabled="isTransitionEnabled(transition.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(transition.id, 'transition', e)"
-          @contextmenu="(e) => handleContextMenu(transition.id, 'transition', e)"
           @dragend="(e) => handleElementDragEnd(transition.id, e)"
         />
 
@@ -613,11 +739,10 @@ defineExpose({
           :key="operator.id"
           :operator="operator"
           :is-selected="selectedIds.includes(operator.id)"
-          :draggable="tool === 'select' && !isTokenGameActive"
+          :draggable="canDragElements"
           :is-enabled="isTransitionEnabled(operator.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(operator.id, 'operator', e)"
-          @contextmenu="(e) => handleContextMenu(operator.id, 'operator', e)"
           @dragend="(e) => handleElementDragEnd(operator.id, e)"
         />
 
@@ -627,11 +752,10 @@ defineExpose({
           :key="subprocess.id"
           :subprocess="subprocess"
           :is-selected="selectedIds.includes(subprocess.id)"
-          :draggable="tool === 'select' && !isTokenGameActive"
+          :draggable="canDragElements"
           :is-enabled="tokenGameStore.isSubprocessEnabled(subprocess.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(subprocess.id, 'subprocess', e)"
-          @contextmenu="(e) => handleContextMenu(subprocess.id, 'subprocess', e)"
           @dblclick="(e) => handleSubProcessDblClick(subprocess.id, e)"
           @dragend="(e) => handleElementDragEnd(subprocess.id, e)"
         />
@@ -649,19 +773,6 @@ defineExpose({
   flex: 1;
   background-color: var(--color-canvas);
   overflow: hidden;
-  cursor: grab;
-}
-
-.editor-canvas.is-placement-tool {
-  cursor: crosshair;
-}
-
-.editor-canvas.is-panning {
-  cursor: grabbing;
-}
-
-.editor-canvas.is-select-tool:not(.is-panning):not(.is-placement-tool) {
-  cursor: grab;
 }
 
 .marquee-selection {

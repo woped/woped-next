@@ -14,7 +14,6 @@ import BreadcrumbNav from './BreadcrumbNav.vue'
 import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
 import AnalysisPanel from '@/components/analysis/AnalysisPanel.vue'
 import SimulationPanel from '@/components/simulation/SimulationPanel.vue'
-import ContextMenu from './ContextMenu.vue'
 import { fileService } from '@/services/file/fileService'
 import { useConfigStore } from '@/stores/config'
 import { useAutoSave } from '@/composables/useAutoSave'
@@ -32,13 +31,6 @@ const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
 
 // Auto-save
 const { lastSaved } = useAutoSave()
-
-// Context menu
-const contextMenuRef = ref(null)
-
-const handleContextMenu = (event) => {
-  contextMenuRef.value?.show(event.x, event.y, event.elementId, event.elementType)
-}
 
 // Drag & Drop file opening
 const isDragOver = ref(false)
@@ -240,7 +232,6 @@ onMounted(() => {
         <EditorCanvas 
           ref="canvasRef"
           @resize="updateCanvasDimensions"
-          @contextmenu="handleContextMenu"
         />
         
         <!-- Floating View Toolbar -->
@@ -333,8 +324,6 @@ onMounted(() => {
         </template>
       </div>
     </div>
-    <ContextMenu ref="contextMenuRef" />
-
     <!-- Help system -->
     <HelpDialog />
     <GuidedTour />

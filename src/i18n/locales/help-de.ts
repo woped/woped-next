@@ -101,7 +101,7 @@ export default {
         },
         canvas: {
           title: 'Zeichenfläche',
-          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe Elemente um sie zu verschieben, ziehe leere Bereiche um die Ansicht zu verschieben, und nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü.',
+          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe Elemente um sie zu verschieben, ziehe auf leeren Bereichen um mehrere auszuwählen, und halte die Leertaste oder nutze die mittlere Maustaste zum Verschieben. Rechtsklick auf ein Element öffnet Quick Connect. Mausrad zum Zoomen.',
         },
         panels: {
           title: 'Seitenpanels',
@@ -175,7 +175,7 @@ export default {
         },
         panZoom: {
           title: 'Verschieben & Zoomen auf der Zeichenfläche',
-          content: 'Klicke und ziehe auf leeren Bereichen um die Ansicht zu verschieben. Nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü mit Schnellaktionen.',
+          content: 'Klicke und ziehe auf leeren Bereichen um mehrere Elemente auszuwählen. Halte die Leertaste oder nutze die mittlere Maustaste zum Verschieben. Mausrad zum Zoomen. Rechtsklick auf ein Element öffnet Quick Connect.',
         },
       },
     },
@@ -496,7 +496,7 @@ Tipp: Drücke jederzeit F1 um diesen Hilfe-Dialog zu öffnen.`,
       title: 'Editor-Werkzeuge',
       content: `Die Werkzeugleiste bietet folgende Werkzeuge:
 
-**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Halte Umschalt und ziehe auf leerer Fläche um mehrere Elemente per Rahmen auszuwählen. Drücke Escape um alles abzuwählen.
+**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Ziehe auf leerer Fläche um mehrere Elemente auszuwählen (Umschalt hält die Auswahl). Rechtsklick auf ein Element öffnet Quick Connect. Escape hebt die Auswahl auf.
 
 **Stelle (P)** — Klicke auf die Zeichenfläche um eine neue Stelle zu erstellen. Stellen werden als Kreise dargestellt und halten Token.
 
@@ -517,7 +517,11 @@ Nutze **Rückgängig (Strg+Z)** und **Wiederholen (Strg+Y / Strg+Umschalt+Z)** u
       title: 'Canvas-Navigation',
       content: `**Zoom:** Nutze das Mausrad oder die Zoom-Buttons (+/−) in der Ansichts-Werkzeugleiste. Klicke "Einpassen" um alle Elemente sichtbar zu machen.
 
-**Verschieben:** Klicke und ziehe auf einem leeren Bereich der Zeichenfläche um die Ansicht zu verschieben. Alternativ funktioniert auch die mittlere Maustaste. Halte Umschalt und ziehe um mehrere Elemente per Rahmen auszuwählen.
+**Verschieben:** Halte die Leertaste oder die mittlere Maustaste gedrückt und ziehe um die Ansicht zu verschieben.
+
+**Rahmenauswahl:** Ziehe auf leerer Fläche um mehrere Elemente auszuwählen. Halte Umschalt um zur bestehenden Auswahl hinzuzufügen.
+
+**Quick Connect:** Rechtsklick auf Stelle, Transition, Operator oder Subprozess öffnet das Nachfolger-Menü und verbindet das neue Element automatisch.
 
 **Rotation:** Nutze die Rotations-Buttons (↺ ↻) in der Ansichts-Werkzeugleiste um die Ansicht um 90° zu drehen.
 
