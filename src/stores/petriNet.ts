@@ -37,6 +37,8 @@ interface PetriNetState {
   history: Record<string, PetriNet>[]
   historyIndex: number
   maxHistorySize: number
+  // Incremented whenever a net is loaded so the canvas can fit it into view
+  fitToViewRequest: number
 }
 
 const createEmptyNet = (id?: string, name?: string, parentId?: string): PetriNet => ({
@@ -77,6 +79,7 @@ export const usePetriNetStore = defineStore('petriNet', {
       history: [],
       historyIndex: -1,
       maxHistorySize: 50,
+      fitToViewRequest: 0,
     }
   },
 
@@ -1002,6 +1005,7 @@ export const usePetriNetStore = defineStore('petriNet', {
       this.history = []
       this.historyIndex = -1
       this.saveToHistory()
+      this.fitToViewRequest++
     },
 
     /**
@@ -1020,6 +1024,7 @@ export const usePetriNetStore = defineStore('petriNet', {
       this.history = []
       this.historyIndex = -1
       this.saveToHistory()
+      this.fitToViewRequest++
     },
 
     /**

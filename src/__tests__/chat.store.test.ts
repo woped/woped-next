@@ -1,6 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useChatStore } from '@/stores/chat'
+import { usePetriNetStore } from '@/stores/petriNet'
+import type { ModelCommand } from '@/types/chat'
+
+const SAMPLE_PNML = `<?xml version="1.0"?>
+<pnml><net id="generated">
+  <place id="p1"><graphics><position x="0" y="0"/></graphics><initialMarking><text>1</text></initialMarking></place>
+  <transition id="t1"><graphics><position x="100" y="0"/></graphics></transition>
+  <place id="p2"><graphics><position x="200" y="0"/></graphics></place>
+  <arc id="a1" source="p1" target="t1"/>
+  <arc id="a2" source="t1" target="p2"/>
+</net></pnml>`
 
 const LLM_CONFIG_STORAGE_KEY = 'woped_llm_config'
 const API_KEY_STORAGE_KEY = 'woped_openai_api_key'
@@ -211,6 +222,34 @@ describe('Chat Store', () => {
 
     expect(store.messages).toHaveLength(1)
     expect(store.messages[0].id).toBe('1')
+  })
+
+  it('imports a generated net and requests a fit-to-view', () => {
+    const chat = useChatStore()
+    const petriNet = usePetriNetStore()
+    const beforeFit = petriNet.fitToViewRequest
+
+    const command: ModelCommand = { type: 'import_net', params: { pnml: SAMPLE_PNML } }
+    chat.executeCommand(command)
+
+    expect(command.executed).toBe(true)
+    expect(petriNet.net?.places).toHaveLength(2)
+    expect(petriNet.net?.transitions).toHaveLength(1)
+    // Loading a net signals the canvas to fit it into view
+    expect(petriNet.fitToViewRequest).toBe(beforeFit + 1)
+  })
+
+  it('does not mark import_net executed when PNML is empty', () => {
+    const chat = useChatStore()
+    const petriNet = usePetriNetStore()
+    const beforeFit = petriNet.fitToViewRequest
+
+    const command: ModelCommand = { type: 'import_net', params: { pnml: '' } }
+    chat.executeCommand(command)
+
+    // Failure must not be reported as success, and must not load anything
+    expect(command.executed).toBeFalsy()
+    expect(petriNet.fitToViewRequest).toBe(beforeFit)
   })
 
   it('clears chat messages and persisted history', () => {

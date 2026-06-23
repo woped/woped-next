@@ -27,7 +27,7 @@ const emit = defineEmits(['resize'])
 
 const store = usePetriNetStore()
 const configStore = useConfigStore()
-const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcCreation, selectedIds } = storeToRefs(store)
+const { places, transitions, operators, subProcesses, arcs, tool, viewport, arcCreation, selectedIds, fitToViewRequest } = storeToRefs(store)
 const { operatorNotation } = storeToRefs(configStore)
 
 // Viewport composable for fit to view functionality
@@ -400,6 +400,16 @@ function handleWindowBlur() {
 watch([tool, isTokenGameActive], () => {
   clearQuickConnect()
   applyCanvasCursor()
+})
+
+// Fit a freshly loaded net (file import, template, chat-generated net, ...)
+// into view so it is never placed outside the current viewport.
+watch(fitToViewRequest, () => {
+  nextTick(() => {
+    setTimeout(() => {
+      fitToView(stageConfig.value.width, stageConfig.value.height)
+    }, 50)
+  })
 })
 
 // Handle stage click
