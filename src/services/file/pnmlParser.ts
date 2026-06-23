@@ -80,10 +80,15 @@ export class PNMLParser {
     const places = this.parsePlaces(netElement, errors, warnings)
 
     // Parse transitions, operators, and subprocesses
-    const { transitions, operators, subProcesses } = this.parseTransitions(netElement, errors, warnings, subNets)
+    const { transitions, operators, subProcesses, operatorMemberMap } = this.parseTransitions(
+      netElement,
+      errors,
+      warnings,
+      subNets
+    )
 
-    // Parse arcs
-    const arcs = this.parseArcs(netElement, errors)
+    // Parse arcs, remapping legacy operator member ids onto the merged operator
+    const arcs = this.parseArcs(netElement, errors, operatorMemberMap)
 
     const mainNet: PetriNet = {
       id: netElement.getAttribute('id') || nanoid(),
@@ -161,11 +166,22 @@ export class PNMLParser {
     errors: ImportError[],
     warnings: string[],
     subNets: Map<string, PetriNet>
-  ): { transitions: Transition[]; operators: OperatorTransition[]; subProcesses: SubProcess[] } {
+  ): {
+    transitions: Transition[]
+    operators: OperatorTransition[]
+    subProcesses: SubProcess[]
+    operatorMemberMap: Map<string, string>
+  } {
     const transitions: Transition[] = []
-    const operators: OperatorTransition[] = []
     const subProcesses: SubProcess[] = []
     const transitionElements = netElement.querySelectorAll(':scope > transition')
+
+    // Legacy WoPeD exports a single operator (e.g. an XOR split) as several
+    // overlapping inner transitions that share one <operator id="...">.
+    // Merge those members into one operator node and remember the mapping
+    // (member transition id -> merged operator id) so arcs can be rewired.
+    const operatorGroups = new Map<string, OperatorTransition>()
+    const operatorMemberMap = new Map<string, string>()
 
     transitionElements.forEach((transEl, index) => {
       const id = transEl.getAttribute('id')
@@ -205,26 +221,39 @@ export class PNMLParser {
       const triggers = this.parseTriggers(transEl)
 
       if (operatorType) {
-        operators.push({
-          id,
-          name,
-          position: position || { x: 100 + index * 100, y: 100 },
-          label,
-          operatorType,
-          ...(triggers.length > 0 ? { triggers } : {}),
-        })
-      } else {
-        transitions.push({
-          id,
-          name,
-          position: position || { x: 100 + index * 100, y: 100 },
-          label,
-          ...(triggers.length > 0 ? { triggers } : {}),
-        })
+        // Use the logical operator id when present (legacy expanded form),
+        // otherwise the transition is itself a standalone operator node.
+        const operatorId = this.getWoPeDOperatorId(transEl) || id
+        operatorMemberMap.set(id, operatorId)
+
+        if (!operatorGroups.has(operatorId)) {
+          operatorGroups.set(operatorId, {
+            id: operatorId,
+            name,
+            position: position || { x: 100 + index * 100, y: 100 },
+            label,
+            operatorType,
+            ...(triggers.length > 0 ? { triggers } : {}),
+          })
+        }
+        return
       }
+
+      transitions.push({
+        id,
+        name,
+        position: position || { x: 100 + index * 100, y: 100 },
+        label,
+        ...(triggers.length > 0 ? { triggers } : {}),
+      })
     })
 
-    return { transitions, operators, subProcesses }
+    return {
+      transitions,
+      operators: Array.from(operatorGroups.values()),
+      subProcesses,
+      operatorMemberMap,
+    }
   }
 
   /**
@@ -239,8 +268,13 @@ export class PNMLParser {
     subNets: Map<string, PetriNet>
   ): PetriNet {
     const places = this.parsePlaces(pageEl, errors, warnings)
-    const { transitions, operators, subProcesses } = this.parseTransitions(pageEl, errors, warnings, subNets)
-    const arcs = this.parseArcs(pageEl, errors)
+    const { transitions, operators, subProcesses, operatorMemberMap } = this.parseTransitions(
+      pageEl,
+      errors,
+      warnings,
+      subNets
+    )
+    const arcs = this.parseArcs(pageEl, errors, operatorMemberMap)
 
     return {
       id: subNetId,
@@ -257,9 +291,18 @@ export class PNMLParser {
   /**
    * Parse all arc elements
    */
-  private parseArcs(netElement: Element, errors: ImportError[]): Arc[] {
+  private parseArcs(
+    netElement: Element,
+    errors: ImportError[],
+    operatorMemberMap?: Map<string, string>
+  ): Arc[] {
     const arcs: Arc[] = []
     const arcElements = netElement.querySelectorAll(':scope > arc')
+
+    // Track source/target pairs so that arcs collapsed onto a merged operator
+    // (e.g. both p2->t5_op_1 and p2->t5_op_2 becoming p2->t5) are not duplicated.
+    const seenEndpoints = new Set<string>()
+    const remap = (endpoint: string): string => operatorMemberMap?.get(endpoint) ?? endpoint
 
     arcElements.forEach((arcEl, index) => {
       const id = arcEl.getAttribute('id') || nanoid()
@@ -274,13 +317,22 @@ export class PNMLParser {
         return
       }
 
+      const sourceId = remap(source)
+      const targetId = remap(target)
+
+      const endpointKey = `${sourceId}->${targetId}`
+      if (seenEndpoints.has(endpointKey)) {
+        return
+      }
+      seenEndpoints.add(endpointKey)
+
       const weight = this.getArcWeight(arcEl)
       const waypoints = this.getArcWaypoints(arcEl)
 
       arcs.push({
         id,
-        sourceId: source,
-        targetId: target,
+        sourceId,
+        targetId,
         weight,
         waypoints,
       })
@@ -425,5 +477,21 @@ export class PNMLParser {
     }
 
     return operatorMapping[type] || null
+  }
+
+  /**
+   * Get the logical WoPeD operator id (shared by expanded operator members).
+   * Legacy WoPeD splits one operator into several transitions whose
+   * <operator> elements all carry the same id (e.g. "t5"), while the
+   * transitions themselves use suffixed ids ("t5_op_1", "t5_op_2", ...).
+   */
+  private getWoPeDOperatorId(transEl: Element): string | null {
+    const toolspec = transEl.querySelector('toolspecific[tool="WoPeD"]')
+    if (!toolspec) return null
+
+    const operatorEl = toolspec.querySelector('operator')
+    if (!operatorEl) return null
+
+    return operatorEl.getAttribute('id') || null
   }
 }
