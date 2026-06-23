@@ -19,7 +19,7 @@ const { operatorNotation } = storeToRefs(configStore)
 
 const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
 
-const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
+const DISCORD_INVITE_URL = 'https://discord.gg/2jFAj5hYnz'
 const WOPED_WEBSITE_URL = 'https://woped.dhbw-karlsruhe.de'
 
 // Settings dialog state

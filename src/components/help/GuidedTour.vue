@@ -6,7 +6,7 @@ import { useHelpStore } from '@/stores/help'
 const { t } = useI18n()
 const helpStore = useHelpStore()
 
-const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
+const DISCORD_INVITE_URL = 'https://discord.gg/2jFAj5hYnz'
 
 const highlightRect = ref({ top: 0, left: 0, width: 0, height: 0 })
 const popoverStyle = ref({})
