@@ -354,6 +354,8 @@ onMounted(() => {
   flex: 1;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .view-toolbar-container {

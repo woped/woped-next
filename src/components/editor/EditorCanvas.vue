@@ -327,9 +327,18 @@ const updateSize = () => {
   }
 }
 
+// Keep the Konva stage in sync with its container for any layout change
+// (side panel collapse/expand, splitter drag, ...), not just window resizes.
+let containerResizeObserver = null
+
 onMounted(() => {
   updateSize()
   window.addEventListener('resize', updateSize)
+
+  if (containerRef.value && typeof ResizeObserver !== 'undefined') {
+    containerResizeObserver = new ResizeObserver(() => updateSize())
+    containerResizeObserver.observe(containerRef.value)
+  }
   window.addEventListener('mousemove', handleWindowMouseMove)
   window.addEventListener('mouseup', handleWindowMouseUp)
   window.addEventListener('keydown', handleKeydown)
@@ -358,6 +367,8 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('keyup', handleKeyup)
   window.removeEventListener('blur', handleWindowBlur)
+  containerResizeObserver?.disconnect()
+  containerResizeObserver = null
   const stage = stageRef.value?.getStage()
   stage?.off('contextmenu', handleStageContextMenu)
 })
