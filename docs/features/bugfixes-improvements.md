@@ -22,10 +22,12 @@ Legend: 🐛 Bug | 🔧 Adjustment | 💅 UI/UX | ⚡ Performance | 🧹 Refacto
 | B-004 | 💅 UI/UX | Marquee box selection on empty canvas (left drag; Shift additive) | 2026-06-22 |
 | B-005 | 🐛 Bug | Toolbar/properties Delete button works for multi-selection (not only keyboard Delete) | 2026-06-22 |
 | B-006 | 💅 UI/UX | WoPeD logos in toolbar, help dialog, and welcome tour link to https://woped.dhbw-karlsruhe.de | 2026-06-22 |
-| B-007 | 💅 UI/UX | Canvas pan via middle mouse button (select tool uses left drag for marquee) | 2026-06-22 |
+| B-007 | 💅 UI/UX | Canvas pan via middle mouse or Space+drag (select tool uses left drag for marquee) | 2026-06-22 |
 | B-010 | 💅 UI/UX | Remove element context menu; duplicate/open/delete via properties panel & shortcuts | 2026-06-22 |
 | B-008 | 💅 UI/UX | Welcome splash screen with WoPeD image and Discord community CTA on first visit | 2026-06-22 |
 | B-009 | 🔧 Adjustment | Default theme set to light instead of system | 2026-06-22 |
+| B-011 | 🔧 Adjustment | Reduced wheel and trackpad zoom sensitivity on the editor canvas | 2026-06-22 |
+| B-012 | 💅 UI/UX | Place circle diameter matches operator square edge length (40 px) | 2026-06-22 |
 
 ## Feature Details
 
@@ -177,6 +179,43 @@ the OS via `system`. Existing saved config in localStorage is unchanged.
 |------|------|
 | Default config | [src/types/config.ts](../../src/types/config.ts) |
 | Tests | [src/__tests__/config.store.test.ts](../../src/__tests__/config.store.test.ts) |
+
+### B-010 — Context Menu Removed
+
+The former right-click context menu on canvas elements was removed. Duplicate,
+open subprocess, and delete remain available via the properties panel and keyboard
+shortcuts. Quick Connect (B-003) now owns the right-click gesture in select mode.
+
+| Area | File |
+|------|------|
+| Removed component | ~~`src/components/editor/ContextMenu.vue`~~ |
+| Editor shell | [src/components/editor/PetriNetEditor.vue](../../src/components/editor/PetriNetEditor.vue) |
+
+### B-011 — Wheel Zoom Sensitivity
+
+Mouse wheel and trackpad zoom no longer apply a fixed 10% scale step per event.
+Zoom delta is derived from the wheel pixel delta with exponential scaling, so
+trackpad scrolling is smooth and a mouse wheel notch changes zoom by roughly 4–5%.
+Each event is capped at ±6% to prevent large jumps from pinch gestures.
+
+Toolbar +/- buttons are unchanged (20% per click).
+
+| Area | File |
+|------|------|
+| Zoom math | [src/utils/wheelZoom.ts](../../src/utils/wheelZoom.ts) |
+| Canvas wheel handler | [src/components/editor/EditorCanvas.vue](../../src/components/editor/EditorCanvas.vue) |
+| Viewport composable | [src/composables/useViewport.ts](../../src/composables/useViewport.ts) |
+
+### B-012 — Place Circle Size
+
+Place circles are sized so their diameter equals the operator square edge length
+(`VISUAL.operator.size`, 40 px). Token markings inside places were scaled
+proportionally.
+
+| Area | File |
+|------|------|
+| Visual constants | [src/types/petri-net.ts](../../src/types/petri-net.ts) |
+| Canvas rendering | [src/components/canvas/PlaceNode.vue](../../src/components/canvas/PlaceNode.vue) |
 
 ## Template
 

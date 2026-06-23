@@ -158,9 +158,11 @@ Documented in [bugfixes-improvements.md](./bugfixes-improvements.md):
 | B-004 | Marquee box selection (Shift + drag) |
 | B-005 | Multi-selection delete button fix |
 | B-006 | Logo links to official WoPeD website |
-| B-007 | Canvas pan by drag |
+| B-007 | Canvas pan (middle mouse / Space+drag) |
 | B-008 | Welcome splash + Discord CTA |
 | B-009 | Default light theme |
+| B-011 | Reduced wheel/trackpad zoom sensitivity |
+| B-012 | Place circle size aligned with operator squares |
 
 ---
 

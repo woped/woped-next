@@ -13,6 +13,7 @@ import {
   findElementsInMarquee,
   screenToWorld,
 } from '@/utils/marqueeSelection'
+import { scaleFromWheelDelta } from '@/utils/wheelZoom'
 import QuickConnectPad from '@/components/editor/QuickConnectPad.vue'
 import PlaceNode from '@/components/canvas/PlaceNode.vue'
 import TransitionNode from '@/components/canvas/TransitionNode.vue'
@@ -487,11 +488,17 @@ const handleWheel = (e) => {
 
   const oldScale = viewport.value.scale
   const pointer = stage.getPointerPosition()
+  if (!pointer) return
 
-  const scaleBy = 1.1
-  const newScale = e.evt.deltaY < 0 
-    ? Math.min(oldScale * scaleBy, DEFAULTS.viewport.maxScale)
-    : Math.max(oldScale / scaleBy, DEFAULTS.viewport.minScale)
+  const newScale = scaleFromWheelDelta(
+    oldScale,
+    e.evt.deltaY,
+    e.evt.deltaMode,
+    DEFAULTS.viewport.minScale,
+    DEFAULTS.viewport.maxScale
+  )
+
+  if (newScale === oldScale) return
 
   // Zoom towards pointer position
   const mousePointTo = {
