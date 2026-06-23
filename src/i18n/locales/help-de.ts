@@ -311,7 +311,7 @@ export default {
       steps: {
         tab: {
           title: 'Analyse-Tab',
-          content: 'Klicke diesen Tab um alle Analysefunktionen zu erreichen: Workflow-Prüfungen, Soundness-Verifikation, Erreichbarkeitsgraphen und Prozessmetriken.',
+          content: 'Klicke diesen Tab um alle Analysefunktionen zu erreichen: Workflow-Netz-Eigenschaften, Soundness-Verifikation, Erreichbarkeitsgraphen und Prozessmetriken.',
         },
         panel: {
           title: 'Analyse-Panel',
@@ -678,7 +678,7 @@ Du kannst die Standardstrategie in Einstellungen → Simulation → Konfliktlös
       title: 'Analyse-Überblick',
       content: `Das Analyse-Panel bietet Werkzeuge um die Korrektheit deines Petri-Netzes zu überprüfen.
 
-**Workflow-Prüfung** — Überprüft ob dein Netz ein gültiges Workflow-Netz ist:
+**Workflow-Netz-Eigenschaft** — Überprüft ob dein Netz ein gültiges Workflow-Netz ist:
 - Genau eine Startstelle (keine eingehenden Kanten)
 - Genau eine Endstelle (keine ausgehenden Kanten)
 - Jedes Element liegt auf einem Pfad von Start zu Ende

@@ -27,7 +27,7 @@ Status: Open · In Progress · Blocked · Done
 | C-007 | Analysis | Rename "State Space Graphs" → "State Space Analysis" | P3 | Done |
 | C-008 | Analysis | Disable Custom Metrics UI (keep logic) | P3 | Done |
 | C-009 | Analysis | Coverability graph: multiset marking on hover/click | P2 | Done |
-| C-010 | Analysis fix | Fix Workflow Check label | P2 | Open |
+| C-010 | Analysis fix | Rename Workflow Check to Workflow Net Property | P2 | Done |
 | C-011 | Analysis fix | Move Free Choice under Soundness | P2 | Done |
 
 **Completed:** 2026-06-22 (commits `8b84b1e` … `79728da` on fork `main`), except C-010.
@@ -119,22 +119,12 @@ using existing `formatMarking()` and place-name resolution.
 
 ## 4. Analysis fixes
 
-### C-010 — Fix Workflow Check label
+### C-010 — Rename Workflow Check label ✅
 
-**Goal:** Correct the wrong "Workflow net property" label in the Workflow Check.
-
-**Status:** Still **Open** — skipped pending user clarification of the correct label.
-
-**Investigation pointer:** No literal string "Workflow net property" exists in the
-source. The likely target is the section label `analysis.workflowCheck`
-("Workflow Check" / "Workflow-Prüfung") in
-[src/i18n/locales/en.ts](../../src/i18n/locales/en.ts) /
-[src/i18n/locales/de.ts](../../src/i18n/locales/de.ts), used in
-[src/components/analysis/AnalysisPanel.vue](../../src/components/analysis/AnalysisPanel.vue).
-Confirm with the user which label is wrong and what it should read before editing.
-
-**Acceptance:** The Workflow Check section/property is labeled correctly and
-consistently (EN/DE).
+**Done (2026-06-22):** Renamed `analysis.workflowCheck` to **Workflow Net Property**
+(EN) and **Workflow-Netz-Eigenschaft** (DE) in
+[src/i18n/locales/en.ts](../../src/i18n/locales/en.ts),
+[src/i18n/locales/de.ts](../../src/i18n/locales/de.ts), and matching help copy.
 
 ### C-011 — Move Free Choice under Soundness ✅
 

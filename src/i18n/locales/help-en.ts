@@ -311,7 +311,7 @@ export default {
       steps: {
         tab: {
           title: 'Analysis Tab',
-          content: 'Click this tab to access all analysis features: workflow checks, soundness verification, coverability graphs, and process metrics.',
+          content: 'Click this tab to access all analysis features: workflow net properties, soundness verification, coverability graphs, and process metrics.',
         },
         panel: {
           title: 'Analysis Panel',
@@ -678,7 +678,7 @@ You can set the default strategy in Settings → Simulation → Conflict Resolut
       title: 'Analysis Overview',
       content: `The Analysis panel offers tools to verify your Petri net's correctness.
 
-**Workflow Check** — Verifies that your net is a valid workflow net:
+**Workflow Net Property** — Verifies that your net is a valid workflow net:
 - Exactly one start place (no incoming arcs)
 - Exactly one end place (no outgoing arcs)
 - Every element is on a path from start to end
