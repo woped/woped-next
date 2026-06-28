@@ -23,7 +23,15 @@ jobs:
         with:
           model: openai/gpt-4.1-mini
           prompt: |
-            Look at this PR's changes. Check if AGENTS.md or files in docs/
-            need updating to reflect the changes in this PR.
-            If updates are needed, make the changes and commit them to this PR branch.
-            If nothing needs updating, do nothing.
+            Look at the new code introduced in this PR.
+            Update AGENTS.md and/or files in docs/ to document any new additions.
+
+            Guidelines:
+            - New composables → add to the composables table in AGENTS.md
+            - New components → add to the directory structure or component list
+            - New services → document in the services section
+            - New features → add relevant sections
+
+            Follow existing conventions in AGENTS.md and docs/.
+            Commit all changes to this PR branch.
+            If nothing new was added that needs documentation, do nothing.
