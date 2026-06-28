@@ -6,9 +6,8 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   update-agents-md:
@@ -17,14 +16,30 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - uses: anomalyco/opencode/github@latest
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install opencode
+        run: curl -fsSL https://opencode.ai/install | bash
+
+      - name: Add opencode to PATH
+        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Analyze and update docs
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        with:
-          model: openai/gpt-4.1-mini
-          prompt: |
-            Look at the diff from the last commit (`git diff HEAD~1`).
-            Check if AGENTS.md or files in `docs/` need updating.
-            If updates are needed, make them and create a PR with title
-            `chore: <short description of what changed>`.
-            If nothing needs updating, do nothing.
+          MODEL: openai/gpt-4.1-mini
+        run: |
+          opencode "Look at the diff from the last commit (run: git diff HEAD~1).
+          Check if AGENTS.md or files in docs/ need updating.
+          If updates are needed:
+          1. Make the necessary changes
+          2. Create a new branch: git checkout -b chore/update-docs-\$(date +%Y%m%d-%H%M%S)
+          3. Commit the changes
+          4. Push the branch
+          5. Create a PR using: gh pr create --title 'chore: update docs' --body 'Auto-generated docs update based on recent changes.'
+          If nothing needs updating, just say so and do nothing."
