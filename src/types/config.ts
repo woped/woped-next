@@ -19,6 +19,13 @@ export interface GeneralConfig {
 }
 
 /**
+ * Operator rendering notation
+ * - 'vanDerAalst': authentic WoPeD notation (transition rectangle with directional chevron)
+ * - 'modern': diamond (AND) / circle-with-X (XOR) gateway-style glyphs
+ */
+export type OperatorNotation = "vanDerAalst" | "modern";
+
+/**
  * Editor-specific settings
  */
 export interface EditorConfig {
@@ -30,6 +37,7 @@ export interface EditorConfig {
   showLabels: boolean;
   showTokenNumbers: boolean;
   smartEditing: boolean;
+  operatorNotation: OperatorNotation;
 }
 
 /**
@@ -110,6 +118,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     showLabels: true,
     showTokenNumbers: true,
     smartEditing: true,
+    operatorNotation: "vanDerAalst",
   },
   tokenGame: {
     defaultSpeed: 1000,

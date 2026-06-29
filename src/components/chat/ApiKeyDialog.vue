@@ -29,6 +29,8 @@ const displayedModels = computed(() =>
 )
 const hasMoreModels = computed(() => availableModels.value.length > VISIBLE_MODELS_COUNT)
 
+const isInitializing = ref(false)
+
 function ensureSelectedModelInList() {
   const models = availableModels.value
   if (models.length === 0) {
@@ -80,13 +82,19 @@ async function loadAvailableModels() {
 }
 
 onMounted(async () => {
+  isInitializing.value = true
   apiKey.value = chatStore.llmConfig.apiKey
   selectedProvider.value = chatStore.llmConfig.provider
   selectedModel.value = chatStore.llmConfig.model
-  await loadAvailableModels()
+  try {
+    await loadAvailableModels()
+  } finally {
+    isInitializing.value = false
+  }
 })
 
 watch(selectedProvider, async () => {
+  if (isInitializing.value) return
   availableModels.value = []
   selectedModel.value = ''
   modelsError.value = ''

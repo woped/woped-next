@@ -352,46 +352,43 @@ export const useChatStore = defineStore("chat", {
         }
         case "import_net": {
           const rawPnml = command.params.pnml as string;
-          if (rawPnml) {
-            try {
-              const pnml = extractPnmlContent(rawPnml);
-              if (!pnml) {
-                chatLogger.error(
-                  "Import net from chat",
-                  new Error("Empty PNML content"),
-                );
-                break;
-              }
-              const result = fileService.importFromString(pnml, "pnml");
-              if (!result.net) {
-                chatLogger.error(
-                  "Import net from chat",
-                  new Error(
-                    result.errors.map((e) => e.message).join("; ") ||
-                      "Import failed",
-                  ),
-                );
-                break;
-              }
-              if (result.subNets && result.subNets.size > 0) {
-                const nets: Record<string, typeof result.net> = {
-                  [result.net.id]: result.net,
-                };
-                for (const [id, subNet] of result.subNets) {
-                  nets[id] = subNet;
-                }
-                petriNetStore.loadNets(nets, result.net.id);
-              } else {
-                petriNetStore.loadNet(result.net);
-              }
-              if (!result.success && result.warnings.length > 0) {
-                chatLogger.warn(
-                  `Import warnings: ${result.warnings.join("; ")}`,
-                );
-              }
-            } catch (e) {
-              chatLogger.error("Import net from chat", e);
+          const pnml = rawPnml ? extractPnmlContent(rawPnml) : "";
+          if (!pnml) {
+            chatLogger.error(
+              "Import net from chat",
+              new Error("Empty PNML content"),
+            );
+            return;
+          }
+          try {
+            const result = fileService.importFromString(pnml, "pnml");
+            if (!result.net) {
+              chatLogger.error(
+                "Import net from chat",
+                new Error(
+                  result.errors.map((e) => e.message).join("; ") ||
+                    "Import failed",
+                ),
+              );
+              return;
             }
+            if (result.subNets && result.subNets.size > 0) {
+              const nets: Record<string, typeof result.net> = {
+                [result.net.id]: result.net,
+              };
+              for (const [id, subNet] of result.subNets) {
+                nets[id] = subNet;
+              }
+              petriNetStore.loadNets(nets, result.net.id);
+            } else {
+              petriNetStore.loadNet(result.net);
+            }
+            if (!result.success && result.warnings.length > 0) {
+              chatLogger.warn(`Import warnings: ${result.warnings.join("; ")}`);
+            }
+          } catch (e) {
+            chatLogger.error("Import net from chat", e);
+            return;
           }
           break;
         }

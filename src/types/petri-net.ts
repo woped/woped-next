@@ -210,11 +210,14 @@ export const DEFAULTS = {
 /**
  * Visual constants for rendering
  */
+const OPERATOR_EDGE = 40
+
 export const VISUAL = {
   place: {
-    radius: 25,
+    // Place diameter matches the operator square edge length
+    radius: OPERATOR_EDGE / 2,
     strokeWidth: 2,
-    tokenRadius: 4,
+    tokenRadius: 3.5,
   },
   transition: {
     width: 40,
@@ -222,7 +225,7 @@ export const VISUAL = {
     strokeWidth: 2,
   },
   operator: {
-    size: 40, // Size of the operator shape
+    size: OPERATOR_EDGE,
     strokeWidth: 2,
     innerOffset: 8, // Offset for inner shape in combined operators
   },
@@ -242,6 +245,33 @@ export const VISUAL = {
     color: '#e0e0e0',
   },
 } as const
+
+/**
+ * Effective transition box size for a given operator notation.
+ * The authentic van der Aalst (WoPeD) notation renders transitions as squares,
+ * while the modern notation keeps the wider rectangle.
+ */
+export function getTransitionSize(
+  notation: 'vanDerAalst' | 'modern'
+): { width: number; height: number } {
+  if (notation === 'vanDerAalst') {
+    return { width: VISUAL.transition.width, height: VISUAL.transition.width }
+  }
+  return { width: VISUAL.transition.width, height: VISUAL.transition.height }
+}
+
+/**
+ * Effective subprocess box size for a given operator notation.
+ * Square in the van der Aalst notation, wider rectangle in the modern notation.
+ */
+export function getSubProcessSize(
+  notation: 'vanDerAalst' | 'modern'
+): { width: number; height: number } {
+  if (notation === 'vanDerAalst') {
+    return { width: VISUAL.subprocess.height, height: VISUAL.subprocess.height }
+  }
+  return { width: VISUAL.subprocess.width, height: VISUAL.subprocess.height }
+}
 
 /**
  * Operator display info

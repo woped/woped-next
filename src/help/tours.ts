@@ -8,6 +8,13 @@ export const guidedTours: GuidedTour[] = [
     descriptionKey: 'help.tours.welcome.description',
     steps: [
       {
+        targetSelector: '',
+        titleKey: 'help.tours.welcome.steps.splash.title',
+        contentKey: 'help.tours.welcome.steps.splash.content',
+        placement: 'bottom',
+        variant: 'splash',
+      },
+      {
         targetSelector: '.editor-toolbar',
         titleKey: 'help.tours.welcome.steps.toolbar.title',
         contentKey: 'help.tours.welcome.steps.toolbar.content',

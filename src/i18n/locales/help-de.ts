@@ -14,6 +14,7 @@ export default {
   tourPrev: 'Zurück',
   tourFinish: 'Fertig',
   tourSkip: 'Tour überspringen',
+  welcomeDiscordHint: 'Tritt der WoPeD-Community auf Discord bei – für Support, Updates und Austausch mit anderen Nutzern.',
 
   // Tooltip
   tooltipMore: 'Mehr Infos...',
@@ -90,13 +91,17 @@ export default {
       title: 'Willkommen bei WoPeD Next',
       description: 'Ein kurzer Überblick über die Anwendungsoberfläche.',
       steps: {
+        splash: {
+          title: 'Willkommen bei WoPeD Next',
+          content: 'Modelliere, analysiere und simuliere Workflow-Petri-Netze im Browser. Diese kurze Tour führt dich durch die wichtigsten Bereiche des Editors.',
+        },
         toolbar: {
           title: 'Werkzeugleiste',
-          content: 'Das ist die Hauptwerkzeugleiste. Hier findest du das Datei-Menü, Bearbeitungswerkzeuge für Stellen, Transitionen, Kanten und Operatoren, Rückgängig/Wiederholen-Buttons und Zoom-Steuerung.',
+          content: 'Das ist die Hauptwerkzeugleiste. Hier findest du das Datei-Menü, Bearbeitungswerkzeuge für Stellen, Transitionen, Kanten und Operatoren, Rückgängig/Wiederholen-Buttons, Zoom-Steuerung und den Discord-Community-Link.',
         },
         canvas: {
           title: 'Zeichenfläche',
-          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe sie um sie zu verschieben, und nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü.',
+          content: 'Das ist dein Arbeitsbereich. Klicke auf die Fläche um Elemente zu platzieren, ziehe Elemente um sie zu verschieben, ziehe auf leeren Bereichen um mehrere auszuwählen, und halte die Leertaste oder nutze die mittlere Maustaste zum Verschieben. Rechtsklick auf ein Element öffnet Quick Connect. Mausrad zum Zoomen.',
         },
         panels: {
           title: 'Seitenpanels',
@@ -170,7 +175,7 @@ export default {
         },
         panZoom: {
           title: 'Verschieben & Zoomen auf der Zeichenfläche',
-          content: 'Klicke und ziehe auf leeren Bereichen um die Ansicht zu verschieben. Nutze das Mausrad zum Zoomen. Rechtsklick öffnet das Kontextmenü mit Schnellaktionen.',
+          content: 'Klicke und ziehe auf leeren Bereichen um mehrere Elemente auszuwählen. Halte die Leertaste oder nutze die mittlere Maustaste zum Verschieben. Mausrad zum Zoomen. Rechtsklick auf ein Element öffnet Quick Connect.',
         },
       },
     },
@@ -306,7 +311,7 @@ export default {
       steps: {
         tab: {
           title: 'Analyse-Tab',
-          content: 'Klicke diesen Tab um alle Analysefunktionen zu erreichen: Workflow-Prüfungen, Soundness-Verifikation, Erreichbarkeitsgraphen und Prozessmetriken.',
+          content: 'Klicke diesen Tab um alle Analysefunktionen zu erreichen: Workflow-Netz-Eigenschaften, Soundness-Verifikation, Erreichbarkeitsgraphen und Prozessmetriken.',
         },
         panel: {
           title: 'Analyse-Panel',
@@ -316,12 +321,12 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'Zustandsraumgraphen',
+      title: 'Zustandsraumanalyse',
       description: 'Erkunde alle erreichbaren Zustände mit dem Erreichbarkeits- oder Überdeckungsgraphen.',
       steps: {
         tab: {
           title: 'Analyse-Tab',
-          content: 'Öffne den Analyse-Tab und scrolle nach unten zum Bereich "Zustandsraumgraphen".',
+          content: 'Öffne den Analyse-Tab und scrolle nach unten zum Bereich "Zustandsraumanalyse".',
         },
         section: {
           title: 'Graphtyp wählen',
@@ -491,7 +496,7 @@ Tipp: Drücke jederzeit F1 um diesen Hilfe-Dialog zu öffnen.`,
       title: 'Editor-Werkzeuge',
       content: `Die Werkzeugleiste bietet folgende Werkzeuge:
 
-**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Halte Shift um mehrere Elemente auszuwählen. Drücke Escape um alles abzuwählen.
+**Auswählen (V)** — Klicke um Elemente auszuwählen, ziehe um sie zu verschieben. Ziehe auf leerer Fläche um mehrere Elemente auszuwählen (Umschalt hält die Auswahl). Rechtsklick auf ein Element öffnet Quick Connect. Escape hebt die Auswahl auf.
 
 **Stelle (P)** — Klicke auf die Zeichenfläche um eine neue Stelle zu erstellen. Stellen werden als Kreise dargestellt und halten Token.
 
@@ -512,7 +517,11 @@ Nutze **Rückgängig (Strg+Z)** und **Wiederholen (Strg+Y / Strg+Umschalt+Z)** u
       title: 'Canvas-Navigation',
       content: `**Zoom:** Nutze das Mausrad oder die Zoom-Buttons (+/−) in der Ansichts-Werkzeugleiste. Klicke "Einpassen" um alle Elemente sichtbar zu machen.
 
-**Verschieben:** Klicke und ziehe auf einem leeren Bereich der Zeichenfläche um die Ansicht zu verschieben.
+**Verschieben:** Halte die Leertaste oder die mittlere Maustaste gedrückt und ziehe um die Ansicht zu verschieben.
+
+**Rahmenauswahl:** Ziehe auf leerer Fläche um mehrere Elemente auszuwählen. Halte Umschalt um zur bestehenden Auswahl hinzuzufügen.
+
+**Quick Connect:** Rechtsklick auf Stelle, Transition, Operator oder Subprozess öffnet das Nachfolger-Menü und verbindet das neue Element automatisch.
 
 **Rotation:** Nutze die Rotations-Buttons (↺ ↻) in der Ansichts-Werkzeugleiste um die Ansicht um 90° zu drehen.
 
@@ -669,7 +678,7 @@ Du kannst die Standardstrategie in Einstellungen → Simulation → Konfliktlös
       title: 'Analyse-Überblick',
       content: `Das Analyse-Panel bietet Werkzeuge um die Korrektheit deines Petri-Netzes zu überprüfen.
 
-**Workflow-Prüfung** — Überprüft ob dein Netz ein gültiges Workflow-Netz ist:
+**Workflow-Netz-Eigenschaft** — Überprüft ob dein Netz ein gültiges Workflow-Netz ist:
 - Genau eine Startstelle (keine eingehenden Kanten)
 - Genau eine Endstelle (keine ausgehenden Kanten)
 - Jedes Element liegt auf einem Pfad von Start zu Ende
@@ -688,8 +697,8 @@ Du kannst die Standardstrategie in Einstellungen → Simulation → Konfliktlös
     },
 
     analysisCoverability: {
-      title: 'Zustandsraumgraphen',
-      content: `Der Bereich **Zustandsraumgraphen** bietet zwei komplementäre Ansichten des Verhaltens deines Petri-Netzes:
+      title: 'Zustandsraumanalyse',
+      content: `Der Bereich **Zustandsraumanalyse** bietet zwei komplementäre Ansichten des Verhaltens deines Petri-Netzes:
 
 **Erreichbarkeitsgraph** — zählt alle *exakt* erreichbaren Markierungen auf. Jeder Knoten enthält konkrete Token-Zahlen, was präzise Erreichbarkeitsabfragen ("Kann Markierung M erreicht werden?") und vollständige Lebendigkeitsanalyse ermöglicht. Funktioniert nur für **beschränkte** Netze (endlicher Zustandsraum). Bei unbeschränkten Netzen wird automatisch auf den Überdeckungsgraphen zurückgefallen.
 

@@ -13,12 +13,14 @@ export default {
     ok: "OK",
     yes: "Yes",
     no: "No",
+    comingSoon: "Coming soon",
     loading: "Loading...",
     error: "Error",
     warning: "Warning",
     info: "Info",
     success: "Success",
     more: "more",
+    visitWopedWebsite: "Visit WoPeD website",
   },
 
   // Menu
@@ -43,6 +45,13 @@ export default {
     delete: "Delete",
     properties: "Properties",
     openSubprocess: "Open Subprocess",
+  },
+
+  quickConnect: {
+    place: "Add place",
+    transition: "Add transition",
+    operator: "Add operator",
+    subprocess: "Add subprocess",
   },
 
   // Templates
@@ -156,6 +165,9 @@ export default {
     conflictTitle: "Conflict Resolution",
     conflictDescription:
       "Multiple transitions are enabled. Select which one to fire:",
+    branchTitle: "Choose Branch",
+    branchDescription:
+      "The XOR split routes the token to exactly one branch. Select which one:",
     statistics: "Statistics",
     totalSteps: "Total Steps",
     transitionsFired: "Transitions Fired",
@@ -175,7 +187,7 @@ export default {
     analyzing: "Analyzing...",
     clear: "Clear",
     statistics: "Statistics",
-    workflowCheck: "Workflow Check",
+    workflowCheck: "Workflow Net Property",
     soundnessCheck: "Soundness Check",
     valid: "Valid",
     invalid: "Invalid",
@@ -197,10 +209,11 @@ export default {
     deadlockFree: "Deadlock-free",
     coverabilityGraph: "Coverability Graph",
     reachabilityGraph: "Reachability Graph",
-    stateSpaceGraphs: "State Space Graphs",
+    stateSpaceGraphs: "State Space Analysis",
     buildGraph: "Build Graph",
     building: "Building...",
     resetView: "Reset View",
+    marking: "Marking",
     states: "States",
     unbounded: "Unbounded",
     deadlocks: "Deadlocks",
@@ -285,6 +298,10 @@ export default {
     showGrid: "Show Grid",
     snapToGrid: "Snap to Grid",
     gridSize: "Grid Size (px)",
+    notation: "Notation",
+    operatorNotation: "Operator Notation",
+    notationVanDerAalst: "van der Aalst (WoPeD)",
+    notationModern: "Modern (Gateways)",
     display: "Display",
     showLabels: "Show Labels",
     showTokenNumbers: "Show Token Numbers",
@@ -549,8 +566,6 @@ export default {
     modelChanges: "Model Changes",
     applyChanges: "Apply Changes",
     changesApplied: "Changes applied",
-    copyCode: "Copy",
-    copied: "Copied!",
     suggestions: {
       describe: "Describe my model",
       analyze: "Is my net sound?",
@@ -580,9 +595,6 @@ export default {
       modelsLoadFailed:
         "Could not load models from the provider. Check your API key and connection.",
       modelsEmpty: "No chat models are available with this API key.",
-      modelsFallback:
-        "Could not load models from the provider — showing a default list of current models.",
-      showMore: "Show more models",
     },
     commands: {
       addPlace: 'Add place "{name}"',

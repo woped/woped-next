@@ -7,6 +7,8 @@ import { HELP_CATEGORIES } from '@/types/help'
 const { t } = useI18n()
 const helpStore = useHelpStore()
 
+const WOPED_WEBSITE_URL = 'https://woped.dhbw-karlsruhe.de'
+
 const searchInput = ref(null)
 
 const categories = computed(() => HELP_CATEGORIES)
@@ -139,6 +141,16 @@ function renderContent(text) {
       <div class="help-dialog" role="dialog" aria-labelledby="help-title">
         <!-- Header -->
         <div class="help-header">
+          <a
+            class="help-logo-link"
+            :href="WOPED_WEBSITE_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+            :title="t('common.visitWopedWebsite')"
+            :aria-label="t('common.visitWopedWebsite')"
+          >
+            <img class="help-logo" src="/woped-logo.svg" alt="WoPeD" />
+          </a>
           <h2 id="help-title">{{ $t('help.title') }}</h2>
           <div class="help-search">
             <span class="search-icon">🔍</span>
@@ -273,6 +285,25 @@ function renderContent(text) {
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg);
   flex-shrink: 0;
+}
+
+.help-logo-link {
+  display: flex;
+  flex-shrink: 0;
+  line-height: 0;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.help-logo-link:hover {
+  opacity: 0.85;
+}
+
+.help-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  border-radius: 4px;
 }
 
 .help-header h2 {

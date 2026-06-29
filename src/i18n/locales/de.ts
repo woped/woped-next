@@ -13,12 +13,14 @@ export default {
     ok: "OK",
     yes: "Ja",
     no: "Nein",
+    comingSoon: "Demnächst",
     loading: "Laden...",
     error: "Fehler",
     warning: "Warnung",
     info: "Info",
     success: "Erfolg",
     more: "weitere",
+    visitWopedWebsite: "WoPeD-Website besuchen",
   },
 
   // Menu
@@ -43,6 +45,13 @@ export default {
     delete: "Löschen",
     properties: "Eigenschaften",
     openSubprocess: "Subprozess öffnen",
+  },
+
+  quickConnect: {
+    place: "Stelle hinzufügen",
+    transition: "Transition hinzufügen",
+    operator: "Operator hinzufügen",
+    subprocess: "Subprozess hinzufügen",
   },
 
   // Templates (Vorlagen)
@@ -161,6 +170,9 @@ export default {
     conflictTitle: "Konfliktlösung",
     conflictDescription:
       "Mehrere Transitionen sind aktiviert. Wähle welche ausgeführt werden soll:",
+    branchTitle: "Zweig wählen",
+    branchDescription:
+      "Der XOR-Split leitet die Marke in genau einen Zweig. Wähle welchen:",
     statistics: "Statistiken",
     totalSteps: "Gesamtschritte",
     transitionsFired: "Transitionen gefeuert",
@@ -180,7 +192,7 @@ export default {
     analyzing: "Analysiere...",
     clear: "Löschen",
     statistics: "Statistiken",
-    workflowCheck: "Workflow-Prüfung",
+    workflowCheck: "Workflow-Netz-Eigenschaft",
     soundnessCheck: "Soundness-Prüfung",
     valid: "Gültig",
     invalid: "Ungültig",
@@ -188,7 +200,7 @@ export default {
     unsound: "Nicht Sound",
     duration: "Dauer",
     noIssues: "Keine Probleme gefunden",
-    freeChoice: "Free Choice",
+    freeChoice: "Freie Wahl",
     connected: "Verbunden",
     structural: "Strukturanalyse",
     behavioral: "Verhaltensanalyse",
@@ -202,10 +214,11 @@ export default {
     deadlockFree: "Deadlock-frei",
     coverabilityGraph: "Überdeckungsgraph",
     reachabilityGraph: "Erreichbarkeitsgraph",
-    stateSpaceGraphs: "Zustandsraumgraphen",
+    stateSpaceGraphs: "Zustandsraumanalyse",
     buildGraph: "Graph erstellen",
     building: "Erstelle...",
     resetView: "Ansicht zurücksetzen",
+    marking: "Markierung",
     states: "Zustände",
     unbounded: "Unbeschränkt",
     deadlocks: "Deadlocks",
@@ -290,6 +303,10 @@ export default {
     showGrid: "Raster anzeigen",
     snapToGrid: "Am Raster einrasten",
     gridSize: "Rastergröße (px)",
+    notation: "Notation",
+    operatorNotation: "Operator-Notation",
+    notationVanDerAalst: "van der Aalst (WoPeD)",
+    notationModern: "Modern (Gateways)",
     display: "Anzeige",
     showLabels: "Beschriftungen anzeigen",
     showTokenNumbers: "Token-Zahlen anzeigen",
@@ -555,8 +572,6 @@ export default {
     modelChanges: "Modelländerungen",
     applyChanges: "Änderungen anwenden",
     changesApplied: "Änderungen angewendet",
-    copyCode: "Kopieren",
-    copied: "Kopiert!",
     suggestions: {
       describe: "Beschreibe mein Modell",
       analyze: "Ist mein Netz sound?",
@@ -591,9 +606,6 @@ export default {
         "Modelle konnten nicht geladen werden. API-Schlüssel und Verbindung prüfen.",
       modelsEmpty:
         "Mit diesem API-Schlüssel sind keine Chat-Modelle verfügbar.",
-      modelsFallback:
-        "Modelle konnten nicht geladen werden — es wird eine Standardliste aktueller Modelle angezeigt.",
-      showMore: "Mehr Modelle anzeigen",
     },
     commands: {
       addPlace: 'Stelle "{name}" hinzufügen',

@@ -10,6 +10,7 @@ import type {
   RecentFile,
   ThemeMode,
   Locale,
+  OperatorNotation,
 } from "@/types/config";
 import {
   DEFAULT_CONFIG,
@@ -69,6 +70,13 @@ export const useConfigStore = defineStore("config", {
      */
     gridSize(): number {
       return this.editor.gridSize;
+    },
+
+    /**
+     * Active operator notation style
+     */
+    operatorNotation(): OperatorNotation {
+      return this.editor.operatorNotation;
     },
   },
 
@@ -171,6 +179,14 @@ export const useConfigStore = defineStore("config", {
      */
     toggleSnapToGrid() {
       this.editor.snapToGrid = !this.editor.snapToGrid;
+      this.save();
+    },
+
+    /**
+     * Set the operator notation style
+     */
+    setOperatorNotation(notation: OperatorNotation) {
+      this.editor.operatorNotation = notation;
       this.save();
     },
 
