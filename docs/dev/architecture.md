@@ -1,293 +1,67 @@
-# Architecture
-
-## System Overview
-
-```mermaid
-graph TB
-    subgraph Frontend[WoPeD Next Frontend]
-        VUE[Vue.js 3]
-        VITE[Vite]
-        COMP[Components]
-    end
-    
-    subgraph Build[Build Process]
-        NPM[npm build]
-        DIST[/dist/]
-    end
-    
-    subgraph Production[Production]
-        NGINX[nginx]
-        DOCKER[Docker Container]
-        GH[GitHub Pages]
-    end
-    
-    VUE --> VITE
-    VITE --> COMP
-    COMP --> NPM
-    NPM --> DIST
-    DIST --> NGINX
-    DIST --> GH
-    NGINX --> DOCKER
-```
-
-## Component Structure
-
-```mermaid
-graph TD
-    APP[App.vue] --> EDITOR[PetriNetEditor]
-    
-    EDITOR --> TOOLBAR[EditorToolbar]
-    EDITOR --> CANVAS[EditorCanvas]
-    EDITOR --> PANELS[Side Panels]
-    
-    TOOLBAR --> FILEMENU[FileMenu]
-    TOOLBAR --> SETTINGS[SettingsDialog]
-    
-    CANVAS --> PLACE[PlaceNode]
-    CANVAS --> TRANS[TransitionNode]
-    CANVAS --> OP[OperatorNode]
-    CANVAS --> SUB[SubProcessNode]
-    CANVAS --> ARC[ArcEdge]
-    
-    PANELS --> PROPS[PropertiesPanel]
-    PANELS --> ANALYSIS[AnalysisPanel]
-    PANELS --> SIM[SimulationPanel]
-    PANELS --> TOKEN[TokenGameControls]
-    
-    style APP fill:#42b883
-    style EDITOR fill:#35495e,color:#fff
-    style CANVAS fill:#3eaf7c,color:#fff
-```
-
-## Directory Structure
-
-```
-src/
-├── assets/              # Static assets
-├── components/
-│   ├── analysis/        # Analysis components
-│   │   ├── AnalysisPanel.vue
-│   │   └── MetricsSection.vue
-│   ├── canvas/          # Konva canvas elements
-│   │   ├── PlaceNode.vue
-│   │   ├── TransitionNode.vue
-│   │   ├── OperatorNode.vue
-│   │   ├── SubProcessNode.vue
-│   │   ├── ArcEdge.vue
-│   │   └── TokenAnimation.vue
-│   ├── editor/          # Main editor components
-│   │   ├── PetriNetEditor.vue
-│   │   ├── EditorCanvas.vue
-│   │   ├── EditorToolbar.vue
-│   │   ├── ViewToolbar.vue
-│   │   ├── PropertiesPanel.vue
-│   │   ├── BreadcrumbNav.vue
-│   │   └── SubprocessPreview.vue
-│   ├── file/            # File operations
-│   │   └── FileMenu.vue
-│   ├── settings/        # Settings
-│   │   └── SettingsDialog.vue
-│   ├── simulation/      # Quantitative simulation
-│   │   ├── SimulationPanel.vue
-│   │   ├── SimulationConfig.vue
-│   │   ├── SimulationResults.vue
-│   │   ├── TimeModelConfig.vue
-│   │   ├── ResourceConfig.vue
-│   │   └── BottleneckAnalysis.vue
-│   ├── token-game/      # Token game
-│   │   ├── TokenGameControls.vue
-│   │   ├── TokenGameStats.vue
-│   │   └── ConflictDialog.vue
-│   └── triggers/        # Trigger editor
-│       └── TriggerEditor.vue
-├── composables/         # Vue Composition Functions
-│   └── useViewport.ts
-├── i18n/                # Internationalization
-│   ├── index.ts
-│   └── locales/
-│       ├── en.ts
-│       └── de.ts
-├── services/            # Business logic
-│   ├── analysis/        # Analysis services
-│   │   ├── index.ts
-│   │   └── metricsCalculator.ts
-│   ├── file/            # File services
-│   │   ├── fileService.ts
-│   │   ├── pnmlParser.ts
-│   │   ├── pnmlWriter.ts
-│   │   ├── jsonParser.ts
-│   │   └── imageExporter.ts
-│   ├── simulation/      # Simulation services
-│   │   ├── SimulationEngine.ts
-│   │   └── XESExporter.ts
-│   └── templates/       # Template service
-│       └── petriNetTemplates.ts
-├── stores/              # Pinia stores
-│   ├── petriNet.ts      # Main store for Petri net
-│   ├── config.ts        # Configuration & settings
-│   ├── tokenGame.ts     # Token game state
-│   └── simulation.ts    # Simulation state
-├── types/               # TypeScript types
-│   ├── petri-net.ts     # Petri net types
-│   ├── config.ts        # Config types
-│   ├── simulation.ts    # Simulation types
-│   ├── metrics.ts       # Metrics types
-│   ├── triggers.ts      # Trigger types
-│   └── file-formats.ts  # File format types
-├── utils/               # Helper functions
-│   ├── geometry.ts      # Geometry calculations
-│   ├── routing.ts       # Arc routing
-│   ├── layout.ts        # Auto-layout algorithms
-│   └── random.ts        # Random generators
-├── App.vue
-└── main.js
-```
-
-## Tech Stack
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Vue.js | 3.x | Frontend framework |
-| Vite | 6.x | Build tool |
-| Pinia | 3.x | State management |
-| vue-i18n | 11.x | Internationalization |
-| vue-konva | 3.x | Canvas rendering (Petri net) |
-| nanoid | 5.x | Unique ID generation |
-| nginx | alpine | Web server (production) |
-
-## State Management (Pinia)
-
-### Store Overview
-
-```mermaid
-graph LR
-    subgraph Stores
-        PN[petriNet] --> |net, viewport| CANVAS
-        CFG[config] --> |theme, language| UI
-        TG[tokenGame] --> |marking, enabled| CANVAS
-        SIM[simulation] --> |results| PANEL
-    end
-    
-    subgraph Components
-        CANVAS[EditorCanvas]
-        UI[UI Components]
-        PANEL[SimulationPanel]
-    end
-```
-
-### Reactivity Patterns for Nested Objects
-
-Nested state objects (e.g., `config.editor.showGrid`) can cause reactivity issues. Recommended solutions:
-
-```typescript
-// Store: Getters for nested properties
-getters: {
-  showGrid(): boolean {
-    return this.editor.showGrid
-  }
-}
-
-// Store: Explicit toggle actions
-actions: {
-  toggleShowGrid() {
-    this.editor.showGrid = !this.editor.showGrid
-    this.save()
-  }
-}
-```
-
-```typescript
-// Component: Reference $state explicitly
-const showGrid = computed(() => configStore.$state.editor.showGrid)
-```
-
-### Vue-Konva Integration
-
-Avoid `v-if` on layers with vue-konva - use Konva's native `visible` property instead:
-
-```vue
-<v-layer :config="gridLayerConfig">
-
-<script setup>
-const gridLayerConfig = computed(() => ({
-  visible: showGrid.value
-}))
-</script>
-```
-
-## Development Environment
-
-### Prerequisites
-- Node.js 22+
-- npm 10+
-
-### Setup
-
-```bash
-npm install
-npm run dev
-```
-
-### Build
-
-```bash
-# Production build
-npm run build
-
-# Preview
-npm run preview
-```
-
-### Docker
-
-```bash
-docker-compose up --build
-```
-
-## Internationalization (i18n)
-
-The application supports multiple languages via `vue-i18n`:
-
-- **Configuration**: `src/i18n/index.ts`
-- **Language files**: `src/i18n/locales/`
-- **Supported languages**: English (en), German (de)
-
-### Usage in Components
-
-```vue
-<script setup>
-import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
-</script>
-
-<template>
-  <span>{{ $t('key.path') }}</span>
-</template>
-```
-
-### Adding New Translations
-
-1. Add key in `src/i18n/locales/en.ts`
-2. Add translation in `src/i18n/locales/de.ts`
-3. Use in component with `$t('key.path')`
-
-## Deployment
-
-### GitHub Pages
-
-The project is deployed on GitHub Pages:
-- **URL**: https://taminofischer.github.io/woped-next/
-- **CI/CD**: GitHub Actions
-
-### Docker
-
-```bash
-# Build and start
-docker-compose up --build
-
-# Build only
-docker build -t woped-next .
-
-# Start container
-docker run -p 80:80 woped-next
-```
+67: │   │   ├── SimulationEngine.ts
+68: │   │   └── XESExporter.ts
+69: │   └── templates/       # Template service
+70: │       └── petriNetTemplates.ts
+71: ├── stores/              # Pinia stores
+72: │   ├── petriNet.ts      # Main store for Petri net
+73: │   ├── config.ts        # Configuration & settings
+74: │   ├── tokenGame.ts     # Token game state
+75: │   └── simulation.ts    # Simulation state
+76: ├── types/               # TypeScript types
+77: │   ├── petri-net.ts     # Petri net types
+78: │   ├── config.ts        # Config types
+79: │   ├── simulation.ts    # Simulation types
+80: │   ├── metrics.ts       # Metrics types
+81: │   ├── triggers.ts      # Trigger types
+82: │   └── file-formats.ts  # File format types
+83: ├── utils/               # Helper functions
+84: │   ├── geometry.ts      # Geometry calculations
+85: │   ├── routing.ts       # Arc routing
+86: │   ├── layout.ts        # Auto-layout algorithms
+87: │   ├── random.ts        # Random generators
+88: │   ├── marqueeSelection.ts # Marquee selection logic and bounds tests
+89: │   ├── operatorGlyph.ts     # Geometry and orientation helpers for operator icons
+90: │   ├── operatorSemantics.ts # Semantic evaluation helpers for operator logic
+91: │   ├── quickConnect.ts      # Logic for Quick Connect pad on right-click
+92: │   └── wheelZoom.ts         # Smoother zoom scaling based on wheel delta
+93: ├── components/
+94: │   ├── analysis/
+95: │   │   ├── AnalysisPanel.vue
+96: │   │   └── MetricsSection.vue
+97: │   ├── canvas/
+98: │   │   ├── PlaceNode.vue
+99: │   │   ├── TransitionNode.vue
+100: │   │   ├── OperatorNode.vue
+101: │   │   ├── SubProcessNode.vue
+102: │   │   ├── ArcEdge.vue
+103: │   │   └── TokenAnimation.vue
+104: │   ├── editor/
+105: │   │   ├── PetriNetEditor.vue
+106: │   │   ├── EditorCanvas.vue
+107: │   │   ├── EditorToolbar.vue
+108: │   │   ├── ViewToolbar.vue
+109: │   │   ├── PropertiesPanel.vue
+110: │   │   ├── BreadcrumbNav.vue
+111: │   │   ├── SubprocessPreview.vue
+112: │   │   ├── OperatorAalstIcon.vue          # New operator icon component for van der Aalst notation
+113: │   │   ├── QuickConnectPad.vue             # New quick connect right-click pad
+114: │   ├── file/
+115: │   │   └── FileMenu.vue
+116: │   ├── settings/
+117: │   │   └── SettingsDialog.vue
+118: │   ├── simulation/
+119: │   │   ├── SimulationPanel.vue
+120: │   │   ├── SimulationConfig.vue
+121: │   │   ├── SimulationResults.vue
+122: │   │   ├── TimeModelConfig.vue
+123: │   │   ├── ResourceConfig.vue
+124: │   │   └── BottleneckAnalysis.vue
+125: │   ├── token-game/
+126: │   │   ├── TokenGameControls.vue
+127: │   │   ├── TokenGameStats.vue
+128: │   │   ├── ConflictDialog.vue
+129: │   │   ├── BranchChoiceDialog.vue          # New branch choice dialog for token game
+130: │   ├── triggers/
+131: │   │   └── TriggerEditor.vue
+132: ├── composables/
+133: │   └── useViewport.ts                     # Viewport zoom/pan management composable
