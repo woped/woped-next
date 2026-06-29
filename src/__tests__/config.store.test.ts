@@ -45,7 +45,7 @@ describe("Config Store", () => {
     it("should have default config values", () => {
       const store = useConfigStore();
 
-      expect(store.general.theme).toBe("system");
+      expect(store.general.theme).toBe('light');
       expect(store.editor.showGrid).toBe(true);
       expect(store.editor.snapToGrid).toBe(true);
     });

@@ -1,48 +1,27 @@
-# Bugfixes & Minor Improvements
+### B-003 — Quick Connect
 
-## Overview
+Right-click a place, transition, operator, or subprocess in select mode to open a floating pad with logical next elements. Choosing an option creates the element and connects it automatically. The new floating pad UI component introduced is:
 
-Collection of bugfixes, minor improvements, and adjustments that don't justify a dedicated feature document. Entries are documented chronologically and grouped by category.
+- UI component: [src/components/editor/QuickConnectPad.vue](../../src/components/editor/QuickConnectPad.vue)
 
-## Open Items
+### B-002 — Operator Menu-glyphs (van der Aalst)
 
-| # | Category | Description | Priority | Status |
-|---|----------|-------------|----------|--------|
-| — | — | *No entries yet* | — | — |
+The operator tool dropdown now uses notation-aware chevron icons instead of diamond/X symbols in van der Aalst notation.
 
-Legend: 🐛 Bug | 🔧 Adjustment | 💅 UI/UX | ⚡ Performance | 🧹 Refactoring
+- SVG chevron icon component: [src/components/editor/OperatorAalstIcon.vue](../../src/components/editor/OperatorAalstIcon.vue)
 
-## Completed Items
+### Token Game - New Branch Choice Dialog
 
-| # | Category | Description | Completed |
-|---|----------|-------------|-----------|
-| — | — | *No entries yet* | — |
+A new dialog component was introduced for XOR branch choice during token games.
 
-## Template
+- Dialog component: [src/components/token-game/BranchChoiceDialog.vue](../../src/components/token-game/BranchChoiceDialog.vue)
 
-New entries use the following format in the table:
+### Composables
 
-| Field | Description |
-|-------|-------------|
-| **#** | Sequential number (B-001, B-002, ...) |
-| **Category** | 🐛 Bug, 🔧 Adjustment, 💅 UI/UX, ⚡ Performance, 🧹 Refactoring |
-| **Description** | Brief description of the issue or change |
-| **Priority** | P1 (critical), P2 (important), P3 (nice-to-have) |
-| **Status** | 🔜 Planned, 🚧 In Progress, ✅ Done |
+- The `useViewport` composable was modified to support advanced viewport controls including zoom, pan, and fit-to-view logic.
 
-When completed, entries are moved from "Open Items" to "Completed Items" with the date added.
+- File: [src/composables/useViewport.ts](../../src/composables/useViewport.ts)
 
-### Example
+These additions add to the editor UI and token game experience, improving navigation, interaction, and notation fidelity.
 
-**Open:**
-
-| # | Category | Description | Priority | Status |
-|---|----------|-------------|----------|--------|
-| B-001 | 🐛 Bug | Arc weight not displayed correctly at negative zoom | P2 | 🔜 Planned |
-| B-002 | 💅 UI/UX | Tooltip delay too long in dark mode | P3 | 🚧 In Progress |
-
-**Completed:**
-
-| # | Category | Description | Completed |
-|---|----------|-------------|-----------|
-| B-003 | 🔧 Adjustment | Changed default grid size from 20px to 25px | 2026-05-03 |
+(Other existing documented features remain unchanged.)

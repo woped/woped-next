@@ -207,6 +207,17 @@ const handleKeydown = (e) => {
             </div>
 
             <div class="setting-group">
+              <h3>{{ $t('settings.notation') }}</h3>
+              <div class="setting-row">
+                <label>{{ $t('settings.operatorNotation') }}</label>
+                <select v-model="localEditor.operatorNotation">
+                  <option value="vanDerAalst">{{ $t('settings.notationVanDerAalst') }}</option>
+                  <option value="modern">{{ $t('settings.notationModern') }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-group">
               <h3>{{ $t('settings.display') }}</h3>
               <div class="setting-row">
                 <label>{{ $t('settings.showLabels') }}</label>

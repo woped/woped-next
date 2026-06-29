@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
 import type { Position } from '@/types/petri-net'
 import { DEFAULTS, VISUAL } from '@/types/petri-net'
+import { scaleFromWheelDelta } from '@/utils/wheelZoom'
 
 export interface Bounds {
   minX: number
@@ -119,13 +120,17 @@ export function useViewport() {
   /**
    * Zoom towards a specific point
    */
-  function zoomAtPoint(point: Position, delta: number) {
-    const scaleBy = 1.1
+  function zoomAtPoint(point: Position, deltaY: number, deltaMode = 0) {
     const oldScale = viewport.value.scale
-    const newScale =
-      delta < 0
-        ? Math.min(oldScale * scaleBy, DEFAULTS.viewport.maxScale)
-        : Math.max(oldScale / scaleBy, DEFAULTS.viewport.minScale)
+    const newScale = scaleFromWheelDelta(
+      oldScale,
+      deltaY,
+      deltaMode,
+      DEFAULTS.viewport.minScale,
+      DEFAULTS.viewport.maxScale
+    )
+
+    if (newScale === oldScale) return
 
     const mousePointTo = {
       x: (point.x - viewport.value.x) / oldScale,

@@ -7,15 +7,20 @@ import { useConfigStore } from '@/stores/config'
 import { OperatorType, OPERATOR_INFO } from '@/types/petri-net'
 import FileMenu from '@/components/file/FileMenu.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
+import OperatorAalstIcon from '@/components/editor/OperatorAalstIcon.vue'
 import { useHelpStore } from '@/stores/help'
 
 const { t } = useI18n()
 const store = usePetriNetStore()
 const configStore = useConfigStore()
 const helpStore = useHelpStore()
-const { tool, canUndo, canRedo, viewport, selectedOperatorType } = storeToRefs(store)
+const { tool, canUndo, canRedo, viewport, selectedOperatorType, selectedIds } = storeToRefs(store)
+const { operatorNotation } = storeToRefs(configStore)
 
-const DISCORD_INVITE_URL = 'https://discord.gg/7v9EA9dRK'
+const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
+
+const DISCORD_INVITE_URL = 'https://discord.gg/2jFAj5hYnz'
+const WOPED_WEBSITE_URL = 'https://woped.dhbw-karlsruhe.de'
 
 // Settings dialog state
 const showSettings = ref(false)
@@ -54,6 +59,10 @@ const handleToolClick = (toolId) => {
   if (toolId === 'operator') {
     showOperatorMenu.value = !showOperatorMenu.value
     store.setTool('operator')
+  } else if (toolId === 'delete' && selectedIds.value.length > 0) {
+    showOperatorMenu.value = false
+    store.deleteSelected()
+    store.setTool('select')
   } else {
     showOperatorMenu.value = false
     store.setTool(toolId)
@@ -159,6 +168,18 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
 
 <template>
   <div class="editor-toolbar">
+    <!-- WoPeD logo -->
+    <a
+      class="toolbar-logo-link"
+      :href="WOPED_WEBSITE_URL"
+      target="_blank"
+      rel="noopener noreferrer"
+      :title="$t('common.visitWopedWebsite')"
+      :aria-label="$t('common.visitWopedWebsite')"
+    >
+      <img class="toolbar-logo" src="/woped-logo.svg" alt="WoPeD" />
+    </a>
+
     <!-- File menu -->
     <FileMenu />
 
@@ -186,7 +207,10 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
             :title="`${t.label} (${t.shortcut})`"
             @click.stop="handleToolClick('operator')"
           >
-            <span class="tool-icon">{{ currentOperatorInfo()?.symbol || t.icon }}</span>
+            <span class="tool-icon">
+              <OperatorAalstIcon v-if="isVanDerAalst" :type="selectedOperatorType" />
+              <template v-else>{{ currentOperatorInfo()?.symbol || t.icon }}</template>
+            </span>
             <span class="tool-label">{{ currentOperatorInfo()?.label || t.label }}</span>
             <span class="dropdown-arrow">▾</span>
           </button>
@@ -200,7 +224,10 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
               :class="['operator-option', { selected: selectedOperatorType === op.type }]"
               @click="selectOperatorType(op.type)"
             >
-              <span class="op-icon">{{ op.icon }}</span>
+              <span class="op-icon">
+                <OperatorAalstIcon v-if="isVanDerAalst" :type="op.type" />
+                <template v-else>{{ op.icon }}</template>
+              </span>
               <span class="op-label">{{ op.label }}</span>
             </button>
           </div>
@@ -318,6 +345,25 @@ const zoomPercent = () => Math.round(viewport.value.scale * 100)
   background-color: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border);
   gap: 8px;
+}
+
+.toolbar-logo-link {
+  display: flex;
+  flex-shrink: 0;
+  line-height: 0;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.toolbar-logo-link:hover {
+  opacity: 0.85;
+}
+
+.toolbar-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  border-radius: 4px;
 }
 
 .toolbar-group {

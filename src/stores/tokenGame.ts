@@ -13,6 +13,13 @@ import type {
 } from '@/types/token-game'
 import { DEFAULT_TOKEN_GAME_STATE, DEFAULT_TOKEN_GAME_SETTINGS, DEFAULT_TOKEN_GAME_STATISTICS } from '@/types/token-game'
 import type { PetriNet, Arc, SubProcess } from '@/types/petri-net'
+import {
+  isElementEnabled,
+  computeFirePlan,
+  getBranchDecision,
+  pickArc,
+  type FireChoice,
+} from '@/utils/operatorSemantics'
 
 export const useTokenGameStore = defineStore('tokenGame', {
   state: (): TokenGameState => ({ ...DEFAULT_TOKEN_GAME_STATE }),
@@ -153,6 +160,7 @@ export const useTokenGameStore = defineStore('tokenGame', {
         startTime: Date.now(),
       }
       this.showConflictDialog = false
+      this.pendingBranchChoice = null
 
       this.updateEnabledTransitions()
       this.status = 'paused'
@@ -183,6 +191,7 @@ export const useTokenGameStore = defineStore('tokenGame', {
       this.activeAnimations = []
       this.isAnimating = false
       this.subprocessStack = []
+      this.pendingBranchChoice = null
     },
 
     /**
@@ -284,28 +293,18 @@ export const useTokenGameStore = defineStore('tokenGame', {
     },
 
     /**
-     * Check if a transition is enabled given current marking
+     * Check if a transition is enabled given current marking.
+     * Operators apply AND/XOR input semantics: an XOR-join is enabled when at least
+     * one input place is marked, whereas AND-input requires all input places.
      */
     isTransitionEnabledByMarking(transitionId: string, net: PetriNet): boolean {
-      // Get all input arcs (arcs leading to this transition)
-      const inputArcs = net.arcs.filter((arc) => arc.targetId === transitionId)
-
-      // Transition is enabled if all input places have enough tokens
-      for (const arc of inputArcs) {
-        const tokensAvailable = this.marking.tokens[arc.sourceId] ?? 0
-        if (tokensAvailable < arc.weight) {
-          return false
-        }
-      }
-
-      // Must have at least one input arc to be enabled
-      return inputArcs.length > 0
+      return isElementEnabled(net, transitionId, this.marking.tokens)
     },
 
     /**
      * Fire a transition
      */
-    async fireTransition(transitionId: string) {
+    async fireTransition(transitionId: string, choices: FireChoice = {}) {
       if (!this.enabledTransitions.includes(transitionId)) {
         console.warn('Transition not enabled:', transitionId)
         return
@@ -319,16 +318,22 @@ export const useTokenGameStore = defineStore('tokenGame', {
       const petriNetStore = usePetriNetStore()
       const net = petriNetStore.net
 
+      // Resolve any exclusive (XOR) branch decisions before firing. In manual mode
+      // an unresolved choice opens the branch dialog and defers the firing.
+      const resolved = this.resolveFireChoices(transitionId, net, choices)
+      if (resolved === null) return
+      const fireChoices = resolved
+
       // Track conflict if multiple transitions were enabled
       if (this.enabledTransitions.length + this.enabledSubprocesses.length > 1) {
         this.statistics.conflictsEncountered++
       }
 
       // Start animation
-      await this.animateTransition(transitionId, net)
+      await this.animateTransition(transitionId, net, fireChoices)
 
       // Compute new marking
-      const newMarking = this.computeNewMarking(transitionId, net)
+      const newMarking = this.computeNewMarking(transitionId, net, fireChoices)
       newMarking.firedTransition = transitionId
 
       // Truncate future history if we're not at the end
@@ -368,17 +373,16 @@ export const useTokenGameStore = defineStore('tokenGame', {
     },
 
     /**
-     * Compute new marking after firing a transition
+     * Compute new marking after firing a transition.
+     * Honours AND/XOR operator semantics: XOR-join consumes from a single input
+     * branch and XOR-split produces to a single output branch (chosen via `choices`).
      */
-    computeNewMarking(transitionId: string, net: PetriNet): Marking {
+    computeNewMarking(transitionId: string, net: PetriNet, choices: FireChoice = {}): Marking {
       const newTokens = { ...this.marking.tokens }
+      const plan = computeFirePlan(net, transitionId, newTokens, choices)
 
-      // Get input and output arcs
-      const inputArcs = net.arcs.filter((arc) => arc.targetId === transitionId)
-      const outputArcs = net.arcs.filter((arc) => arc.sourceId === transitionId)
-
-      // Remove tokens from input places
-      for (const arc of inputArcs) {
+      // Remove tokens from the consumed input places
+      for (const arc of plan.consume) {
         const current = newTokens[arc.sourceId] ?? 0
         const newValue = current - arc.weight
         if (newValue > 0) {
@@ -388,8 +392,8 @@ export const useTokenGameStore = defineStore('tokenGame', {
         }
       }
 
-      // Add tokens to output places
-      for (const arc of outputArcs) {
+      // Add tokens to the produced output places
+      for (const arc of plan.produce) {
         const current = newTokens[arc.targetId] ?? 0
         newTokens[arc.targetId] = current + arc.weight
       }
@@ -403,7 +407,7 @@ export const useTokenGameStore = defineStore('tokenGame', {
     /**
      * Animate token movement through transition
      */
-    async animateTransition(transitionId: string, net: PetriNet): Promise<void> {
+    async animateTransition(transitionId: string, net: PetriNet, choices: FireChoice = {}): Promise<void> {
       const petriNetStore = usePetriNetStore()
       const duration = DEFAULT_TOKEN_GAME_SETTINGS.animationDuration
 
@@ -415,9 +419,10 @@ export const useTokenGameStore = defineStore('tokenGame', {
 
       if (!transition) return
 
-      // Get input and output arcs
-      const inputArcs = net.arcs.filter((arc) => arc.targetId === transitionId)
-      const outputArcs = net.arcs.filter((arc) => arc.sourceId === transitionId)
+      // Only animate the arcs actually consumed/produced (respects XOR branches)
+      const plan = computeFirePlan(net, transitionId, this.marking.tokens, choices)
+      const inputArcs = plan.consume
+      const outputArcs = plan.produce
 
       // Create animations for input tokens (moving to transition)
       const inputAnimations: TokenAnimation[] = []
@@ -648,6 +653,77 @@ export const useTokenGameStore = defineStore('tokenGame', {
      */
     setConflictResolution(mode: ConflictResolutionMode) {
       this.conflictResolution = mode
+    },
+
+    /**
+     * Resolve exclusive (XOR) branch decisions for a firing.
+     * Returns the completed choices, or `null` when a manual decision is required
+     * (in which case the branch dialog is opened and firing is deferred).
+     * The input side is auto-resolved (rare ambiguity); the output side prompts the
+     * user in manual mode, since the chosen branch determines where the token goes.
+     */
+    resolveFireChoices(transitionId: string, net: PetriNet, choices: FireChoice): FireChoice | null {
+      const decision = getBranchDecision(net, transitionId, this.marking.tokens)
+      const result: FireChoice = { ...choices }
+
+      // Input side: auto-pick when ambiguous (multiple marked XOR-join inputs)
+      if (decision.needsInputChoice && !result.inputArcId) {
+        result.inputArcId = pickArc(decision.inputOptions, this.conflictResolution)?.id
+      }
+
+      // Output side: the meaningful XOR-split choice
+      if (decision.needsOutputChoice && !result.outputArcId) {
+        if (this.conflictResolution === 'manual') {
+          this.requestBranchChoice(transitionId, net, 'output', decision.outputOptions, 'target')
+          return null
+        }
+        result.outputArcId = pickArc(decision.outputOptions, this.conflictResolution)?.id
+      }
+
+      return result
+    },
+
+    /**
+     * Open the branch-choice dialog for a manual XOR decision.
+     */
+    requestBranchChoice(
+      operatorId: string,
+      net: PetriNet,
+      side: 'input' | 'output',
+      arcs: Arc[],
+      placeFrom: 'source' | 'target'
+    ) {
+      const options = arcs.map((arc) => {
+        const placeId = placeFrom === 'source' ? arc.sourceId : arc.targetId
+        const place = net.places.find((p) => p.id === placeId)
+        return {
+          arcId: arc.id,
+          placeId,
+          placeName: place?.name || placeId,
+        }
+      })
+      this.pendingBranchChoice = { operatorId, side, options }
+      this.status = 'paused'
+    },
+
+    /**
+     * Resolve a pending manual branch choice and fire the operator on that branch.
+     */
+    async resolveBranchChoice(arcId: string) {
+      const pending = this.pendingBranchChoice
+      if (!pending) return
+      this.pendingBranchChoice = null
+
+      const choices: FireChoice =
+        pending.side === 'output' ? { outputArcId: arcId } : { inputArcId: arcId }
+      await this.fireTransition(pending.operatorId, choices)
+    },
+
+    /**
+     * Dismiss a pending branch choice without firing.
+     */
+    cancelBranchChoice() {
+      this.pendingBranchChoice = null
     },
 
     /**

@@ -45,6 +45,8 @@ export interface TourStep {
   contentKey: string
   placement: 'top' | 'bottom' | 'left' | 'right'
   highlightPadding?: number
+  /** Centered splash dialog without UI spotlight (welcome screen). */
+  variant?: 'splash'
 }
 
 /**

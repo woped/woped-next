@@ -405,7 +405,7 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
     </div>
 
     <!-- Actions -->
-    <div v-if="selectedElement" class="panel-actions">
+    <div v-if="selectedIds.length > 0" class="panel-actions">
       <button
         class="delete-btn"
         @click="store.deleteSelected()"

@@ -350,7 +350,8 @@ describe('Help Store', () => {
 
         const step = store.activeTourCurrentStep
         expect(step).not.toBeNull()
-        expect(step!.targetSelector).toBe('.editor-toolbar')
+        expect(step!.variant).toBe('splash')
+        expect(step!.targetSelector).toBe('')
       })
 
       it('should return null for an out-of-bounds step index', () => {

@@ -43,6 +43,8 @@ const colors = computed(() => {
 })
 const { places, transitions, operators, subProcesses } = storeToRefs(store)
 
+const { operatorNotation } = storeToRefs(configStore)
+
 // Get routing mode (default to 'direct')
 const routingMode = computed(() => props.arc.routingMode || 'direct')
 
@@ -103,7 +105,8 @@ const endpoints = computed(() => {
       sourcePos,
       targetPos,
       sourceElement.value.type,
-      sourceElement.value.type === 'place' ? 'transition' : 'place'
+      sourceElement.value.type === 'place' ? 'transition' : 'place',
+      operatorNotation.value
     )
     return {
       start: result.start,
@@ -115,7 +118,8 @@ const endpoints = computed(() => {
     sourcePos,
     targetPos,
     sourceElement.value.type,
-    targetElement.value.type
+    targetElement.value.type,
+    operatorNotation.value
   )
 })
 
