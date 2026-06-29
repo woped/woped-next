@@ -99,12 +99,15 @@ woped-next/
 │   │   ├── analysis/            # Analysis panels, metrics, coverability graph
 │   │   ├── canvas/              # Konva nodes (Place, Transition, Arc, Operator, …)
 │   │   ├── editor/              # PetriNetEditor, toolbar, canvas, properties
+│   │   │   ├── OperatorAalstIcon.vue   # Operator icon for van der Aalst notation
+│   │   │   ├── QuickConnectPad.vue     # Quick connect pad for right-click
 │   │   ├── file/                # File menu (import/export)
 │   │   ├── help/                # Help dialog, tooltips, guided tour
 │   │   ├── resources/           # Resource manager UI
 │   │   ├── settings/            # Settings dialog
 │   │   ├── simulation/          # Quantitative simulation UI
 │   │   ├── token-game/          # Token game controls and stats
+│   │   │   ├── BranchChoiceDialog.vue  # Branch choice dialog for token game
 │   │   └── triggers/            # Transition trigger editor
 │   ├── composables/             # Shared composition functions
 │   ├── stores/                  # Pinia stores
