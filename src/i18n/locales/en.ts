@@ -566,6 +566,8 @@ export default {
     modelChanges: "Model Changes",
     applyChanges: "Apply Changes",
     changesApplied: "Changes applied",
+    copyCode: "Copy",
+    copied: "Copied!",
     suggestions: {
       describe: "Describe my model",
       analyze: "Is my net sound?",
