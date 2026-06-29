@@ -40,6 +40,30 @@ export interface TokenAnimation {
 }
 
 /**
+ * A pending exclusive (XOR) branch choice that the user must resolve manually.
+ */
+export interface PendingBranchChoice {
+  /** The operator that is being fired */
+  operatorId: string
+  /** Which side of the operator the choice is for */
+  side: 'input' | 'output'
+  /** Selectable options (one per candidate arc) */
+  options: BranchChoiceOption[]
+}
+
+/**
+ * A single selectable branch in a pending XOR choice.
+ */
+export interface BranchChoiceOption {
+  /** The arc that would be used if this option is picked */
+  arcId: string
+  /** The connected place (source for input choice, target for output choice) */
+  placeId: string
+  /** Display name of the connected place */
+  placeName: string
+}
+
+/**
  * State saved when stepping into a subprocess
  */
 export interface SubprocessStackEntry {
@@ -133,6 +157,8 @@ export interface TokenGameState {
   statistics: TokenGameStatistics
   /** Whether the conflict dialog is showing */
   showConflictDialog: boolean
+  /** Pending exclusive branch choice for an XOR operator (manual mode) */
+  pendingBranchChoice: PendingBranchChoice | null
 }
 
 /**
@@ -152,6 +178,7 @@ export const DEFAULT_TOKEN_GAME_STATE: TokenGameState = {
   subprocessStack: [],
   statistics: { ...DEFAULT_TOKEN_GAME_STATISTICS },
   showConflictDialog: false,
+  pendingBranchChoice: null,
 }
 
 /**

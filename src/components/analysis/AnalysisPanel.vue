@@ -15,6 +15,11 @@ const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
 const { net } = storeToRefs(petriNetStore)
 
+// Conference: UI entry points disabled (analysis logic is preserved and can be
+// re-enabled by flipping these flags back to true).
+const SHOW_SOUNDNESS_CHECK = false
+const SHOW_CUSTOM_METRICS = false
+
 // Analysis results
 const workflowResult = ref(null)
 const soundnessResult = ref(null)
@@ -22,6 +27,7 @@ const isAnalyzing = ref(false)
 
 // Collapsed states
 const showStatistics = ref(false)
+const showFreeChoice = ref(false)
 const showCoverability = ref(false)
 const showProcessTree = ref(false)
 const showCustomMetrics = ref(false)
@@ -163,9 +169,6 @@ const formatDuration = (ms) => {
           </div>
         </div>
         <div class="stat-props">
-          <div class="prop" :class="{ active: statistics.freeChoice }">
-            {{ $t('analysis.freeChoice') }}: {{ statistics.freeChoice ? $t('common.yes') : $t('common.no') }}
-          </div>
           <div class="prop" :class="{ active: statistics.stronglyConnected }">
             {{ $t('analysis.connected') }}: {{ statistics.stronglyConnected ? $t('common.yes') : $t('common.no') }}
           </div>
@@ -181,13 +184,25 @@ const formatDuration = (ms) => {
       @run="runWorkflowAnalysis"
     />
 
-    <!-- Soundness Analysis -->
+    <!-- Soundness Analysis (UI disabled for conference; logic preserved) -->
     <AnalysisResults
+      v-if="SHOW_SOUNDNESS_CHECK"
       :title="$t('analysis.soundnessCheck')"
       :result="soundnessResult"
       :is-analyzing="isAnalyzing"
       @run="runSoundnessAnalysis"
     />
+
+    <!-- Free Choice (coming soon) -->
+    <div class="section">
+      <div class="section-header" @click="showFreeChoice = !showFreeChoice">
+        <span class="toggle">{{ showFreeChoice ? '▼' : '▶' }}</span>
+        <span class="section-title">{{ $t('analysis.freeChoice') }}</span>
+      </div>
+      <div v-if="showFreeChoice" class="section-content">
+        <p class="coming-soon">{{ $t('common.comingSoon') }}</p>
+      </div>
+    </div>
 
     <!-- State Space Graphs -->
     <div class="section">
@@ -200,8 +215,8 @@ const formatDuration = (ms) => {
       </div>
     </div>
 
-    <!-- Custom Metrics -->
-    <div class="section">
+    <!-- Custom Metrics (UI disabled for conference; component preserved) -->
+    <div v-if="SHOW_CUSTOM_METRICS" class="section">
       <div class="section-header" @click="showCustomMetrics = !showCustomMetrics">
         <span class="toggle">{{ showCustomMetrics ? '▼' : '▶' }}</span>
         <span class="section-title">{{ $t('analysis.customMetrics') }}</span>
@@ -564,6 +579,17 @@ const formatDuration = (ms) => {
   border-radius: 4px;
   font-size: 12px;
   padding: 12px;
+}
+
+.coming-soon {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-text-muted);
+  background: var(--color-bg-tertiary);
+  text-align: center;
 }
 
 :global(.dark) .no-issues {

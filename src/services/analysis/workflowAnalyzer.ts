@@ -109,15 +109,7 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
   }
 
   // Info about structural properties
-  if (statistics.freeChoice) {
-    issues.push({
-      severity: 'info',
-      code: IssueCodes.ST003,
-      message: 'The net is a free-choice net.',
-      affectedElements: [],
-    })
-  }
-
+  // Note: free-choice is reported under the Soundness section, not here.
   if (statistics.stateMachine) {
     issues.push({
       severity: 'info',

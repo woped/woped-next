@@ -20,6 +20,9 @@ const isLoadingModels = ref(false)
 const validationError = ref('')
 const modelsError = ref('')
 const usedFallback = ref(false)
+// Guards the provider watcher while restoring the saved config so it does
+// not wipe the persisted model selection during initial mount.
+const isInitializing = ref(false)
 
 // Show the newest few models by default; "show more" reveals the rest.
 const displayedModels = computed(() =>
@@ -80,13 +83,21 @@ async function loadAvailableModels() {
 }
 
 onMounted(async () => {
+  isInitializing.value = true
   apiKey.value = chatStore.llmConfig.apiKey
   selectedProvider.value = chatStore.llmConfig.provider
   selectedModel.value = chatStore.llmConfig.model
-  await loadAvailableModels()
+  try {
+    await loadAvailableModels()
+  } finally {
+    isInitializing.value = false
+  }
 })
 
 watch(selectedProvider, async () => {
+  // Skip while restoring the saved config; otherwise switching the provider
+  // back to its default would clear the persisted model selection.
+  if (isInitializing.value) return
   availableModels.value = []
   selectedModel.value = ''
   modelsError.value = ''

@@ -14,6 +14,7 @@ export default {
   tourPrev: 'Back',
   tourFinish: 'Finish',
   tourSkip: 'Skip Tour',
+  welcomeDiscordHint: 'Connect with the WoPeD community on Discord for support, updates, and discussion.',
 
   // Tooltip
   tooltipMore: 'More info...',
@@ -90,13 +91,17 @@ export default {
       title: 'Welcome to WoPeD Next',
       description: 'A quick overview of the application interface.',
       steps: {
+        splash: {
+          title: 'Welcome to WoPeD Next',
+          content: 'Design, analyze, and simulate workflow Petri nets in your browser. This quick tour introduces the main areas of the editor.',
+        },
         toolbar: {
           title: 'Toolbar',
-          content: 'This is the main toolbar. Here you find the file menu, editing tools for places, transitions, arcs and operators, undo/redo buttons, and zoom controls.',
+          content: 'This is the main toolbar. Here you find the file menu, editing tools for places, transitions, arcs and operators, undo/redo buttons, zoom controls, and the Discord community link.',
         },
         canvas: {
           title: 'Canvas',
-          content: 'This is your workspace. Click on the canvas to place elements, drag to move them, and use the mouse wheel to zoom. Right-click for the context menu.',
+          content: 'This is your workspace. Click on the canvas to place elements, drag elements to move them, drag on empty areas to select multiple elements, and hold Space or use the middle mouse button to pan. Right-click an element for quick connect. Use the mouse wheel to zoom.',
         },
         panels: {
           title: 'Side Panels',
@@ -170,7 +175,7 @@ export default {
         },
         panZoom: {
           title: 'Pan & Zoom on Canvas',
-          content: 'Click and drag on empty areas to pan. Use the mouse wheel to zoom. Right-click for the context menu with quick actions.',
+          content: 'Click and drag on empty areas to box-select. Hold Space or use the middle mouse button to pan. Use the mouse wheel to zoom. Right-click an element for quick connect.',
         },
       },
     },
@@ -306,7 +311,7 @@ export default {
       steps: {
         tab: {
           title: 'Analysis Tab',
-          content: 'Click this tab to access all analysis features: workflow checks, soundness verification, coverability graphs, and process metrics.',
+          content: 'Click this tab to access all analysis features: workflow net properties, soundness verification, coverability graphs, and process metrics.',
         },
         panel: {
           title: 'Analysis Panel',
@@ -316,12 +321,12 @@ export default {
     },
 
     analysisCoverability: {
-      title: 'State Space Graphs',
+      title: 'State Space Analysis',
       description: 'Explore all reachable states with the Reachability or Coverability Graph.',
       steps: {
         tab: {
           title: 'Analysis Tab',
-          content: 'Open the Analysis tab and scroll down to the "State Space Graphs" section.',
+          content: 'Open the Analysis tab and scroll down to the "State Space Analysis" section.',
         },
         section: {
           title: 'Choose Graph Type',
@@ -491,7 +496,7 @@ Tip: Press F1 at any time to open this help dialog.`,
       title: 'Editor Tools',
       content: `The toolbar provides the following tools:
 
-**Select (V)** — Click to select elements, drag to move. Hold Shift to select multiple elements. Press Escape to deselect all.
+**Select (V)** — Click to select elements, drag to move. Drag on empty canvas to box-select multiple elements (hold Shift to add to selection). Right-click an element for quick connect. Press Escape to deselect all.
 
 **Place (P)** — Click on the canvas to create a new place. Places are shown as circles and hold tokens.
 
@@ -512,7 +517,11 @@ Use **Undo (Ctrl+Z)** and **Redo (Ctrl+Y / Ctrl+Shift+Z)** to reverse changes.`,
       title: 'Canvas Navigation',
       content: `**Zoom:** Use the mouse wheel or the zoom buttons (+/−) in the view toolbar. Click "Fit" to zoom so all elements are visible.
 
-**Pan:** Click and drag on an empty area of the canvas to pan the view.
+**Pan:** Hold Space and drag, or use the middle mouse button and drag to pan the view.
+
+**Box select:** Drag on an empty area of the canvas to select multiple elements. Hold Shift to add to the current selection.
+
+**Quick connect:** Right-click a place, transition, operator, or subprocess to open the successor menu and auto-connect a new element.
 
 **Rotation:** Use the rotation buttons (↺ ↻) in the view toolbar to rotate the view by 90°.
 
@@ -669,7 +678,7 @@ You can set the default strategy in Settings → Simulation → Conflict Resolut
       title: 'Analysis Overview',
       content: `The Analysis panel offers tools to verify your Petri net's correctness.
 
-**Workflow Check** — Verifies that your net is a valid workflow net:
+**Workflow Net Property** — Verifies that your net is a valid workflow net:
 - Exactly one start place (no incoming arcs)
 - Exactly one end place (no outgoing arcs)
 - Every element is on a path from start to end
@@ -688,8 +697,8 @@ You can set the default strategy in Settings → Simulation → Conflict Resolut
     },
 
     analysisCoverability: {
-      title: 'State Space Graphs',
-      content: `The **State Space Graphs** section provides two complementary views of your Petri net's behavior:
+      title: 'State Space Analysis',
+      content: `The **State Space Analysis** section provides two complementary views of your Petri net's behavior:
 
 **Reachability Graph** — enumerates all *exact* reachable markings. Every node contains concrete token counts, enabling precise reachability queries ("Can marking M be reached?") and full liveness analysis. Only works for **bounded** nets (finite state space). If the net is unbounded, the construction automatically falls back to the coverability graph.
 

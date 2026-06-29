@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { analyzeWorkflow, analyzeSoundness, metricsCalculator } from '@/services/analysis'
+import { getAnalysisBadge } from '@/utils/analysisBadge'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -113,8 +114,8 @@ const formatDuration = (ms) => ms < 1 ? '< 1ms' : `${ms.toFixed(1)}ms`
     <div v-else class="wizard-step results-step">
       <div v-if="results.workflow" class="result-card">
         <div class="result-header">
-          <span class="result-badge" :class="results.workflow.valid ? 'valid' : 'invalid'">
-            {{ results.workflow.valid ? '✓' : '✗' }}
+          <span class="result-badge" :class="getAnalysisBadge(results.workflow.issues).kind">
+            {{ getAnalysisBadge(results.workflow.issues).icon }}
           </span>
           <span class="result-title">{{ t('analysis.workflowCheck') }}</span>
           <span class="result-duration">{{ formatDuration(results.workflow.duration) }}</span>
@@ -135,8 +136,8 @@ const formatDuration = (ms) => ms < 1 ? '< 1ms' : `${ms.toFixed(1)}ms`
 
       <div v-if="results.soundness" class="result-card">
         <div class="result-header">
-          <span class="result-badge" :class="results.soundness.valid ? 'valid' : 'invalid'">
-            {{ results.soundness.valid ? '✓' : '✗' }}
+          <span class="result-badge" :class="getAnalysisBadge(results.soundness.issues).kind">
+            {{ getAnalysisBadge(results.soundness.issues).icon }}
           </span>
           <span class="result-title">{{ t('analysis.soundnessCheck') }}</span>
           <span class="result-duration">{{ formatDuration(results.soundness.duration) }}</span>
@@ -331,6 +332,14 @@ const formatDuration = (ms) => ms < 1 ? '< 1ms' : `${ms.toFixed(1)}ms`
 
 .result-badge.invalid {
   background: #ef4444;
+}
+
+.result-badge.warning {
+  background: #f59e0b;
+}
+
+.result-badge.info {
+  background: #3b82f6;
 }
 
 .result-title {

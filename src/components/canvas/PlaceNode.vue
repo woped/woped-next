@@ -26,7 +26,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dragend', 'contextmenu'])
 
 const { radius, strokeWidth, tokenRadius } = VISUAL.place
 
@@ -54,6 +54,8 @@ const effectiveTokens = computed(() => {
 
 // Circle config
 const circleConfig = computed(() => ({
+  id: props.place.id,
+  name: props.place.id,
   x: props.place.position.x,
   y: props.place.position.y,
   radius,
@@ -75,15 +77,15 @@ const tokenPositions = computed(() => {
   if (tokens === 1) {
     positions.push({ x: centerX, y: centerY })
   } else if (tokens === 2) {
-    positions.push({ x: centerX - 6, y: centerY })
-    positions.push({ x: centerX + 6, y: centerY })
+    positions.push({ x: centerX - 5, y: centerY })
+    positions.push({ x: centerX + 5, y: centerY })
   } else if (tokens === 3) {
-    positions.push({ x: centerX, y: centerY - 6 })
-    positions.push({ x: centerX - 6, y: centerY + 4 })
-    positions.push({ x: centerX + 6, y: centerY + 4 })
+    positions.push({ x: centerX, y: centerY - 5 })
+    positions.push({ x: centerX - 5, y: centerY + 3 })
+    positions.push({ x: centerX + 5, y: centerY + 3 })
   } else if (tokens <= 5) {
     // Square pattern
-    const offset = 6
+    const offset = 5
     positions.push({ x: centerX - offset, y: centerY - offset })
     positions.push({ x: centerX + offset, y: centerY - offset })
     positions.push({ x: centerX - offset, y: centerY + offset })
@@ -134,6 +136,10 @@ const handleClick = (e) => {
 const handleDragEnd = (e) => {
   emit('dragend', e)
 }
+
+const handleContextMenu = (e) => {
+  emit('contextmenu', e)
+}
 </script>
 
 <template>
@@ -143,6 +149,7 @@ const handleDragEnd = (e) => {
       :config="circleConfig"
       @click="handleClick"
       @dragend="handleDragEnd"
+      @contextmenu="handleContextMenu"
     />
 
     <!-- Tokens (dots) -->

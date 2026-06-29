@@ -6,25 +6,31 @@ import { useHelpStore } from '@/stores/help'
 const { t } = useI18n()
 const helpStore = useHelpStore()
 
+const DISCORD_INVITE_URL = 'https://discord.gg/2jFAj5hYnz'
+
 const highlightRect = ref({ top: 0, left: 0, width: 0, height: 0 })
 const popoverStyle = ref({})
 const visible = ref(false)
+const popoverRef = ref(null)
 
 const tour = computed(() => helpStore.activeTour)
 const step = computed(() => helpStore.activeTourCurrentStep)
 const stepIndex = computed(() => helpStore.activeTourStep)
 const totalSteps = computed(() => tour.value?.steps.length ?? 0)
 const isLastStep = computed(() => stepIndex.value >= totalSteps.value - 1)
+const isSplashStep = computed(() => step.value?.variant === 'splash')
 
-function positionHighlight() {
+async function positionHighlight() {
   if (!step.value) {
     visible.value = false
     return
   }
 
-  const el = document.querySelector(step.value.targetSelector)
+  visible.value = true
+
+  const el = step.value.variant === 'splash' ? null : document.querySelector(step.value.targetSelector)
+
   if (!el) {
-    visible.value = true
     highlightRect.value = { top: 0, left: 0, width: 0, height: 0 }
     popoverStyle.value = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
     return
@@ -40,30 +46,43 @@ function positionHighlight() {
     height: rect.height + pad * 2,
   }
 
-  const popover = {}
+  // Measure the popover so its placement can be clamped to the viewport.
+  // Width/height are independent of the (possibly stale) position, so the
+  // measurement is valid even before the final coordinates are applied.
+  await nextTick()
+  const popEl = popoverRef.value
+  const popWidth = popEl?.offsetWidth ?? 340
+  const popHeight = popEl?.offsetHeight ?? 220
+
   const gap = 16
+  const margin = 12
+  const vw = window.innerWidth
+  const vh = window.innerHeight
   const placement = step.value.placement
 
-  if (placement === 'bottom') {
-    popover.top = `${rect.bottom + gap}px`
-    popover.left = `${rect.left + rect.width / 2}px`
-    popover.transform = 'translateX(-50%)'
-  } else if (placement === 'top') {
-    popover.bottom = `${window.innerHeight - rect.top + gap}px`
-    popover.left = `${rect.left + rect.width / 2}px`
-    popover.transform = 'translateX(-50%)'
+  let left
+  let top
+
+  if (placement === 'top') {
+    top = rect.top - gap - popHeight
+    left = rect.left + rect.width / 2 - popWidth / 2
   } else if (placement === 'left') {
-    popover.top = `${rect.top + rect.height / 2}px`
-    popover.right = `${window.innerWidth - rect.left + gap}px`
-    popover.transform = 'translateY(-50%)'
+    left = rect.left - gap - popWidth
+    top = rect.top + rect.height / 2 - popHeight / 2
   } else if (placement === 'right') {
-    popover.top = `${rect.top + rect.height / 2}px`
-    popover.left = `${rect.right + gap}px`
-    popover.transform = 'translateY(-50%)'
+    left = rect.right + gap
+    top = rect.top + rect.height / 2 - popHeight / 2
+  } else {
+    // default: bottom
+    top = rect.bottom + gap
+    left = rect.left + rect.width / 2 - popWidth / 2
   }
 
-  popoverStyle.value = popover
-  visible.value = true
+  // Keep the popover fully inside the viewport.
+  left = Math.max(margin, Math.min(left, vw - popWidth - margin))
+  top = Math.max(margin, Math.min(top, vh - popHeight - margin))
+
+  popoverStyle.value = { top: `${top}px`, left: `${left}px` }
 }
 
 function handleNext() {
@@ -151,7 +170,18 @@ onUnmounted(() => {
       ></div>
 
       <!-- Popover -->
-      <div class="tour-popover" :style="popoverStyle">
+      <div
+        ref="popoverRef"
+        class="tour-popover"
+        :class="{ 'tour-popover-splash': isSplashStep }"
+        :style="popoverStyle"
+      >
+        <img
+          v-if="isSplashStep"
+          class="tour-splash"
+          src="/woped-splash.jpg"
+          alt="WoPeD"
+        />
         <div class="tour-popover-header">
           <h4>{{ step ? $t(step.titleKey) : '' }}</h4>
           <span class="tour-step-count">
@@ -159,6 +189,24 @@ onUnmounted(() => {
           </span>
         </div>
         <p class="tour-popover-content">{{ step ? $t(step.contentKey) : '' }}</p>
+        <div v-if="isSplashStep" class="tour-discord">
+          <p class="tour-discord-text">{{ $t('help.welcomeDiscordHint') }}</p>
+          <a
+            class="tour-discord-link"
+            :href="DISCORD_INVITE_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+            :title="t('toolbar.discord')"
+          >
+            <svg class="tour-discord-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
+              />
+            </svg>
+            {{ $t('toolbar.discord') }}
+          </a>
+        </div>
         <div class="tour-popover-footer">
           <button class="tour-skip-btn" @click="handleSkip">
             {{ $t('help.tourSkip') }}
@@ -221,6 +269,7 @@ onUnmounted(() => {
 .tour-popover {
   position: fixed;
   width: 340px;
+  max-width: calc(100vw - 32px);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -229,6 +278,59 @@ onUnmounted(() => {
   pointer-events: auto;
   z-index: 2001;
   transition: all 0.3s ease;
+}
+
+.tour-popover-splash {
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+}
+
+.tour-splash {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.tour-discord {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+}
+
+.tour-discord-text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.tour-discord-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #5865f2;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.tour-discord-link:hover {
+  background: #4752c4;
+}
+
+.tour-discord-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .tour-popover-header {
