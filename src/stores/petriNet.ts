@@ -19,6 +19,7 @@ import {
   computeQuickConnectPosition,
   isValidQuickConnect,
   type QuickConnectTarget,
+  type QuickConnectSource,
 } from "@/utils/quickConnect";
 import { snapToGrid } from "@/utils/geometry";
 import { useConfigStore } from "@/stores/config";
@@ -594,10 +595,11 @@ export const usePetriNetStore = defineStore("petriNet", {
       operatorType?: OperatorType,
     ): string | null {
       const net = this.nets[this.activeNetId];
-      const getType = this.getElementById;
+      const getType = this.getElementType;
       const sourceType = getType(sourceId);
       if (!sourceType || sourceType === "arc") return null;
-      if (!isValidQuickConnect(sourceType, targetKind)) return null;
+      const sourceKind = sourceType as QuickConnectSource;
+      if (!isValidQuickConnect(sourceKind, targetKind)) return null;
 
       const sourceEl = this.getElementById(sourceId);
       if (!sourceEl || !("position" in sourceEl)) return null;
@@ -607,7 +609,7 @@ export const usePetriNetStore = defineStore("petriNet", {
       ).length;
       let position = computeQuickConnectPosition(
         sourceEl.position,
-        sourceType,
+        sourceKind,
         targetKind,
         outgoingCount,
       );
