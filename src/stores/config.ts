@@ -6,6 +6,7 @@ import type {
   TokenGameConfig,
   AnalysisConfig,
   LanguageConfig,
+  ServicesConfig,
   RecentFile,
   ThemeMode,
   Locale,
@@ -204,6 +205,14 @@ export const useConfigStore = defineStore('config', {
      */
     updateAnalysis(config: Partial<AnalysisConfig>) {
       this.analysis = { ...this.analysis, ...config }
+      this.save()
+    },
+
+    /**
+     * Update external service (T2P/P2T) settings
+     */
+    updateServices(config: Partial<ServicesConfig>) {
+      this.services = { ...this.services, ...config }
       this.save()
     },
 

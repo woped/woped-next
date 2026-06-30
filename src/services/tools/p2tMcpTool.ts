@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LLMConfig } from "@/types/chat";
+import type { ServicesConfig } from "@/types/config";
 import type { McpTool, McpToolResult } from "@/types/mcp";
 import { jsonStringToMcpResult } from "./mcpJsonResult";
 import { runP2T } from "./t2pP2tCore";
@@ -36,7 +37,8 @@ export function parseP2TArgs(raw: unknown): P2TArgs {
 export async function executeP2T(
   args: P2TArgs,
   llmConfig?: LLMConfig,
+  servicesConfig?: ServicesConfig,
 ): Promise<McpToolResult> {
-  const json = await runP2T(args, llmConfig);
+  const json = await runP2T(args, llmConfig, servicesConfig);
   return jsonStringToMcpResult(json);
 }

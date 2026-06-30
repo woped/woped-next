@@ -11,10 +11,10 @@ const llmConfig: LLMConfig = {
 };
 
 vi.mock("@/services/tools/toolConfig", () => ({
-  TOOL_ENDPOINTS: {
+  getToolEndpoints: () => ({
     t2p: "http://test-t2p/generate_pnml",
     p2t: "http://test-p2t/generateText",
-  },
+  }),
 }));
 
 vi.mock("@/services/tools/llmFallback", () => ({

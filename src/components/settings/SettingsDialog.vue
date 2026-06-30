@@ -3,6 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
+import { withPort } from '@/services/tools/toolConfig'
+import { pingService } from '@/services/tools/serviceHealth'
 
 const props = defineProps({
   open: {
@@ -15,7 +17,7 @@ const emit = defineEmits(['close'])
 
 const { t } = useI18n()
 const configStore = useConfigStore()
-const { general, editor, tokenGame, analysis, language } = storeToRefs(configStore)
+const { general, editor, tokenGame, analysis, language, services } = storeToRefs(configStore)
 
 // Active tab
 const activeTab = ref('general')
@@ -25,6 +27,7 @@ const tabs = computed(() => [
   { id: 'editor', label: t('settings.editor') },
   { id: 'simulation', label: t('settings.simulation') },
   { id: 'analysis', label: t('settings.analysis') },
+  { id: 'services', label: t('settings.wopedServices') },
 ])
 
 // Local copies for editing
@@ -33,6 +36,93 @@ const localEditor = ref({ ...editor.value })
 const localTokenGame = ref({ ...tokenGame.value })
 const localAnalysis = ref({ ...analysis.value })
 const localLanguage = ref({ ...language.value })
+const localServices = ref({ ...services.value })
+
+// A URL is acceptable if it is empty or a valid http(s) URL.
+function isValidEndpoint(url) {
+  const trimmed = (url ?? '').trim()
+  if (!trimmed) return true
+  try {
+    const parsed = new URL(trimmed)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+// A port is acceptable if it is empty/unset or an integer in 1..65535.
+function isValidPort(port) {
+  if (port === null || port === undefined || port === '') return true
+  const n = Number(port)
+  return Number.isInteger(n) && n >= 1 && n <= 65535
+}
+
+// Coerce a port input into an integer or null for persistence.
+function toPortOrNull(port) {
+  if (port === null || port === undefined || port === '') return null
+  const n = Number(port)
+  return Number.isInteger(n) && n >= 1 && n <= 65535 ? n : null
+}
+
+// Derive the implicit default port from an endpoint URL (explicit port, else 443/80).
+function defaultPortFromEndpoint(url) {
+  const trimmed = (url ?? '').trim()
+  if (!trimmed) return ''
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.port) return parsed.port
+    return parsed.protocol === 'https:' ? '443' : '80'
+  } catch {
+    return ''
+  }
+}
+
+const t2pDefaultPortPlaceholder = computed(() =>
+  defaultPortFromEndpoint(localServices.value.t2pEndpoint),
+)
+const p2tDefaultPortPlaceholder = computed(() =>
+  defaultPortFromEndpoint(localServices.value.p2tEndpoint),
+)
+
+// Only enabled services with a non-empty URL must be valid; a disabled service
+// (or one intentionally left blank to force the LLM fallback) is fine.
+const t2pEndpointInvalid = computed(
+  () => localServices.value.t2pEnabled && !isValidEndpoint(localServices.value.t2pEndpoint),
+)
+const p2tEndpointInvalid = computed(
+  () => localServices.value.p2tEnabled && !isValidEndpoint(localServices.value.p2tEndpoint),
+)
+const t2pPortInvalid = computed(() => !isValidPort(localServices.value.t2pPort))
+const p2tPortInvalid = computed(() => !isValidPort(localServices.value.p2tPort))
+const servicesValid = computed(
+  () =>
+    !t2pEndpointInvalid.value &&
+    !p2tEndpointInvalid.value &&
+    !t2pPortInvalid.value &&
+    !p2tPortInvalid.value,
+)
+
+// Connection test state per service: 'idle' | 'testing' | 'ok' | 'fail'
+const connectionStatus = ref({ t2p: 'idle', p2t: 'idle' })
+
+function resetConnectionStatus(kind) {
+  connectionStatus.value[kind] = 'idle'
+}
+
+async function testConnection(kind) {
+  const endpoint = kind === 't2p' ? localServices.value.t2pEndpoint : localServices.value.p2tEndpoint
+  const port = kind === 't2p' ? localServices.value.t2pPort : localServices.value.p2tPort
+
+  if (!isValidEndpoint(endpoint) || !isValidPort(port) || !(endpoint ?? '').trim()) {
+    connectionStatus.value[kind] = 'fail'
+    return
+  }
+
+  connectionStatus.value[kind] = 'testing'
+  const url = withPort(endpoint.trim(), toPortOrNull(port))
+  const ok = await pingService(url)
+  connectionStatus.value[kind] = ok ? 'ok' : 'fail'
+}
 
 // Store original settings when dialog opens (for cancel restore)
 const originalTheme = ref(null)
@@ -48,6 +138,8 @@ watch(
       localTokenGame.value = { ...tokenGame.value }
       localAnalysis.value = { ...analysis.value }
       localLanguage.value = { ...language.value }
+      localServices.value = { ...services.value }
+      connectionStatus.value = { t2p: 'idle', p2t: 'idle' }
       originalTheme.value = general.value.theme
       originalLocale.value = language.value.locale
     }
@@ -56,10 +148,19 @@ watch(
 
 // Save all settings
 const saveSettings = () => {
+  if (!servicesValid.value) {
+    activeTab.value = 'services'
+    return
+  }
   configStore.updateGeneral(localGeneral.value)
   configStore.updateEditor(localEditor.value)
   configStore.updateTokenGame(localTokenGame.value)
   configStore.updateAnalysis(localAnalysis.value)
+  configStore.updateServices({
+    ...localServices.value,
+    t2pPort: toPortOrNull(localServices.value.t2pPort),
+    p2tPort: toPortOrNull(localServices.value.p2tPort),
+  })
   configStore.updateLanguage(localLanguage.value)
   emit('close')
 }
@@ -83,6 +184,7 @@ const resetDefaults = () => {
   localTokenGame.value = { ...tokenGame.value }
   localAnalysis.value = { ...analysis.value }
   localLanguage.value = { ...language.value }
+  localServices.value = { ...services.value }
 }
 
 // Preview theme immediately when changed
@@ -315,6 +417,111 @@ const handleKeydown = (e) => {
               </div>
             </div>
           </div>
+
+          <!-- WoPeD Services Tab -->
+          <div v-show="activeTab === 'services'" class="tab-content">
+            <p class="settings-hint">{{ $t('settings.servicesHint') }}</p>
+
+            <div class="setting-group">
+              <h3>{{ $t('settings.t2pService') }}</h3>
+              <div class="setting-row">
+                <label>{{ $t('settings.t2pEnabled') }}</label>
+                <input type="checkbox" v-model="localServices.t2pEnabled" />
+              </div>
+              <div class="setting-row">
+                <label>{{ $t('settings.t2pEndpoint') }}</label>
+                <input
+                  type="text"
+                  v-model="localServices.t2pEndpoint"
+                  class="endpoint-input"
+                  :class="{ invalid: t2pEndpointInvalid }"
+                  :disabled="!localServices.t2pEnabled"
+                  placeholder="https://…"
+                  @input="resetConnectionStatus('t2p')"
+                />
+              </div>
+              <p v-if="t2pEndpointInvalid" class="setting-error">{{ $t('settings.invalidEndpoint') }}</p>
+              <div class="setting-row">
+                <label>{{ $t('settings.port') }}</label>
+                <input
+                  type="number"
+                  v-model="localServices.t2pPort"
+                  :class="{ invalid: t2pPortInvalid }"
+                  :disabled="!localServices.t2pEnabled"
+                  min="1"
+                  max="65535"
+                  :placeholder="t2pDefaultPortPlaceholder"
+                  @input="resetConnectionStatus('t2p')"
+                />
+              </div>
+              <p v-if="t2pPortInvalid" class="setting-error">{{ $t('settings.invalidPort') }}</p>
+              <div class="setting-row connection-row">
+                <button
+                  type="button"
+                  class="btn-test"
+                  :disabled="!localServices.t2pEnabled || connectionStatus.t2p === 'testing'"
+                  @click="testConnection('t2p')"
+                >
+                  {{ $t('settings.testConnection') }}
+                </button>
+                <span class="connection-status" :class="connectionStatus.t2p">
+                  <template v-if="connectionStatus.t2p === 'testing'">{{ $t('settings.testing') }}</template>
+                  <template v-else-if="connectionStatus.t2p === 'ok'">{{ $t('settings.connectionOk') }}</template>
+                  <template v-else-if="connectionStatus.t2p === 'fail'">{{ $t('settings.connectionFailed') }}</template>
+                </span>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <h3>{{ $t('settings.p2tService') }}</h3>
+              <div class="setting-row">
+                <label>{{ $t('settings.p2tEnabled') }}</label>
+                <input type="checkbox" v-model="localServices.p2tEnabled" />
+              </div>
+              <div class="setting-row">
+                <label>{{ $t('settings.p2tEndpoint') }}</label>
+                <input
+                  type="text"
+                  v-model="localServices.p2tEndpoint"
+                  class="endpoint-input"
+                  :class="{ invalid: p2tEndpointInvalid }"
+                  :disabled="!localServices.p2tEnabled"
+                  placeholder="https://…"
+                  @input="resetConnectionStatus('p2t')"
+                />
+              </div>
+              <p v-if="p2tEndpointInvalid" class="setting-error">{{ $t('settings.invalidEndpoint') }}</p>
+              <div class="setting-row">
+                <label>{{ $t('settings.port') }}</label>
+                <input
+                  type="number"
+                  v-model="localServices.p2tPort"
+                  :class="{ invalid: p2tPortInvalid }"
+                  :disabled="!localServices.p2tEnabled"
+                  min="1"
+                  max="65535"
+                  :placeholder="p2tDefaultPortPlaceholder"
+                  @input="resetConnectionStatus('p2t')"
+                />
+              </div>
+              <p v-if="p2tPortInvalid" class="setting-error">{{ $t('settings.invalidPort') }}</p>
+              <div class="setting-row connection-row">
+                <button
+                  type="button"
+                  class="btn-test"
+                  :disabled="!localServices.p2tEnabled || connectionStatus.p2t === 'testing'"
+                  @click="testConnection('p2t')"
+                >
+                  {{ $t('settings.testConnection') }}
+                </button>
+                <span class="connection-status" :class="connectionStatus.p2t">
+                  <template v-if="connectionStatus.p2t === 'testing'">{{ $t('settings.testing') }}</template>
+                  <template v-else-if="connectionStatus.p2t === 'ok'">{{ $t('settings.connectionOk') }}</template>
+                  <template v-else-if="connectionStatus.p2t === 'fail'">{{ $t('settings.connectionFailed') }}</template>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -506,6 +713,85 @@ const handleKeydown = (e) => {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.setting-row input[type='text'].endpoint-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.setting-row input[type='text'].endpoint-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.setting-row input[type='text'].endpoint-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-row input[type='text'].endpoint-input.invalid {
+  border-color: var(--color-error);
+}
+
+.settings-hint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.setting-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.setting-row input[type='number'].invalid {
+  border-color: var(--color-error);
+}
+
+.connection-row {
+  gap: 10px;
+}
+
+.btn-test {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-test:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.connection-status {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.connection-status.ok {
+  color: var(--color-success);
+}
+
+.connection-status.fail {
+  color: var(--color-error);
 }
 
 .setting-row select option {

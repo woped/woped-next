@@ -4,6 +4,7 @@ import { createNlpMcpServer } from './mcp/createNlpMcpServer'
 import { modelSerializer } from './modelSerializer'
 import { chatLogger } from './chatLogger'
 import type { LLMConfig, OrchestratorResponse, ModelCommand, ToolCall } from '@/types/chat'
+import type { ServicesConfig } from '@/types/config'
 
 const SYSTEM_PROMPT = `You are a helpful Petri net modeling assistant in WoPeD (Workflow Petri Net Designer). You help users with:
 - Creating Petri nets from natural language descriptions (use t2p_convert)
@@ -29,8 +30,8 @@ const MAX_TOOL_ITERATIONS = 5
 export class ChatOrchestrator {
   private client: LLMClient
 
-  constructor(config: LLMConfig) {
-    this.client = new LLMClient(config, createNlpMcpServer(config))
+  constructor(config: LLMConfig, servicesConfig?: ServicesConfig) {
+    this.client = new LLMClient(config, createNlpMcpServer(config, servicesConfig))
   }
 
   abort() {

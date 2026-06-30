@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid'
 import { ChatOrchestrator } from '@/services/chatOrchestrator'
 import { chatLogger } from '@/services/chatLogger'
 import { usePetriNetStore } from './petriNet'
+import { useConfigStore } from './config'
 import { fileService } from '@/services/file/fileService'
 import type { ChatMessage, ModelCommand, LLMConfig } from '@/types/chat'
 import { DEFAULT_LLM_CONFIG } from '@/types/chat'
@@ -181,7 +182,10 @@ export const useChatStore = defineStore('chat', {
       this.isLoading = true
 
       try {
-        const orchestrator = new ChatOrchestrator(this.llmConfig)
+        const orchestrator = new ChatOrchestrator(
+          this.llmConfig,
+          useConfigStore().services,
+        )
         activeOrchestrator = orchestrator
 
         const historyForContext = this.chatHistory.filter(

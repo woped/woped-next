@@ -23,6 +23,21 @@ import {
 import { snapToGrid } from '@/utils/geometry'
 import { useConfigStore } from '@/stores/config'
 
+/**
+ * localStorage key for persisting the Petri net state across page reloads.
+ */
+const PETRI_NET_STORAGE_KEY = 'woped-petrinet'
+
+/**
+ * Debounce delay (ms) for persisting net state after mutations.
+ */
+const SAVE_DEBOUNCE_MS = 1000
+
+/**
+ * Pending debounced save timeout (module-level so it survives store re-use).
+ */
+let saveTimeout: ReturnType<typeof setTimeout> | null = null
+
 interface PetriNetState {
   // Multi-net support
   nets: Record<string, PetriNet>
@@ -39,6 +54,8 @@ interface PetriNetState {
   maxHistorySize: number
   // Incremented whenever a net is loaded so the canvas can fit it into view
   fitToViewRequest: number
+  // True when the active net was restored from persisted storage on startup
+  hydratedFromStorage: boolean
 }
 
 const createEmptyNet = (id?: string, name?: string, parentId?: string): PetriNet => ({
@@ -80,6 +97,7 @@ export const usePetriNetStore = defineStore('petriNet', {
       historyIndex: -1,
       maxHistorySize: 50,
       fitToViewRequest: 0,
+      hydratedFromStorage: false,
     }
   },
 
@@ -1109,6 +1127,98 @@ export const usePetriNetStore = defineStore('petriNet', {
      */
     initialize() {
       this.saveToHistory()
+    },
+
+    // ========== Persistence ==========
+
+    /**
+     * Persist the current nets and active net id to localStorage.
+     * Only the net data is stored; transient UI state (viewport, selection,
+     * tool, undo history) is intentionally left out.
+     */
+    saveToLocalStorage() {
+      try {
+        localStorage.setItem(
+          PETRI_NET_STORAGE_KEY,
+          JSON.stringify({
+            nets: this.nets,
+            activeNetId: this.activeNetId,
+          }),
+        )
+      } catch (e) {
+        console.warn('Failed to save Petri net state:', e)
+      }
+    },
+
+    /**
+     * Schedule a debounced persistence write. Repeated calls within the
+     * debounce window collapse into a single write.
+     */
+    scheduleSave() {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout)
+      }
+      saveTimeout = setTimeout(() => {
+        saveTimeout = null
+        this.saveToLocalStorage()
+      }, SAVE_DEBOUNCE_MS)
+    },
+
+    /**
+     * Restore net state from localStorage.
+     * Returns true when a valid saved state was restored, false otherwise
+     * (no saved state, corrupted data, or inconsistent references).
+     */
+    loadFromLocalStorage(): boolean {
+      try {
+        const saved = localStorage.getItem(PETRI_NET_STORAGE_KEY)
+        if (!saved) return false
+
+        const parsed = JSON.parse(saved)
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          parsed.nets &&
+          typeof parsed.nets === 'object' &&
+          typeof parsed.activeNetId === 'string' &&
+          parsed.nets[parsed.activeNetId]
+        ) {
+          const normalized: Record<string, PetriNet> = {}
+          for (const [id, net] of Object.entries(parsed.nets as Record<string, PetriNet>)) {
+            normalized[id] = normalizePetriNet(net).net
+          }
+
+          this.nets = normalized
+          this.activeNetId = parsed.activeNetId
+          this.breadcrumb = [parsed.activeNetId]
+          this.selectedIds = []
+          this.history = []
+          this.historyIndex = -1
+          this.saveToHistory()
+          this.fitToViewRequest++
+          this.hydratedFromStorage = true
+          return true
+        }
+      } catch (e) {
+        console.warn('Failed to load Petri net state:', e)
+      }
+      return false
+    },
+
+    /**
+     * Clear the persisted state and reset to a fresh empty net.
+     */
+    clearSaved() {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout)
+        saveTimeout = null
+      }
+      try {
+        localStorage.removeItem(PETRI_NET_STORAGE_KEY)
+      } catch (e) {
+        console.warn('Failed to clear saved Petri net state:', e)
+      }
+      this.newNet()
     },
   },
 })
