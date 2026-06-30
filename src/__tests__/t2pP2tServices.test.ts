@@ -39,6 +39,7 @@ describe("t2pP2tCore with disabled services", () => {
     p2tEndpoint: "http://example.com/p2t",
     t2pEnabled: false,
     p2tEnabled: false,
+    t2pPromptingStrategy: "zero_shot",
   };
 
   it("runT2P uses the LLM fallback when T2P is disabled", async () => {

@@ -23,6 +23,7 @@ const servicesConfig: ServicesConfig = {
   p2tEndpoint: "http://test-p2t",
   t2pEnabled: true,
   p2tEnabled: true,
+  t2pPromptingStrategy: "zero_shot",
 };
 
 describe("ChatOrchestrator MCP integration", () => {
