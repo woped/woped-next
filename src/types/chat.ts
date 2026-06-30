@@ -58,6 +58,8 @@ export const PROVIDER_OPTIONS: Array<{ id: LLMProvider; name: string }> = [
 export interface LLMModelOption {
   id: string
   name: string
+  /** Provider creation timestamp (Unix seconds), when available (OpenAI). Used to sort newest-first. */
+  created?: number
 }
 
 export interface ToolCall {

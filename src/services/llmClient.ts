@@ -462,13 +462,12 @@ export class LLMClient {
       throw new Error(`OpenAI models API error: ${response.status}`)
     }
 
-    const data = await response.json() as { data?: Array<{ id: string }> }
+    const data = await response.json() as { data?: Array<{ id: string; created?: number }> }
 
     return (data.data || [])
-      .map((model) => model.id)
-      .filter((id) => LLMClient.isOpenAiChatModel(id))
-      .sort((a, b) => a.localeCompare(b))
-      .map((id) => ({ id, name: id }))
+      .filter((model) => LLMClient.isOpenAiChatModel(model.id))
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((model) => ({ id: model.id, name: model.id, created: model.created }))
   }
 
   private static async listGeminiModels(apiKey: string): Promise<LLMModelOption[]> {
