@@ -191,7 +191,25 @@ export const useChatStore = defineStore('chat', {
         const historyForContext = this.chatHistory.filter(
           (m) => m.content !== content.trim(),
         )
-        const response = await orchestrator.sendMessage(content, historyForContext)
+        const services = useConfigStore().services
+        const response = await orchestrator.sendMessage(content, historyForContext, {
+          onToolStart: (toolName) => {
+            if (
+              toolName !== 't2p_convert' ||
+              !services.t2pEnabled ||
+              services.t2pPromptingStrategy !== 'few_shot'
+            ) {
+              return
+            }
+            const idx = this.messages.findIndex((m) => m.id === loadingId)
+            if (idx !== -1) {
+              this.messages[idx] = {
+                ...this.messages[idx],
+                loadingHintKey: 'chat.t2pFewShotWait',
+              }
+            }
+          },
+        })
 
         activeOrchestrator = null
 

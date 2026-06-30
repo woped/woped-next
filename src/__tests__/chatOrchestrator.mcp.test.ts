@@ -87,9 +87,11 @@ describe("ChatOrchestrator MCP integration", () => {
 
   it("passes MCP tools to the LLM and returns MCP tool results to the chat loop", async () => {
     const orchestrator = new ChatOrchestrator(config, servicesConfig);
+    const onToolStart = vi.fn();
     const response = await orchestrator.sendMessage(
       "How do I model parallelism?",
       [],
+      { onToolStart },
     );
     const fetchMock = vi.mocked(fetch);
     const firstBody = JSON.parse(
@@ -103,6 +105,7 @@ describe("ChatOrchestrator MCP integration", () => {
       message: "Use an AND-split for parallel work.",
       commands: [],
     });
+    expect(onToolStart).toHaveBeenCalledWith("help_modeling");
     expect(firstBody.tools).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

@@ -621,6 +621,8 @@ export default {
     setupRequired: 'Geben Sie Ihren OpenAI- oder Gemini-API-Schlüssel ein, um den Chat-Assistenten zu nutzen.',
     setupButton: 'API-Schlüssel einrichten',
     emptyState: 'Fragen Sie mich zu Ihrem Petri-Netz-Modell!',
+    t2pFewShotWait:
+      'Konvertierung mit Few-Shot-Prompting — das kann etwas länger dauern.',
     modelChanges: 'Modelländerungen',
     applyChanges: 'Änderungen anwenden',
     changesApplied: 'Änderungen angewendet',

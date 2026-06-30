@@ -104,13 +104,27 @@ describe("t2pP2tCore", () => {
   it("runT2P bypasses service and calls LLM fallback on HTTP error", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response("", { status: 503 })),
-    );
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            error: { code: "upstream_error", message: "The LLM provider call failed." },
+          }),
+          { status: 500 },
+        ),
+      ),
+    )
 
-    const json = await runT2P({ text: "order process" }, llmConfig);
-    expect(JSON.parse(json).pnml).toContain("fallback");
-    expect(llmFallbackT2P).toHaveBeenCalledOnce();
-  });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    const json = await runT2P({ text: "order process" }, llmConfig)
+    expect(JSON.parse(json).pnml).toContain("fallback")
+    expect(llmFallbackT2P).toHaveBeenCalledOnce()
+    expect(warnSpy.mock.calls.some((call) => String(call[0]).includes("upstream_error"))).toBe(
+      true,
+    )
+
+    warnSpy.mockRestore()
+  })
 
   it("runP2T bypasses service and calls LLM fallback on network error", async () => {
     vi.stubGlobal(

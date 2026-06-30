@@ -621,6 +621,8 @@ export default {
     setupRequired: 'Enter your OpenAI or Gemini API key to use the chat assistant.',
     setupButton: 'Set up API Key',
     emptyState: 'Ask me about your Petri net model!',
+    t2pFewShotWait:
+      'Converting your description with few-shot prompting — this may take a little longer.',
     modelChanges: 'Model Changes',
     applyChanges: 'Apply Changes',
     changesApplied: 'Changes applied',
