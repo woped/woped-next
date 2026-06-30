@@ -139,6 +139,9 @@ export default {
     tokens: 'Token',
     weight: 'Gewicht',
     position: 'Position',
+    collapsePanel: 'Panel einklappen',
+    expandPanel: 'Panel einblenden',
+    expandPanelMax: 'Panel auf volle Breite erweitern',
   },
 
   // Token Game
@@ -327,6 +330,10 @@ export default {
     t2pService: 'Text → Petrinetz (T2P)',
     t2pEndpoint: 'T2P-Endpoint-URL',
     t2pEnabled: 'T2P-Service verwenden',
+    t2pPromptingStrategy: 'Prompting-Strategie',
+    t2pPromptingStrategyZeroShot: 'Zero-Shot',
+    t2pPromptingStrategyFewShot: 'Few-Shot',
+    t2pPromptingStrategyHint: 'Wie der T2P-Connector LLM-Prompts erstellt (Zero-Shot: ein Durchlauf; Few-Shot: mehrstufig).',
     p2tService: 'Petrinetz → Text (P2T)',
     p2tEndpoint: 'P2T-Endpoint-URL',
     p2tEnabled: 'P2T-Service verwenden',

@@ -416,7 +416,7 @@ const handleKeydown = (e) => {
                 <select v-model="localTokenGame.conflictResolution">
                   <option value="manual">{{ $t('tokenGame.manual') }}</option>
                   <option value="random">{{ $t('tokenGame.random') }}</option>
-                  <option value="first">{{ $t('tokenGame.first') }}</option>
+                  <option value="priority">{{ $t('tokenGame.priority') }}</option>
                 </select>
               </div>
             </div>
@@ -461,6 +461,17 @@ const handleKeydown = (e) => {
                 <label>{{ $t('settings.t2pEnabled') }}</label>
                 <input type="checkbox" v-model="localServices.t2pEnabled" />
               </div>
+              <div class="setting-row">
+                <label>{{ $t('settings.t2pPromptingStrategy') }}</label>
+                <select
+                  v-model="localServices.t2pPromptingStrategy"
+                  :disabled="!localServices.t2pEnabled"
+                >
+                  <option value="zero_shot">{{ $t('settings.t2pPromptingStrategyZeroShot') }}</option>
+                  <option value="few_shot">{{ $t('settings.t2pPromptingStrategyFewShot') }}</option>
+                </select>
+              </div>
+              <p class="settings-hint settings-hint-inline">{{ $t('settings.t2pPromptingStrategyHint') }}</p>
               <div class="setting-row">
                 <label>{{ $t('settings.t2pEndpoint') }}</label>
                 <input
@@ -807,6 +818,10 @@ const handleKeydown = (e) => {
   font-size: 12px;
   color: var(--color-text-muted);
   line-height: 1.5;
+}
+
+.settings-hint-inline {
+  margin-top: -4px;
 }
 
 .setting-error {

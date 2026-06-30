@@ -79,16 +79,34 @@ const SHOW_SIMULATION = false
 
 // Right panel collapsed state (start expanded by default)
 const rightPanelCollapsed = ref(false)
+const editorMainRef = ref(null)
 
 // Resizable panel width
 const PANEL_MIN_WIDTH = 280
 const PANEL_DEFAULT_WIDTH = 360
-const PANEL_MAX_WIDTH = 600
+const MIN_CANVAS_WIDTH = 160
+const PANEL_COLLAPSE_THRESHOLD = 72
 const rightPanelWidth = ref(PANEL_DEFAULT_WIDTH)
+const lastExpandedWidth = ref(PANEL_DEFAULT_WIDTH)
 const isResizing = ref(false)
 
+const maxPanelWidth = computed(() => {
+  const editorWidth = editorMainRef.value?.clientWidth ?? 1200
+  return Math.max(PANEL_MIN_WIDTH, editorWidth - MIN_CANVAS_WIDTH)
+})
+
+const panelSplitterStyle = computed(() => ({
+  right: `${rightPanelCollapsed.value ? 0 : rightPanelWidth.value}px`,
+}))
+
 const rightPanelStyle = computed(() => {
-  if (rightPanelCollapsed.value) return {}
+  if (rightPanelCollapsed.value) {
+    return {
+      width: '0px',
+      minWidth: '0px',
+      borderLeftWidth: '0',
+    }
+  }
   return { width: `${rightPanelWidth.value}px` }
 })
 
@@ -98,13 +116,25 @@ function startResize(e) {
   e.preventDefault()
   isResizing.value = true
 
+  if (rightPanelCollapsed.value) {
+    rightPanelCollapsed.value = false
+    rightPanelWidth.value = Math.max(PANEL_MIN_WIDTH, lastExpandedWidth.value)
+  }
+
   const startX = e.clientX
   const startWidth = rightPanelWidth.value
+  const maxWidth = maxPanelWidth.value
 
   const onMouseMove = (moveEvent) => {
     const delta = startX - moveEvent.clientX
-    const newWidth = Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, startWidth + delta))
-    rightPanelWidth.value = newWidth
+    const newWidth = startWidth + delta
+
+    if (newWidth <= PANEL_COLLAPSE_THRESHOLD) {
+      rightPanelWidth.value = Math.max(0, newWidth)
+      return
+    }
+
+    rightPanelWidth.value = Math.min(maxWidth, newWidth)
   }
 
   const onMouseUp = () => {
@@ -113,6 +143,22 @@ function startResize(e) {
     document.removeEventListener('mouseup', onMouseUp)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
+
+    if (rightPanelWidth.value <= PANEL_COLLAPSE_THRESHOLD) {
+      lastExpandedWidth.value = Math.max(
+        PANEL_MIN_WIDTH,
+        Math.min(startWidth, maxPanelWidth.value),
+      )
+      rightPanelCollapsed.value = true
+      rightPanelWidth.value = 0
+    } else {
+      rightPanelWidth.value = Math.min(
+        maxPanelWidth.value,
+        Math.max(PANEL_MIN_WIDTH, rightPanelWidth.value),
+      )
+      lastExpandedWidth.value = rightPanelWidth.value
+    }
+
     setTimeout(updateCanvasDimensions, 50)
   }
 
@@ -122,25 +168,46 @@ function startResize(e) {
   document.addEventListener('mouseup', onMouseUp)
 }
 
+function collapseRightPanel() {
+  if (rightPanelCollapsed.value) return
+  lastExpandedWidth.value = rightPanelWidth.value
+  rightPanelCollapsed.value = true
+  rightPanelWidth.value = 0
+  setTimeout(updateCanvasDimensions, 250)
+}
+
+function expandRightPanel(mode = 'restore') {
+  rightPanelCollapsed.value = false
+  rightPanelWidth.value =
+    mode === 'max'
+      ? maxPanelWidth.value
+      : Math.max(
+          PANEL_MIN_WIDTH,
+          Math.min(lastExpandedWidth.value, maxPanelWidth.value),
+        )
+  lastExpandedWidth.value = rightPanelWidth.value
+  setTimeout(updateCanvasDimensions, 250)
+}
+
 function handleResizeDoubleClick() {
+  if (rightPanelCollapsed.value) {
+    expandRightPanel('restore')
+    return
+  }
+
   if (rightPanelWidth.value < PANEL_DEFAULT_WIDTH + 20) {
-    rightPanelWidth.value = PANEL_MAX_WIDTH
+    rightPanelWidth.value = maxPanelWidth.value
   } else {
     rightPanelWidth.value = PANEL_DEFAULT_WIDTH
   }
+  lastExpandedWidth.value = rightPanelWidth.value
   setTimeout(updateCanvasDimensions, 50)
-}
-
-const toggleRightPanel = () => {
-  rightPanelCollapsed.value = !rightPanelCollapsed.value
-  setTimeout(updateCanvasDimensions, 250)
 }
 
 function openPropertiesPanel() {
   rightPanelTab.value = 'properties'
   if (rightPanelCollapsed.value) {
-    rightPanelCollapsed.value = false
-    setTimeout(updateCanvasDimensions, 250)
+    expandRightPanel('restore')
   }
 }
 
@@ -148,8 +215,7 @@ function openPropertiesPanel() {
 watch(isTokenGameActive, (active) => {
   if (active) {
     rightPanelTab.value = 'tokenGame'
-    rightPanelCollapsed.value = false
-    setTimeout(updateCanvasDimensions, 250)
+    expandRightPanel('restore')
   }
 })
 
@@ -202,7 +268,7 @@ onMounted(() => {
   >
     <EditorToolbar />
     <BreadcrumbNav />
-    <div class="editor-main">
+    <div ref="editorMainRef" class="editor-main">
       <div class="canvas-container">
         <EditorCanvas 
           ref="canvasRef"
@@ -233,17 +299,6 @@ onMounted(() => {
         :class="['right-panel', { collapsed: rightPanelCollapsed, resizing: isResizing }]"
         :style="rightPanelStyle"
       >
-        <!-- Resize handle -->
-        <div
-          v-if="!rightPanelCollapsed"
-          class="resize-handle"
-          @mousedown="startResize"
-          @dblclick="handleResizeDoubleClick"
-        ></div>
-
-        <button class="collapse-toggle" @click="toggleRightPanel" :title="rightPanelCollapsed ? 'Expand' : 'Collapse'">
-          {{ rightPanelCollapsed ? '◀' : '▶' }}
-        </button>
         <template v-if="!rightPanelCollapsed">
           <div class="right-panel-tabs">
             <button
@@ -299,6 +354,49 @@ onMounted(() => {
           </div>
         </template>
       </div>
+
+      <!-- Splitter + toggles sit on the canvas/panel boundary (always reachable) -->
+      <div
+        class="panel-splitter"
+        :class="{ resizing: isResizing }"
+        :style="panelSplitterStyle"
+      >
+        <div
+          class="resize-handle"
+          @mousedown="startResize"
+          @dblclick="handleResizeDoubleClick"
+        ></div>
+        <div class="panel-toggles">
+          <button
+            v-if="rightPanelCollapsed"
+            type="button"
+            class="panel-toggle expand-toggle primary"
+            @click="expandRightPanel('restore')"
+            :title="t('editor.expandPanel')"
+          >
+            ◀
+          </button>
+          <template v-else>
+            <button
+              v-if="rightPanelWidth < maxPanelWidth - 8"
+              type="button"
+              class="panel-toggle expand-toggle"
+              @click="expandRightPanel('max')"
+              :title="t('editor.expandPanelMax')"
+            >
+              «
+            </button>
+            <button
+              type="button"
+              class="panel-toggle collapse-toggle"
+              @click="collapseRightPanel"
+              :title="t('editor.collapsePanel')"
+            >
+              ▶
+            </button>
+          </template>
+        </div>
+      </div>
     </div>
     <!-- Help system -->
     <HelpDialog />
@@ -321,6 +419,7 @@ onMounted(() => {
 }
 
 .editor-main {
+  position: relative;
   display: flex;
   flex: 1;
   overflow: hidden;
@@ -356,7 +455,8 @@ onMounted(() => {
   border-left: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   flex-shrink: 0;
-  transition: width 0.2s ease;
+  overflow: hidden;
+  transition: width 0.2s ease, border-color 0.2s ease;
 }
 
 .right-panel.resizing {
@@ -364,34 +464,65 @@ onMounted(() => {
 }
 
 .right-panel.collapsed {
-  width: 36px !important;
+  pointer-events: none;
+}
+
+.panel-splitter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  z-index: 30;
+  transition: right 0.2s ease;
+}
+
+.panel-splitter.resizing {
+  transition: none;
 }
 
 /* Resize handle */
 .resize-handle {
   position: absolute;
-  left: -3px;
+  left: -10px;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: 20px;
   cursor: col-resize;
-  z-index: 25;
+  pointer-events: auto;
   transition: background 0.15s;
 }
 
-.resize-handle:hover,
-.right-panel.resizing .resize-handle {
-  background: var(--color-primary);
-  opacity: 0.4;
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
 }
 
-.collapse-toggle {
+.resize-handle:hover::after,
+.panel-splitter.resizing .resize-handle::after {
+  background: var(--color-primary);
+  opacity: 0.55;
+}
+
+.panel-toggles {
   position: absolute;
-  left: -12px;
+  left: 0;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-100%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.panel-toggle {
   width: 24px;
-  height: 48px;
+  height: 24px;
   border: 1px solid var(--color-border);
   border-radius: 6px 0 0 6px;
   background: var(--color-bg-secondary);
@@ -401,23 +532,26 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  z-index: 20;
+  line-height: 1;
+  padding: 0;
   transition: all 0.15s;
 }
 
-.collapse-toggle:hover {
+.panel-toggle:hover {
   background: var(--color-bg-tertiary);
   color: var(--color-text);
 }
 
-.right-panel.collapsed .collapse-toggle {
+.panel-toggle.primary,
+.panel-splitter .panel-toggle.expand-toggle.primary {
   background: var(--color-primary);
   color: white;
   border-color: var(--color-primary);
 }
 
-.right-panel.collapsed .collapse-toggle:hover {
-  background: #2563eb;
+.panel-toggle.primary:hover,
+.panel-splitter .panel-toggle.expand-toggle.primary:hover {
+  background: var(--color-primary-hover);
 }
 
 .right-panel-tabs {
