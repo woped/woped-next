@@ -26,7 +26,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend', 'contextmenu'])
+const emit = defineEmits(['click', 'dblclick', 'dragend', 'contextmenu'])
 
 const { radius, strokeWidth, tokenRadius, tokenFontSize } = VISUAL.place
 
@@ -134,6 +134,10 @@ const handleClick = (e) => {
   emit('click', e)
 }
 
+const handleDblClick = (e) => {
+  emit('dblclick', e)
+}
+
 const handleDragEnd = (e) => {
   emit('dragend', e)
 }
@@ -149,6 +153,7 @@ const handleContextMenu = (e) => {
     <v-circle
       :config="circleConfig"
       @click="handleClick"
+      @dblclick="handleDblClick"
       @dragend="handleDragEnd"
       @contextmenu="handleContextMenu"
     />

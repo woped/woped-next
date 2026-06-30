@@ -322,7 +322,8 @@ export default {
     andJoin: 'UND-Join',
     xorSplit: 'XOR-Split',
     xorJoin: 'XOR-Join',
-    type: 'Operatortyp',
+    type: 'Typ',
+    convertToTransition: 'Transition',
   },
 
   // Layout
@@ -393,7 +394,7 @@ export default {
     open: 'Subprozess öffnen',
     create: 'Subprozess erstellen',
     empty: 'Leerer Subprozess',
-    doubleClickHint: 'Doppelklick zum Öffnen',
+    doubleClickHint: 'Doppelklick für Properties',
     canStepOut: 'Subprozess abgeschlossen - klicke "Zurück" um zurückzukehren',
     noProgress: 'Kein Fortschritt möglich - füge Transitionen hinzu',
   },

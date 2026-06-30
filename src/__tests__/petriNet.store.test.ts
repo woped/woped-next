@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePetriNetStore } from '@/stores/petriNet'
+import { OperatorType } from '@/types/petri-net'
 
 describe('PetriNet Store', () => {
   beforeEach(() => {
@@ -176,6 +177,63 @@ describe('PetriNet Store', () => {
       store.clearSelection()
 
       expect(store.selectedIds).toHaveLength(0)
+    })
+  })
+
+  describe('Operators', () => {
+    it('converts an operator into a plain transition, preserving id and arcs', () => {
+      const store = usePetriNetStore()
+      const place = store.addPlace({ x: 100, y: 200 }, 'P1')
+      const operator = store.addOperator({ x: 200, y: 200 })
+      store.updateOperator(operator.id, { name: 'Op-X' })
+      const arc = store.addArc(place.id, operator.id)
+
+      const ok = store.convertOperatorToTransition(operator.id)
+
+      expect(ok).toBe(true)
+      expect(store.net.operators.find((o) => o.id === operator.id)).toBeUndefined()
+      const transition = store.net.transitions.find((t) => t.id === operator.id)
+      expect(transition).toBeDefined()
+      expect(transition!.name).toBe('Op-X')
+      expect(transition!.position).toEqual({ x: 200, y: 200 })
+      // Arc still connects to the same id
+      expect(store.net.arcs.find((a) => a.id === arc!.id)!.targetId).toBe(operator.id)
+      expect(store.getElementType(operator.id)).toBe('transition')
+    })
+
+    it('returns false when the id is not an operator', () => {
+      const store = usePetriNetStore()
+      const transition = store.addTransition({ x: 100, y: 200 }, 'T1')
+
+      expect(store.convertOperatorToTransition(transition.id)).toBe(false)
+      expect(store.convertOperatorToTransition('does-not-exist')).toBe(false)
+    })
+
+    it('converts a transition into an operator, preserving id and arcs', () => {
+      const store = usePetriNetStore()
+      const place = store.addPlace({ x: 100, y: 200 }, 'P1')
+      const transition = store.addTransition({ x: 200, y: 200 }, 'T-X')
+      const arc = store.addArc(place.id, transition.id)
+
+      const ok = store.convertTransitionToOperator(transition.id, OperatorType.XOR_SPLIT)
+
+      expect(ok).toBe(true)
+      expect(store.net.transitions.find((t) => t.id === transition.id)).toBeUndefined()
+      const operator = store.net.operators.find((o) => o.id === transition.id)
+      expect(operator).toBeDefined()
+      expect(operator!.name).toBe('T-X')
+      expect(operator!.operatorType).toBe(OperatorType.XOR_SPLIT)
+      expect(operator!.position).toEqual({ x: 200, y: 200 })
+      expect(store.net.arcs.find((a) => a.id === arc!.id)!.sourceId).toBe(place.id)
+      expect(store.getElementType(transition.id)).toBe('operator')
+    })
+
+    it('returns false when converting a non-transition to an operator', () => {
+      const store = usePetriNetStore()
+      const operator = store.addOperator({ x: 100, y: 200 })
+
+      expect(store.convertTransitionToOperator(operator.id, OperatorType.AND_SPLIT)).toBe(false)
+      expect(store.convertTransitionToOperator('does-not-exist', OperatorType.AND_SPLIT)).toBe(false)
     })
   })
 

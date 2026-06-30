@@ -28,7 +28,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend', 'contextmenu'])
+const emit = defineEmits(['click', 'dblclick', 'dragend', 'contextmenu'])
 
 const { strokeWidth } = VISUAL.transition
 
@@ -141,6 +141,10 @@ const handleClick = (e) => {
   emit('click', e)
 }
 
+const handleDblClick = (e) => {
+  emit('dblclick', e)
+}
+
 const handleDragEnd = (e) => {
   const newX = e.target.x() + props.transition.position.x
   const newY = e.target.y() + props.transition.position.y
@@ -166,6 +170,7 @@ const handleContextMenu = (e) => {
   <v-group
     :config="groupConfig"
     @click="handleClick"
+    @dblclick="handleDblClick"
     @dragend="handleDragEnd"
     @contextmenu="handleContextMenu"
   >

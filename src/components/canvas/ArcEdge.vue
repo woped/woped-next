@@ -26,7 +26,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits(['click', 'dblclick'])
 
 const store = usePetriNetStore()
 const configStore = useConfigStore()
@@ -265,18 +265,22 @@ const handleClick = (e) => {
 }
 
 const handleDblClick = (e) => {
-  if (props.isTemp || routingMode.value !== 'manual') return
-  const stage = e.target.getStage()
-  if (!stage) return
-  const pos = stage.getPointerPosition()
-  if (!pos) return
-  const vp = store.viewport
-  const worldPos = {
-    x: (pos.x - vp.x) / vp.scale,
-    y: (pos.y - vp.y) / vp.scale,
+  if (props.isTemp) return
+  if (routingMode.value === 'manual') {
+    const stage = e.target.getStage()
+    if (!stage) return
+    const pos = stage.getPointerPosition()
+    if (!pos) return
+    const vp = store.viewport
+    const worldPos = {
+      x: (pos.x - vp.x) / vp.scale,
+      y: (pos.y - vp.y) / vp.scale,
+    }
+    const wp = [...(props.arc.waypoints || []), worldPos]
+    store.updateArc(props.arc.id, { waypoints: wp })
+    return
   }
-  const wp = [...(props.arc.waypoints || []), worldPos]
-  store.updateArc(props.arc.id, { waypoints: wp })
+  emit('dblclick', e)
 }
 
 const handleWaypointDrag = (index, e) => {

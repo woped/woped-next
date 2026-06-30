@@ -29,7 +29,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dblclick', 'dragend'])
 
 const { size, strokeWidth } = VISUAL.operator
 const halfSize = size / 2
@@ -249,6 +249,10 @@ const handleClick = (e) => {
   emit('click', e)
 }
 
+const handleDblClick = (e) => {
+  emit('dblclick', e)
+}
+
 const handleDragEnd = (e) => {
   const newX = e.target.x() + props.operator.position.x
   const newY = e.target.y() + props.operator.position.y
@@ -270,6 +274,7 @@ const handleDragEnd = (e) => {
   <v-group
     :config="groupConfig"
     @click="handleClick"
+    @dblclick="handleDblClick"
     @dragend="handleDragEnd"
   >
     <!-- van der Aalst notation: transition rectangle with directional chevron(s) -->

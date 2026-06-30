@@ -398,6 +398,57 @@ export const usePetriNetStore = defineStore('petriNet', {
       }
     },
 
+    /**
+     * Convert an operator into a plain transition.
+     * The element id is preserved so existing arcs stay connected.
+     */
+    convertOperatorToTransition(id: string): boolean {
+      const net = this.nets[this.activeNetId]
+      const opIndex = net.operators.findIndex((o) => o.id === id)
+      if (opIndex === -1) return false
+
+      this.saveToHistory()
+
+      const operator = net.operators[opIndex]
+      const transition: Transition = {
+        id: operator.id,
+        name: operator.name,
+        position: operator.position,
+      }
+      if (operator.label !== undefined) transition.label = operator.label
+      if (operator.triggers !== undefined) transition.triggers = operator.triggers
+
+      net.operators.splice(opIndex, 1)
+      net.transitions.push(transition)
+      return true
+    },
+
+    /**
+     * Convert a plain transition into an operator.
+     * The element id is preserved so existing arcs stay connected.
+     */
+    convertTransitionToOperator(id: string, operatorType: OperatorType): boolean {
+      const net = this.nets[this.activeNetId]
+      const tIndex = net.transitions.findIndex((t) => t.id === id)
+      if (tIndex === -1) return false
+
+      this.saveToHistory()
+
+      const transition = net.transitions[tIndex]
+      const operator: OperatorTransition = {
+        id: transition.id,
+        name: transition.name,
+        position: transition.position,
+        operatorType,
+      }
+      if (transition.label !== undefined) operator.label = transition.label
+      if (transition.triggers !== undefined) operator.triggers = transition.triggers
+
+      net.transitions.splice(tIndex, 1)
+      net.operators.push(operator)
+      return true
+    },
+
     // ========== SubProcess Operations ==========
 
     /**

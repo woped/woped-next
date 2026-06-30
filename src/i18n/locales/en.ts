@@ -322,7 +322,8 @@ export default {
     andJoin: 'AND-Join',
     xorSplit: 'XOR-Split',
     xorJoin: 'XOR-Join',
-    type: 'Operator Type',
+    type: 'Type',
+    convertToTransition: 'Transition',
   },
 
   // Layout
@@ -393,7 +394,7 @@ export default {
     open: 'Open Subprocess',
     create: 'Create Subprocess',
     empty: 'Empty Subprocess',
-    doubleClickHint: 'Double-click to open',
+    doubleClickHint: 'Double-click for Properties',
     canStepOut: 'Subprocess complete - click "Go Back" to return',
     noProgress: 'No progress possible - add transitions to continue',
   },

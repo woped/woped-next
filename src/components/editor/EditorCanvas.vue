@@ -23,7 +23,7 @@ import ArcEdge from '@/components/canvas/ArcEdge.vue'
 import TokenAnimation from '@/components/canvas/TokenAnimation.vue'
 import EditorGrid from '@/components/canvas/EditorGrid.vue'
 
-const emit = defineEmits(['resize'])
+const emit = defineEmits(['resize', 'open-properties'])
 
 const store = usePetriNetStore()
 const configStore = useConfigStore()
@@ -699,14 +699,17 @@ const handleElementClick = (id, type, e) => {
   }
 }
 
-// Handle subprocess double-click to open it
-const handleSubProcessDblClick = (id, e) => {
-  e.cancelBubble = true
-  
-  // Don't open subprocess during token game
+// Double-click in select mode opens the Properties tab for the element.
+const handleElementDblClick = (id, type, e) => {
+  if (isRightClick(e)) return
+  if (spaceHeld.value) return
   if (isTokenGameActive.value) return
-  
-  store.openSubProcess(id)
+  if (tool.value !== 'select') return
+
+  e.cancelBubble = true
+  clearQuickConnect()
+  store.select(id, false)
+  emit('open-properties')
 }
 
 // Handle element drag
@@ -787,6 +790,7 @@ defineExpose({
           :arc="arc"
           :is-selected="selectedIds.includes(arc.id)"
           @click="(e) => handleElementClick(arc.id, 'arc', e)"
+          @dblclick="(e) => handleElementDblClick(arc.id, 'arc', e)"
         />
 
         <!-- Temp arc during creation -->
@@ -813,6 +817,7 @@ defineExpose({
           :token-override="getTokenCount(place.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(place.id, 'place', e)"
+          @dblclick="(e) => handleElementDblClick(place.id, 'place', e)"
           @dragend="(e) => handleElementDragEnd(place.id, e)"
         />
 
@@ -826,6 +831,7 @@ defineExpose({
           :is-enabled="isTransitionEnabled(transition.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(transition.id, 'transition', e)"
+          @dblclick="(e) => handleElementDblClick(transition.id, 'transition', e)"
           @dragend="(e) => handleElementDragEnd(transition.id, e)"
         />
 
@@ -839,6 +845,7 @@ defineExpose({
           :is-enabled="isTransitionEnabled(operator.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(operator.id, 'operator', e)"
+          @dblclick="(e) => handleElementDblClick(operator.id, 'operator', e)"
           @dragend="(e) => handleElementDragEnd(operator.id, e)"
         />
 
@@ -852,7 +859,7 @@ defineExpose({
           :is-enabled="tokenGameStore.isSubprocessEnabled(subprocess.id)"
           :is-token-game-active="isTokenGameActive"
           @click="(e) => handleElementClick(subprocess.id, 'subprocess', e)"
-          @dblclick="(e) => handleSubProcessDblClick(subprocess.id, e)"
+          @dblclick="(e) => handleElementDblClick(subprocess.id, 'subprocess', e)"
           @dragend="(e) => handleElementDragEnd(subprocess.id, e)"
         />
 

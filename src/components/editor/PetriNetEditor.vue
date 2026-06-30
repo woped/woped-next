@@ -137,6 +137,14 @@ const toggleRightPanel = () => {
   setTimeout(updateCanvasDimensions, 250)
 }
 
+function openPropertiesPanel() {
+  rightPanelTab.value = 'properties'
+  if (rightPanelCollapsed.value) {
+    rightPanelCollapsed.value = false
+    setTimeout(updateCanvasDimensions, 250)
+  }
+}
+
 // Auto-switch to token game tab and expand panel when token game starts
 watch(isTokenGameActive, (active) => {
   if (active) {
@@ -232,6 +240,7 @@ onMounted(() => {
         <EditorCanvas 
           ref="canvasRef"
           @resize="updateCanvasDimensions"
+          @open-properties="openPropertiesPanel"
         />
         
         <!-- Floating View Toolbar -->
