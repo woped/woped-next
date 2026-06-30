@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
 import { withPort } from '@/services/tools/toolConfig'
 import { pingService } from '@/services/tools/serviceHealth'
+import { resetAppToDefaults } from '@/services/appReset'
 
 const props = defineProps({
   open: {
@@ -142,6 +143,8 @@ watch(
       connectionStatus.value = { t2p: 'idle', p2t: 'idle' }
       originalTheme.value = general.value.theme
       originalLocale.value = language.value.locale
+    } else {
+      showResetConfirm.value = false
     }
   }
 )
@@ -177,14 +180,32 @@ const cancel = () => {
 }
 
 // Reset to defaults
+const showResetConfirm = ref(false)
+
+const requestReset = () => {
+  showResetConfirm.value = true
+}
+
+const closeResetConfirm = () => {
+  showResetConfirm.value = false
+}
+
+const confirmReset = () => {
+  showResetConfirm.value = false
+  resetDefaults()
+}
+
 const resetDefaults = () => {
-  configStore.reset()
+  resetAppToDefaults()
   localGeneral.value = { ...general.value }
   localEditor.value = { ...editor.value }
   localTokenGame.value = { ...tokenGame.value }
   localAnalysis.value = { ...analysis.value }
   localLanguage.value = { ...language.value }
   localServices.value = { ...services.value }
+  connectionStatus.value = { t2p: 'idle', p2t: 'idle' }
+  originalTheme.value = general.value.theme
+  originalLocale.value = language.value.locale
 }
 
 // Preview theme immediately when changed
@@ -200,6 +221,10 @@ const previewLocale = () => {
 // Handle escape key
 const handleKeydown = (e) => {
   if (e.key === 'Escape') {
+    if (showResetConfirm.value) {
+      closeResetConfirm()
+      return
+    }
     cancel()
   }
 }
@@ -276,6 +301,14 @@ const handleKeydown = (e) => {
                 />
                 <span class="hint">{{ Math.round(localGeneral.autoSaveInterval / 1000) }}s</span>
               </div>
+            </div>
+
+            <div class="setting-group">
+              <h3>{{ $t('settings.reset') }}</h3>
+              <p class="settings-hint">{{ $t('settings.resetToDefaultHint') }}</p>
+              <button type="button" class="btn-reset-default" @click="requestReset">
+                {{ $t('settings.resetToDefault') }}
+              </button>
             </div>
           </div>
 
@@ -526,11 +559,39 @@ const handleKeydown = (e) => {
 
         <!-- Footer -->
         <div class="dialog-footer">
-          <button class="btn-reset" @click="resetDefaults">{{ $t('settings.resetDefaults') }}</button>
           <div class="footer-actions">
             <button class="btn-cancel" @click="cancel">{{ $t('common.cancel') }}</button>
             <button class="btn-save" @click="saveSettings">{{ $t('common.save') }}</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div
+      v-if="open && showResetConfirm"
+      class="confirm-overlay"
+      @click.self="closeResetConfirm"
+      @keydown="handleKeydown"
+    >
+      <div
+        class="confirm-dialog"
+        role="alertdialog"
+        aria-labelledby="reset-confirm-title"
+        aria-describedby="reset-confirm-message"
+      >
+        <h3 id="reset-confirm-title">{{ $t('settings.resetConfirmTitle') }}</h3>
+        <p id="reset-confirm-message" class="confirm-message">
+          {{ $t('settings.resetConfirmMessageStart') }}<strong>{{ $t('settings.resetConfirmMessageBold') }}</strong>{{ $t('settings.resetConfirmMessageEnd') }}
+        </p>
+        <div class="confirm-actions">
+          <button type="button" class="btn-cancel" @click="closeResetConfirm">
+            {{ $t('common.cancel') }}
+          </button>
+          <button type="button" class="btn-confirm-danger" @click="confirmReset">
+            {{ $t('settings.resetToDefault') }}
+          </button>
         </div>
       </div>
     </div>
@@ -807,7 +868,7 @@ const handleKeydown = (e) => {
 
 .dialog-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 16px 20px;
   border-top: 1px solid var(--color-border);
@@ -820,16 +881,19 @@ const handleKeydown = (e) => {
   gap: 10px;
 }
 
-.btn-reset {
+.btn-reset-default {
+  align-self: flex-start;
   padding: 8px 14px;
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
   font-size: 13px;
   cursor: pointer;
 }
 
-.btn-reset:hover {
+.btn-reset-default:hover {
+  border-color: var(--color-error);
   color: var(--color-error);
 }
 
@@ -860,5 +924,65 @@ const handleKeydown = (e) => {
 
 .btn-save:hover {
   background: var(--color-primary-hover);
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.confirm-dialog {
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 420px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--color-border);
+}
+
+.confirm-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.confirm-message {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.confirm-message strong {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-confirm-danger {
+  padding: 8px 16px;
+  border: none;
+  background: var(--color-error);
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-confirm-danger:hover {
+  filter: brightness(0.92);
 }
 </style>

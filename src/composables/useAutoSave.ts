@@ -3,6 +3,17 @@ import { usePetriNetStore } from '@/stores/petriNet'
 import { useConfigStore } from '@/stores/config'
 import { fileService } from '@/services/file/fileService'
 
+export const AUTOSAVE_STORAGE_KEY = 'woped-autosave'
+
+export function clearAutoSaveStorage(): void {
+  try {
+    localStorage.removeItem(AUTOSAVE_STORAGE_KEY)
+    localStorage.removeItem(`${AUTOSAVE_STORAGE_KEY}-activeNet`)
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
+
 /**
  * Auto-save composable. Periodically saves the current net to localStorage
  * when general.autoSave is enabled.
@@ -11,15 +22,14 @@ export function useAutoSave() {
   const petriNetStore = usePetriNetStore()
   const configStore = useConfigStore()
 
-  const STORAGE_KEY = 'woped-autosave'
   let timerId: ReturnType<typeof setInterval> | null = null
   const lastSaved = ref<number | null>(null)
 
   function save() {
     try {
       const snapshot = JSON.stringify(petriNetStore.nets)
-      localStorage.setItem(STORAGE_KEY, snapshot)
-      localStorage.setItem(`${STORAGE_KEY}-activeNet`, petriNetStore.activeNetId)
+      localStorage.setItem(AUTOSAVE_STORAGE_KEY, snapshot)
+      localStorage.setItem(`${AUTOSAVE_STORAGE_KEY}-activeNet`, petriNetStore.activeNetId)
       lastSaved.value = Date.now()
     } catch {
       // localStorage full or unavailable — silently skip
@@ -28,8 +38,8 @@ export function useAutoSave() {
 
   function restore(): boolean {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      const activeNetId = localStorage.getItem(`${STORAGE_KEY}-activeNet`)
+      const raw = localStorage.getItem(AUTOSAVE_STORAGE_KEY)
+      const activeNetId = localStorage.getItem(`${AUTOSAVE_STORAGE_KEY}-activeNet`)
       if (!raw || !activeNetId) return false
       const nets = JSON.parse(raw)
       if (nets && typeof nets === 'object' && nets[activeNetId]) {

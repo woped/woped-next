@@ -1,7 +1,15 @@
 <script setup>
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
 import { VISUAL } from '@/types/petri-net'
+import {
+  LEGACY_BORDER,
+  LEGACY_TOKEN_RADIUS,
+  getLegacyElementColors,
+  getLegacyPlaceRadius,
+  layoutLegacyPlaceTokens,
+} from '@/utils/canvasLegacy'
 
 const props = defineProps({
   place: {
@@ -28,16 +36,23 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'dblclick', 'dragend', 'contextmenu'])
 
+const configStore = useConfigStore()
+const { operatorNotation } = storeToRefs(configStore)
+
+const isLegacyCanvas = computed(() => operatorNotation.value === 'vanDerAalst')
+
 const { radius, strokeWidth, tokenRadius, tokenFontSize } = VISUAL.place
 
-// Spacing between token dot centers inside a place (keeps a small gap between dots)
 const tokenLayoutOffset = tokenRadius + 1.5
-
-// Theme colors
-const configStore = useConfigStore()
 
 const colors = computed(() => {
   const dark = configStore.isDarkMode
+  if (isLegacyCanvas.value) {
+    return getLegacyElementColors({
+      selected: props.isSelected,
+      isDark: dark,
+    })
+  }
   return {
     fill: dark ? '#1f2937' : '#ffffff',
     stroke: dark ? '#9ca3af' : '#374151',
@@ -47,7 +62,6 @@ const colors = computed(() => {
   }
 })
 
-// Effective token count (use override if token game is active)
 const effectiveTokens = computed(() => {
   if (props.isTokenGameActive && props.tokenOverride !== null) {
     return props.tokenOverride
@@ -55,21 +69,45 @@ const effectiveTokens = computed(() => {
   return props.place.tokens
 })
 
-// Circle config
-const circleConfig = computed(() => ({
-  id: props.place.id,
-  name: props.place.id,
-  x: props.place.position.x,
-  y: props.place.position.y,
-  radius,
-  fill: colors.value.fill,
-  stroke: props.isSelected ? colors.value.selectedStroke : colors.value.stroke,
-  strokeWidth: props.isSelected ? 3 : strokeWidth,
-  draggable: props.draggable,
-}))
+const legacyRadius = computed(() => getLegacyPlaceRadius())
 
-// Token positions for visual representation
+const circleConfig = computed(() => {
+  const cx = props.place.position.x
+  const cy = props.place.position.y
+  const legacy = isLegacyCanvas.value
+
+  return {
+    id: props.place.id,
+    name: props.place.id,
+    x: cx,
+    y: cy,
+    radius: legacy ? legacyRadius.value : radius,
+    fill: legacy ? colors.value.fill : colors.value.fill,
+    stroke: legacy
+      ? colors.value.stroke
+      : props.isSelected
+        ? colors.value.selectedStroke
+        : colors.value.stroke,
+    strokeWidth: legacy
+      ? LEGACY_BORDER
+      : props.isSelected
+        ? 3
+        : strokeWidth,
+    draggable: props.draggable,
+  }
+})
+
+const legacyTokenDisplay = computed(() =>
+  layoutLegacyPlaceTokens(
+    props.place.position.x,
+    props.place.position.y,
+    effectiveTokens.value,
+  ),
+)
+
 const tokenPositions = computed(() => {
+  if (isLegacyCanvas.value) return legacyTokenDisplay.value.dots
+
   const tokens = effectiveTokens.value
   const positions = []
   const centerX = props.place.position.x
@@ -95,39 +133,56 @@ const tokenPositions = computed(() => {
       positions.push({ x: centerX, y: centerY })
     }
   }
-  // For more than 5 tokens, we'll show a number
 
   return positions
 })
 
-// Show number for tokens > 5
-const showTokenNumber = computed(() => effectiveTokens.value > 5)
+const showTokenNumber = computed(() => {
+  if (isLegacyCanvas.value) return legacyTokenDisplay.value.label !== null
+  return effectiveTokens.value > 5
+})
 
-// Label config
+const tokenNumberText = computed(() => {
+  if (isLegacyCanvas.value) return legacyTokenDisplay.value.label ?? ''
+  return String(effectiveTokens.value)
+})
+
+const effectiveTokenRadius = computed(() =>
+  isLegacyCanvas.value ? LEGACY_TOKEN_RADIUS : tokenRadius,
+)
+
 const labelConfig = computed(() => ({
   x: props.place.position.x,
-  y: props.place.position.y + radius + 15,
+  y: props.place.position.y + (isLegacyCanvas.value ? legacyRadius.value : radius) + 15,
   text: props.place.name,
   fontSize: 12,
   fontFamily: 'system-ui, sans-serif',
-  fill: colors.value.labelFill,
+  fill: isLegacyCanvas.value
+    ? configStore.isDarkMode
+      ? '#e5e7eb'
+      : '#374151'
+    : colors.value.labelFill,
   align: 'center',
   offsetX: props.place.name.length * 3,
 }))
 
-// Token number config
 const tokenNumberConfig = computed(() => ({
   x: props.place.position.x,
   y: props.place.position.y,
-  text: String(effectiveTokens.value),
-  fontSize: tokenFontSize,
+  text: tokenNumberText.value,
+  fontSize: isLegacyCanvas.value ? 10 : tokenFontSize,
   fontFamily: 'system-ui, sans-serif',
-  fontStyle: 'bold',
-  fill: colors.value.tokenFill,
+  fontStyle: isLegacyCanvas.value ? 'normal' : 'bold',
+  fill: isLegacyCanvas.value ? colors.value.tokenFill : colors.value.tokenFill,
   align: 'center',
   verticalAlign: 'middle',
-  offsetX: effectiveTokens.value >= 10 ? Math.round(tokenFontSize * 0.55) : Math.round(tokenFontSize * 0.28),
-  offsetY: Math.round(tokenFontSize * 0.5),
+  width: isLegacyCanvas.value ? 40 : undefined,
+  offsetX: isLegacyCanvas.value
+    ? 20
+    : effectiveTokens.value >= 10
+      ? Math.round(tokenFontSize * 0.55)
+      : Math.round(tokenFontSize * 0.28),
+  offsetY: isLegacyCanvas.value ? 5 : Math.round(tokenFontSize * 0.5),
 }))
 
 const handleClick = (e) => {
@@ -149,7 +204,6 @@ const handleContextMenu = (e) => {
 
 <template>
   <v-group>
-    <!-- Main circle -->
     <v-circle
       :config="circleConfig"
       @click="handleClick"
@@ -158,7 +212,6 @@ const handleContextMenu = (e) => {
       @contextmenu="handleContextMenu"
     />
 
-    <!-- Tokens (dots) -->
     <v-circle
       v-for="(pos, index) in tokenPositions"
       v-if="!showTokenNumber"
@@ -166,18 +219,13 @@ const handleContextMenu = (e) => {
       :config="{
         x: pos.x,
         y: pos.y,
-        radius: tokenRadius,
+        radius: effectiveTokenRadius,
         fill: colors.tokenFill,
       }"
     />
 
-    <!-- Token number (for > 5 tokens) -->
-    <v-text
-      v-if="showTokenNumber"
-      :config="tokenNumberConfig"
-    />
+    <v-text v-if="showTokenNumber" :config="tokenNumberConfig" />
 
-    <!-- Label -->
     <v-text :config="labelConfig" />
   </v-group>
 </template>

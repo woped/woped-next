@@ -8,6 +8,27 @@
 import { nanoid } from 'nanoid'
 import type { PetriNet, Place, Transition, Arc } from '@/types/petri-net'
 import { OperatorType } from '@/types/petri-net'
+import loanApplicationPnml from '@/assets/templates/loan-application.pnml?raw'
+import { PNMLParser } from '@/services/file/pnmlParser'
+import { normalizePetriNet } from '@/utils/petriNetNormalize'
+
+const pnmlParser = new PNMLParser()
+
+function createFromPnmlTemplate(pnml: string, displayName: string): PetriNet {
+  const result = pnmlParser.parse(pnml)
+  if (!result.success || !result.net) {
+    throw new Error(result.errors.map(e => e.message).join('; ') || 'Failed to parse template PNML')
+  }
+  const { net } = normalizePetriNet(result.net)
+  return {
+    ...net,
+    id: nanoid(),
+    name: displayName,
+  }
+}
+
+const createLoanApplication = (): PetriNet =>
+  createFromPnmlTemplate(loanApplicationPnml, 'Loan Application')
 
 export interface Template {
   id: string
@@ -929,6 +950,13 @@ export const templates: Template[] = [
     descriptionKey: 'templates.errorHandlingDesc',
     category: 'workflow',
     create: createErrorHandling,
+  },
+  {
+    id: 'loanApplication',
+    nameKey: 'templates.loanApplication',
+    descriptionKey: 'templates.loanApplicationDesc',
+    category: 'workflow',
+    create: createLoanApplication,
   },
   {
     id: 'stateMachine',

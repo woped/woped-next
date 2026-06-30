@@ -4,7 +4,6 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { useTokenGameStore } from '@/stores/tokenGame'
-import { OperatorType } from '@/types/petri-net'
 import EditorToolbar from './EditorToolbar.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import PropertiesPanel from './PropertiesPanel.vue'
@@ -176,42 +175,7 @@ function updateCanvasDimensions() {
 // Skipped when a previously persisted net was restored on startup.
 onMounted(() => {
   if (!store.hydratedFromStorage) {
-    // Start place with token
-    const start = store.addPlace({ x: 100, y: 250 }, 'Start')
-    store.updatePlace(start.id, { tokens: 1 })
-
-    // AND-Split operator
-    const andSplit = store.addOperator({ x: 250, y: 250 }, OperatorType.AND_SPLIT, 'Split')
-
-    // Parallel branches
-    const p1 = store.addPlace({ x: 400, y: 150 }, 'P1')
-    const p2 = store.addPlace({ x: 400, y: 350 }, 'P2')
-
-    // Transitions on branches
-    const t1 = store.addTransition({ x: 550, y: 150 }, 'Task A')
-    const t2 = store.addTransition({ x: 550, y: 350 }, 'Task B')
-
-    // Places after tasks
-    const p3 = store.addPlace({ x: 700, y: 150 }, 'P3')
-    const p4 = store.addPlace({ x: 700, y: 350 }, 'P4')
-
-    // AND-Join operator
-    const andJoin = store.addOperator({ x: 850, y: 250 }, OperatorType.AND_JOIN, 'Join')
-
-    // End place
-    const end = store.addPlace({ x: 1000, y: 250 }, 'End')
-
-    // Connect everything
-    store.addArc(start.id, andSplit.id)
-    store.addArc(andSplit.id, p1.id)
-    store.addArc(andSplit.id, p2.id)
-    store.addArc(p1.id, t1.id)
-    store.addArc(p2.id, t2.id)
-    store.addArc(t1.id, p3.id)
-    store.addArc(t2.id, p4.id)
-    store.addArc(p3.id, andJoin.id)
-    store.addArc(p4.id, andJoin.id)
-    store.addArc(andJoin.id, end.id)
+    store.buildDefaultSampleNet()
   }
 
   // Update canvas dimensions after mount

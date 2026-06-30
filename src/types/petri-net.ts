@@ -234,8 +234,10 @@ export const VISUAL = {
     width: 80,
     height: 50,
     strokeWidth: 2,
-    innerOffset: 4, // Offset for double border
+    innerOffset: 4, // Offset for double border (modern notation)
     cornerRadius: 6,
+    /** van der Aalst footprint matches operator square (40×40) */
+    legacySize: OPERATOR_EDGE,
   },
   arc: {
     strokeWidth: 2,
@@ -269,7 +271,8 @@ export function getSubProcessSize(
   notation: 'vanDerAalst' | 'modern'
 ): { width: number; height: number } {
   if (notation === 'vanDerAalst') {
-    return { width: VISUAL.subprocess.height, height: VISUAL.subprocess.height }
+    const s = VISUAL.subprocess.legacySize
+    return { width: s, height: s }
   }
   return { width: VISUAL.subprocess.width, height: VISUAL.subprocess.height }
 }

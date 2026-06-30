@@ -6,6 +6,12 @@ import { useConfigStore } from '@/stores/config'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { VISUAL, getSubProcessSize } from '@/types/petri-net'
 import SubprocessPreview from '@/components/editor/SubprocessPreview.vue'
+import {
+  LEGACY_BORDER,
+  LEGACY_SIZE,
+  getLegacyElementColors,
+  getLegacySubprocessRects,
+} from '@/utils/canvasLegacy'
 
 const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
@@ -53,16 +59,19 @@ const height = computed(() => dims.value.height)
 
 const colors = computed(() => {
   const dark = configStore.isDarkMode
-  // van der Aalst notation: a subprocess is a transition refinement, so it uses
-  // the neutral transition palette instead of the BPMN-style blue.
   if (isVanDerAalst.value) {
+    const legacy = getLegacyElementColors({
+      active: props.isEnabled && props.isTokenGameActive,
+      selected: props.isSelected,
+      isDark: dark,
+    })
     return {
-      fill: dark ? '#1f2937' : '#ffffff',
-      stroke: dark ? '#9ca3af' : '#374151',
-      innerStroke: dark ? '#6b7280' : '#9ca3af',
-      selectedStroke: '#3b82f6',
-      enabledStroke: '#22c55e',
-      enabledFill: dark ? '#166534' : '#dcfce7',
+      fill: legacy.fill,
+      stroke: legacy.stroke,
+      innerStroke: legacy.inner,
+      selectedStroke: legacy.stroke,
+      enabledStroke: legacy.inner,
+      enabledFill: legacy.fill,
       labelFill: dark ? '#e5e7eb' : '#374151',
       iconFill: dark ? '#9ca3af' : '#6b7280',
     }
@@ -96,31 +105,67 @@ const fillColor = computed(() => {
   return colors.value.fill
 })
 
-// Outer rectangle config
-const outerRectConfig = computed(() => ({
-  id: props.subprocess.id,
-  name: props.subprocess.id,
-  x: props.subprocess.position.x - width.value / 2,
-  y: props.subprocess.position.y - height.value / 2,
-  width: width.value,
-  height: height.value,
-  fill: fillColor.value,
-  stroke: strokeColor.value,
-  strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
-  cornerRadius: outerCornerRadius.value,
-}))
+const legacySubprocessRects = computed(() =>
+  getLegacySubprocessRects(props.subprocess.position.x, props.subprocess.position.y),
+)
 
-// Inner rectangle config (for double-border effect)
-const innerRectConfig = computed(() => ({
-  x: props.subprocess.position.x - width.value / 2 + innerOffset,
-  y: props.subprocess.position.y - height.value / 2 + innerOffset,
-  width: width.value - innerOffset * 2,
-  height: height.value - innerOffset * 2,
-  fill: 'transparent',
-  stroke: colors.value.innerStroke,
-  strokeWidth: 1,
-  cornerRadius: innerCornerRadius.value,
-}))
+// Outer rectangle config
+const outerRectConfig = computed(() => {
+  if (isVanDerAalst.value) {
+    const outer = legacySubprocessRects.value.outer
+    return {
+      id: props.subprocess.id,
+      name: props.subprocess.id,
+      x: outer.x,
+      y: outer.y,
+      width: outer.width,
+      height: outer.height,
+      fill: fillColor.value,
+      stroke: strokeColor.value,
+      strokeWidth: LEGACY_BORDER,
+      cornerRadius: 0,
+    }
+  }
+  return {
+    id: props.subprocess.id,
+    name: props.subprocess.id,
+    x: props.subprocess.position.x - width.value / 2,
+    y: props.subprocess.position.y - height.value / 2,
+    width: width.value,
+    height: height.value,
+    fill: fillColor.value,
+    stroke: strokeColor.value,
+    strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
+    cornerRadius: outerCornerRadius.value,
+  }
+})
+
+// Inner rectangle config (double-border effect)
+const innerRectConfig = computed(() => {
+  if (isVanDerAalst.value) {
+    const inner = legacySubprocessRects.value.inner
+    return {
+      x: inner.x,
+      y: inner.y,
+      width: inner.width,
+      height: inner.height,
+      fill: 'transparent',
+      stroke: colors.value.innerStroke,
+      strokeWidth: LEGACY_BORDER,
+      cornerRadius: 0,
+    }
+  }
+  return {
+    x: props.subprocess.position.x - width.value / 2 + innerOffset,
+    y: props.subprocess.position.y - height.value / 2 + innerOffset,
+    width: width.value - innerOffset * 2,
+    height: height.value - innerOffset * 2,
+    fill: 'transparent',
+    stroke: colors.value.innerStroke,
+    strokeWidth: 1,
+    cornerRadius: innerCornerRadius.value,
+  }
+})
 
 // Group config for dragging
 const groupConfig = computed(() => ({
@@ -134,11 +179,13 @@ const groupConfig = computed(() => ({
 // Label config
 const labelConfig = computed(() => ({
   x: props.subprocess.position.x,
-  y: props.subprocess.position.y - 5,
+  y: isVanDerAalst.value
+    ? props.subprocess.position.y + LEGACY_SIZE / 2 + 12
+    : props.subprocess.position.y - 5,
   text: props.subprocess.name,
-  fontSize: 11,
+  fontSize: isVanDerAalst.value ? 12 : 11,
   fontFamily: 'system-ui, sans-serif',
-  fontStyle: 'bold',
+  fontStyle: isVanDerAalst.value ? 'normal' : 'bold',
   fill: colors.value.labelFill,
   align: 'center',
   offsetX: props.subprocess.name.length * 3,
@@ -265,8 +312,8 @@ const handleDragEnd = (e) => {
     <!-- Name label -->
     <v-text :config="labelConfig" />
 
-    <!-- Miniature preview when subnet has content -->
-    <template v-if="hasSubNetContent">
+    <!-- Miniature preview when subnet has content (modern notation only) -->
+    <template v-if="!isVanDerAalst && hasSubNetContent">
       <template v-for="(shape, idx) in miniPreviewShapes" :key="'mini-' + idx">
         <v-circle
           v-if="shape.kind === 'place'"
