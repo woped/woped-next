@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
 
 defineProps({
@@ -6,6 +7,7 @@ defineProps({
   noIssuesText: { type: String, default: 'No issues found' },
 })
 
+const { t } = useI18n()
 const store = usePetriNetStore()
 
 function getSeverityIcon(severity) {
@@ -15,6 +17,19 @@ function getSeverityIcon(severity) {
     case 'info': return 'ℹ'
     default: return '•'
   }
+}
+
+function issueMessage(issue) {
+  if (issue.messageKey) return t(issue.messageKey, issue.messageParams ?? {})
+  return issue.message
+}
+
+function issueDetails(issue) {
+  if (issue.detailItems?.length) {
+    return issue.detailItems.map((item) => t(item.key, item.params ?? {})).join(' ')
+  }
+  if (issue.detailsKey) return t(issue.detailsKey, issue.detailsParams ?? {})
+  return issue.details
 }
 
 function highlightElement(elementId) {
@@ -32,8 +47,8 @@ function highlightElement(elementId) {
     >
       <span class="issue-icon">{{ getSeverityIcon(issue.severity) }}</span>
       <div class="issue-content">
-        <span class="issue-message">{{ issue.message }}</span>
-        <span v-if="issue.details" class="issue-details">{{ issue.details }}</span>
+        <span class="issue-message">{{ issueMessage(issue) }}</span>
+        <span v-if="issueDetails(issue)" class="issue-details">{{ issueDetails(issue) }}</span>
         <div v-if="issue.affectedElements?.length > 0" class="affected-elements">
           <button
             v-for="id in issue.affectedElements.slice(0, 3)"

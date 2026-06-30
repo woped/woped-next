@@ -17,6 +17,7 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'error',
       code: IssueCodes.ST001,
       message: 'The net is empty',
+      messageKey: 'analysis.issues.wf.emptyNet',
       affectedElements: [],
     })
   }
@@ -27,16 +28,21 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'error',
       code: IssueCodes.WF001,
       message: 'No source place found. A workflow net must have exactly one source place (place with no incoming arcs).',
+      messageKey: 'analysis.issues.wf.noSource',
       affectedElements: [],
       details: 'Add a place with no incoming arcs as the start of your workflow.',
+      detailsKey: 'analysis.issues.wf.noSourceDetails',
     })
   } else if (statistics.sourcePlaces.length > 1) {
     issues.push({
       severity: 'error',
       code: IssueCodes.WF001,
       message: `Multiple source places found (${statistics.sourcePlaces.length}). A workflow net must have exactly one source place.`,
+      messageKey: 'analysis.issues.wf.multipleSource',
+      messageParams: { count: statistics.sourcePlaces.length },
       affectedElements: statistics.sourcePlaces,
       details: 'Merge the source places or add a new common source.',
+      detailsKey: 'analysis.issues.wf.multipleSourceDetails',
     })
   }
 
@@ -46,16 +52,21 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'error',
       code: IssueCodes.WF002,
       message: 'No sink place found. A workflow net must have exactly one sink place (place with no outgoing arcs).',
+      messageKey: 'analysis.issues.wf.noSink',
       affectedElements: [],
       details: 'Add a place with no outgoing arcs as the end of your workflow.',
+      detailsKey: 'analysis.issues.wf.noSinkDetails',
     })
   } else if (statistics.sinkPlaces.length > 1) {
     issues.push({
       severity: 'error',
       code: IssueCodes.WF002,
       message: `Multiple sink places found (${statistics.sinkPlaces.length}). A workflow net must have exactly one sink place.`,
+      messageKey: 'analysis.issues.wf.multipleSink',
+      messageParams: { count: statistics.sinkPlaces.length },
       affectedElements: statistics.sinkPlaces,
       details: 'Merge the sink places or add a new common sink.',
+      detailsKey: 'analysis.issues.wf.multipleSinkDetails',
     })
   }
 
@@ -65,8 +76,11 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'warning',
       code: IssueCodes.WF003,
       message: `Found ${statistics.sourceTransitions.length} transition(s) with no input places.`,
+      messageKey: 'analysis.issues.wf.sourceTransitions',
+      messageParams: { count: statistics.sourceTransitions.length },
       affectedElements: statistics.sourceTransitions,
       details: 'All transitions should have at least one input place in a workflow net.',
+      detailsKey: 'analysis.issues.wf.sourceTransitionsDetails',
     })
   }
 
@@ -76,8 +90,11 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'warning',
       code: IssueCodes.WF003,
       message: `Found ${statistics.sinkTransitions.length} transition(s) with no output places.`,
+      messageKey: 'analysis.issues.wf.sinkTransitions',
+      messageParams: { count: statistics.sinkTransitions.length },
       affectedElements: statistics.sinkTransitions,
       details: 'All transitions should have at least one output place in a workflow net.',
+      detailsKey: 'analysis.issues.wf.sinkTransitionsDetails',
     })
   }
 
@@ -89,9 +106,11 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
         severity: 'error',
         code: IssueCodes.WF003,
         message: 'The net is not strongly connected. Some elements cannot be reached from the source.',
+        messageKey: 'analysis.issues.wf.notStronglyConnected',
         affectedElements: disconnected,
         details:
           'Ensure all elements are connected. Add arcs or remove isolated elements.',
+        detailsKey: 'analysis.issues.wf.notStronglyConnectedDetails',
       })
     }
   }
@@ -103,8 +122,11 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'error',
       code: IssueCodes.WF004,
       message: `Found ${isolated.length} isolated element(s) with no connections.`,
+      messageKey: 'analysis.issues.wf.isolated',
+      messageParams: { count: isolated.length },
       affectedElements: isolated,
       details: 'Remove isolated elements or connect them to the workflow.',
+      detailsKey: 'analysis.issues.wf.isolatedDetails',
     })
   }
 
@@ -115,6 +137,7 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'info',
       code: IssueCodes.ST003,
       message: 'The net is a state machine (each transition has exactly one input and output).',
+      messageKey: 'analysis.issues.wf.stateMachine',
       affectedElements: [],
     })
   }
@@ -124,6 +147,7 @@ export function analyzeWorkflow(net: PetriNet): AnalysisResult {
       severity: 'info',
       code: IssueCodes.ST003,
       message: 'The net is a marked graph (each place has exactly one input and output).',
+      messageKey: 'analysis.issues.wf.markedGraph',
       affectedElements: [],
     })
   }

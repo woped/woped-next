@@ -17,7 +17,6 @@ const { net } = storeToRefs(petriNetStore)
 
 // Conference: UI entry points disabled (analysis logic is preserved and can be
 // re-enabled by flipping these flags back to true).
-const SHOW_SOUNDNESS_CHECK = false
 const SHOW_CUSTOM_METRICS = false
 
 // Analysis results
@@ -27,7 +26,6 @@ const isAnalyzing = ref(false)
 
 // Collapsed states
 const showStatistics = ref(false)
-const showFreeChoice = ref(false)
 const showCoverability = ref(false)
 const showProcessTree = ref(false)
 const showCustomMetrics = ref(false)
@@ -184,25 +182,13 @@ const formatDuration = (ms) => {
       @run="runWorkflowAnalysis"
     />
 
-    <!-- Soundness Analysis (UI disabled for conference; logic preserved) -->
+    <!-- Soundness Analysis -->
     <AnalysisResults
-      v-if="SHOW_SOUNDNESS_CHECK"
       :title="$t('analysis.soundnessCheck')"
       :result="soundnessResult"
       :is-analyzing="isAnalyzing"
       @run="runSoundnessAnalysis"
     />
-
-    <!-- Free Choice (coming soon) -->
-    <div class="section">
-      <div class="section-header" @click="showFreeChoice = !showFreeChoice">
-        <span class="toggle">{{ showFreeChoice ? '▼' : '▶' }}</span>
-        <span class="section-title">{{ $t('analysis.freeChoice') }}</span>
-      </div>
-      <div v-if="showFreeChoice" class="section-content">
-        <p class="coming-soon">{{ $t('common.comingSoon') }}</p>
-      </div>
-    </div>
 
     <!-- State Space Graphs -->
     <div class="section">
@@ -579,17 +565,6 @@ const formatDuration = (ms) => {
   border-radius: 4px;
   font-size: 12px;
   padding: 12px;
-}
-
-.coming-soon {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--color-text-muted);
-  background: var(--color-bg-tertiary);
-  text-align: center;
 }
 
 :global(.dark) .no-issues {
