@@ -63,7 +63,7 @@ const getTokenCount = (placeId) => {
 const quickConnectElementId = ref(null)
 
 const quickConnectTarget = computed(() => {
-  if (isTokenGameActive.value || tool.value !== 'select') return null
+  if (isTokenGameActive.value) return null
   if (!quickConnectElementId.value) return null
 
   const id = quickConnectElementId.value
@@ -626,11 +626,11 @@ function isRightClick(e) {
   return e.evt?.button === 2
 }
 
-// Right-click opens quick connect on the element (handled at stage level for Konva bubbling)
+// Right-click opens quick connect on any element, regardless of the active tool.
 function handleStageContextMenu(e) {
   e.evt.preventDefault()
 
-  if (isTokenGameActive.value || tool.value !== 'select') return
+  if (isTokenGameActive.value) return
 
   const stage = e.target.getStage()
   if (e.target === stage) {
