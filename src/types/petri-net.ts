@@ -217,7 +217,8 @@ export const VISUAL = {
     // Place diameter matches the operator square edge length
     radius: OPERATOR_EDGE / 2,
     strokeWidth: 2,
-    tokenRadius: 3.5,
+    tokenRadius: 5,
+    tokenFontSize: 18,
   },
   transition: {
     width: 40,

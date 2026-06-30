@@ -28,7 +28,10 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'dragend', 'contextmenu'])
 
-const { radius, strokeWidth, tokenRadius } = VISUAL.place
+const { radius, strokeWidth, tokenRadius, tokenFontSize } = VISUAL.place
+
+// Spacing between token dot centers inside a place (keeps a small gap between dots)
+const tokenLayoutOffset = tokenRadius + 1.5
 
 // Theme colors
 const configStore = useConfigStore()
@@ -77,19 +80,17 @@ const tokenPositions = computed(() => {
   if (tokens === 1) {
     positions.push({ x: centerX, y: centerY })
   } else if (tokens === 2) {
-    positions.push({ x: centerX - 5, y: centerY })
-    positions.push({ x: centerX + 5, y: centerY })
+    positions.push({ x: centerX - tokenLayoutOffset, y: centerY })
+    positions.push({ x: centerX + tokenLayoutOffset, y: centerY })
   } else if (tokens === 3) {
-    positions.push({ x: centerX, y: centerY - 5 })
-    positions.push({ x: centerX - 5, y: centerY + 3 })
-    positions.push({ x: centerX + 5, y: centerY + 3 })
+    positions.push({ x: centerX, y: centerY - tokenLayoutOffset })
+    positions.push({ x: centerX - tokenLayoutOffset, y: centerY + tokenRadius - 0.5 })
+    positions.push({ x: centerX + tokenLayoutOffset, y: centerY + tokenRadius - 0.5 })
   } else if (tokens <= 5) {
-    // Square pattern
-    const offset = 5
-    positions.push({ x: centerX - offset, y: centerY - offset })
-    positions.push({ x: centerX + offset, y: centerY - offset })
-    positions.push({ x: centerX - offset, y: centerY + offset })
-    positions.push({ x: centerX + offset, y: centerY + offset })
+    positions.push({ x: centerX - tokenLayoutOffset, y: centerY - tokenLayoutOffset })
+    positions.push({ x: centerX + tokenLayoutOffset, y: centerY - tokenLayoutOffset })
+    positions.push({ x: centerX - tokenLayoutOffset, y: centerY + tokenLayoutOffset })
+    positions.push({ x: centerX + tokenLayoutOffset, y: centerY + tokenLayoutOffset })
     if (tokens === 5) {
       positions.push({ x: centerX, y: centerY })
     }
@@ -119,14 +120,14 @@ const tokenNumberConfig = computed(() => ({
   x: props.place.position.x,
   y: props.place.position.y,
   text: String(effectiveTokens.value),
-  fontSize: 14,
+  fontSize: tokenFontSize,
   fontFamily: 'system-ui, sans-serif',
   fontStyle: 'bold',
   fill: colors.value.tokenFill,
   align: 'center',
   verticalAlign: 'middle',
-  offsetX: effectiveTokens.value >= 10 ? 7 : 4,
-  offsetY: 7,
+  offsetX: effectiveTokens.value >= 10 ? Math.round(tokenFontSize * 0.55) : Math.round(tokenFontSize * 0.28),
+  offsetY: Math.round(tokenFontSize * 0.5),
 }))
 
 const handleClick = (e) => {
