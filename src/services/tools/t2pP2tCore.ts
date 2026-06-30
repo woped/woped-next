@@ -81,7 +81,7 @@ export async function runP2T(
   try {
     const response = await fetch(endpoints.p2t, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/xml' },
+      headers: { 'Content-Type': 'text/plain' },
       body: args.pnml,
     })
 
