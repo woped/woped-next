@@ -8,7 +8,7 @@ vi.mock("@/services/tools/llmFallback", () => ({
 }));
 
 vi.mock("@/services/tools/toolConfig", () => ({
-  getToolEndpoints: vi.fn(() => ({ p2t: "", t2p: "" })),
+  getToolEndpoints: () => ({ p2t: undefined, t2p: undefined }),
 }));
 
 const llmConfig: LLMConfig = {

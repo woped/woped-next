@@ -1,27 +1,33 @@
-import { createApp } from "vue";
-import { createPinia } from "pinia";
-import VueKonva from "vue-konva";
-import { i18n, setLocale } from "./i18n";
-import "./style.css";
-import App from "./App.vue";
+import { createApp, watch } from 'vue'
+import { createPinia } from 'pinia'
+import VueKonva from 'vue-konva'
+import { i18n, setLocale } from './i18n'
+import { useConfigStore } from './stores/config'
+import { usePetriNetStore } from './stores/petriNet'
+import './style.css'
+import App from './App.vue'
 
-const app = createApp(App);
-const pinia = createPinia();
+const app = createApp(App)
+const pinia = createPinia()
 
-app.use(pinia);
-app.use(i18n);
-app.use(VueKonva);
-app.mount("#app");
+app.use(pinia)
+app.use(i18n)
+app.use(VueKonva)
 
-// Initialize config store after mounting
-import { useConfigStore } from "./stores/config";
-const configStore = useConfigStore();
-configStore.load();
+// Initialize stores before mounting so components hydrate from persisted state.
+const configStore = useConfigStore()
+configStore.load()
+setLocale(configStore.language.locale)
 
-// Initialize petri net store and restore persisted state
-import { usePetriNetStore } from "./stores/petriNet";
-const petriNetStore = usePetriNetStore();
-petriNetStore.load();
+const petriNetStore = usePetriNetStore()
+petriNetStore.loadFromLocalStorage()
 
-// Set initial locale from config
-setLocale(configStore.language.locale);
+// Persist net changes (debounced). Only net data and the active net id are
+// watched; transient UI state (viewport, selection, tool) is not persisted.
+watch(
+  [() => petriNetStore.nets, () => petriNetStore.activeNetId],
+  () => petriNetStore.scheduleSave(),
+  { deep: true },
+)
+
+app.mount('#app')

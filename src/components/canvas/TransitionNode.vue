@@ -1,7 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
-import { VISUAL } from '@/types/petri-net'
+import { VISUAL, getTransitionSize } from '@/types/petri-net'
 import { TRIGGER_COLORS } from '@/types/triggers'
 
 const props = defineProps({
@@ -27,11 +28,15 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dblclick', 'dragend', 'contextmenu'])
 
-const { width, height, strokeWidth } = VISUAL.transition
+const { strokeWidth } = VISUAL.transition
 
 const configStore = useConfigStore()
+const { operatorNotation } = storeToRefs(configStore)
+
+// Square in van der Aalst notation, wider rectangle in modern notation.
+const dims = computed(() => getTransitionSize(operatorNotation.value))
 
 const colors = computed(() => {
   const dark = configStore.isDarkMode
@@ -57,16 +62,20 @@ const fillColor = computed(() => {
 })
 
 const rectConfig = computed(() => ({
-  x: props.transition.position.x - width / 2,
-  y: props.transition.position.y - height / 2,
-  width,
-  height,
+  id: props.transition.id,
+  name: props.transition.id,
+  x: props.transition.position.x - dims.value.width / 2,
+  y: props.transition.position.y - dims.value.height / 2,
+  width: dims.value.width,
+  height: dims.value.height,
   fill: fillColor.value,
   stroke: strokeColor.value,
   strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
 }))
 
 const groupConfig = computed(() => ({
+  id: props.transition.id,
+  name: props.transition.id,
   x: 0,
   y: 0,
   draggable: props.draggable,
@@ -74,7 +83,7 @@ const groupConfig = computed(() => ({
 
 const labelConfig = computed(() => ({
   x: props.transition.position.x,
-  y: props.transition.position.y + height / 2 + 15,
+  y: props.transition.position.y + dims.value.height / 2 + 15,
   text: props.transition.name,
   fontSize: 12,
   fontFamily: 'system-ui, sans-serif',
@@ -100,7 +109,7 @@ const triggerIcons = computed(() => {
     }
   }
 
-  const baseX = props.transition.position.x + width / 2 + ICON_RADIUS + 4
+  const baseX = props.transition.position.x + dims.value.width / 2 + ICON_RADIUS + 4
   const totalHeight = (unique.length - 1) * ICON_GAP
   const startY = props.transition.position.y - totalHeight / 2
 
@@ -132,6 +141,10 @@ const handleClick = (e) => {
   emit('click', e)
 }
 
+const handleDblClick = (e) => {
+  emit('dblclick', e)
+}
+
 const handleDragEnd = (e) => {
   const newX = e.target.x() + props.transition.position.x
   const newY = e.target.y() + props.transition.position.y
@@ -147,13 +160,19 @@ const handleDragEnd = (e) => {
     },
   })
 }
+
+const handleContextMenu = (e) => {
+  emit('contextmenu', e)
+}
 </script>
 
 <template>
   <v-group
     :config="groupConfig"
     @click="handleClick"
+    @dblclick="handleDblClick"
     @dragend="handleDragEnd"
+    @contextmenu="handleContextMenu"
   >
     <!-- Main rectangle -->
     <v-rect :config="rectConfig" />

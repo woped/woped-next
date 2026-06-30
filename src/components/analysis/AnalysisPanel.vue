@@ -15,6 +15,10 @@ const { t } = useI18n()
 const petriNetStore = usePetriNetStore()
 const { net } = storeToRefs(petriNetStore)
 
+// Conference: UI entry points disabled (analysis logic is preserved and can be
+// re-enabled by flipping these flags back to true).
+const SHOW_CUSTOM_METRICS = false
+
 // Analysis results
 const workflowResult = ref(null)
 const soundnessResult = ref(null)
@@ -163,9 +167,6 @@ const formatDuration = (ms) => {
           </div>
         </div>
         <div class="stat-props">
-          <div class="prop" :class="{ active: statistics.freeChoice }">
-            {{ $t('analysis.freeChoice') }}: {{ statistics.freeChoice ? $t('common.yes') : $t('common.no') }}
-          </div>
           <div class="prop" :class="{ active: statistics.stronglyConnected }">
             {{ $t('analysis.connected') }}: {{ statistics.stronglyConnected ? $t('common.yes') : $t('common.no') }}
           </div>
@@ -200,8 +201,8 @@ const formatDuration = (ms) => {
       </div>
     </div>
 
-    <!-- Custom Metrics -->
-    <div class="section">
+    <!-- Custom Metrics (UI disabled for conference; component preserved) -->
+    <div v-if="SHOW_CUSTOM_METRICS" class="section">
       <div class="section-header" @click="showCustomMetrics = !showCustomMetrics">
         <span class="toggle">{{ showCustomMetrics ? '▼' : '▶' }}</span>
         <span class="section-title">{{ $t('analysis.customMetrics') }}</span>

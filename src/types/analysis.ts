@@ -23,6 +23,9 @@ export const IssueCodes = {
   SN002: 'SN002', // Dead transition
   SN003: 'SN003', // Unbounded place
   SN004: 'SN004', // No option to complete
+  SN005: 'SN005', // Non-live transition
+  SN006: 'SN006', // Wrongly marked place (initial marking)
+  SN007: 'SN007', // Not a workflow net (soundness prerequisite)
 
   // Structural issues (ST)
   ST001: 'ST001', // Empty net
@@ -33,7 +36,19 @@ export const IssueCodes = {
 export type IssueCode = (typeof IssueCodes)[keyof typeof IssueCodes]
 
 /**
- * An issue found during analysis
+ * A translatable detail line (i18n key + optional interpolation params).
+ */
+export interface AnalysisDetailItem {
+  key: string
+  params?: Record<string, string | number>
+}
+
+/**
+ * An issue found during analysis.
+ *
+ * `message`/`details` always contain an English fallback so non-UI consumers
+ * (MCP tool, CSV export) keep working. UI components prefer the i18n fields
+ * (`messageKey`, `detailsKey`, `detailItems`) when present.
  */
 export interface AnalysisIssue {
   severity: IssueSeverity
@@ -41,6 +56,11 @@ export interface AnalysisIssue {
   message: string
   affectedElements: string[]
   details?: string
+  messageKey?: string
+  messageParams?: Record<string, string | number>
+  detailsKey?: string
+  detailsParams?: Record<string, string | number>
+  detailItems?: AnalysisDetailItem[]
 }
 
 /**

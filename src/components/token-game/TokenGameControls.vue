@@ -6,6 +6,7 @@ import { useTokenGameStore } from '@/stores/tokenGame'
 import { usePetriNetStore } from '@/stores/petriNet'
 import TokenGameStats from './TokenGameStats.vue'
 import ConflictDialog from './ConflictDialog.vue'
+import BranchChoiceDialog from './BranchChoiceDialog.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import HelpTooltip from '@/components/help/HelpTooltip.vue'
 
@@ -344,6 +345,9 @@ const statusClass = computed(() => {
     
     <!-- Conflict Dialog -->
     <ConflictDialog />
+
+    <!-- XOR Branch Choice Dialog -->
+    <BranchChoiceDialog />
   </div>
 </template>
 

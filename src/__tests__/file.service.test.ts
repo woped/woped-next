@@ -117,6 +117,101 @@ describe('File Services', () => {
       expect(result.net!.places).toHaveLength(0)
       expect(result.net!.transitions).toHaveLength(0)
     })
+
+    it('should parse a single-transition operator (new WoPeD format)', () => {
+      const pnml = `<?xml version="1.0"?>
+<pnml><net id="n">
+  <place id="p0"><graphics><position x="0" y="0"/></graphics></place>
+  <place id="p1"><graphics><position x="200" y="0"/></graphics></place>
+  <place id="p2"><graphics><position x="200" y="100"/></graphics></place>
+  <transition id="op">
+    <name><text>Split</text></name>
+    <graphics><position x="100" y="50"/></graphics>
+    <toolspecific tool="WoPeD" version="1.0"><operator type="104"/></toolspecific>
+  </transition>
+  <arc id="a0" source="p0" target="op"/>
+  <arc id="a1" source="op" target="p1"/>
+  <arc id="a2" source="op" target="p2"/>
+</net></pnml>`
+      const result = pnmlParser.parse(pnml)
+
+      expect(result.success).toBe(true)
+      expect(result.net!.operators).toHaveLength(1)
+      expect(result.net!.operators[0].id).toBe('op')
+      const outputs = result.net!.arcs.filter(a => a.sourceId === 'op')
+      expect(outputs).toHaveLength(2)
+    })
+
+    it('should parse standard PNML 2009 with a <page> wrapper', () => {
+      // Standard PNML (and many LLM-generated nets) nest all elements in a
+      // <page> container instead of placing them directly under <net>.
+      const pnml = `<?xml version="1.0"?>
+<pnml><net id="n" type="http://www.pnml.org/version-2009/grammar/pnmlcoremodel">
+  <page id="page1">
+    <place id="p1"><graphics><position x="0" y="0"/></graphics><initialMarking><text>1</text></initialMarking></place>
+    <transition id="t1"><graphics><position x="100" y="0"/></graphics></transition>
+    <place id="p2"><graphics><position x="200" y="0"/></graphics></place>
+    <arc id="a1" source="p1" target="t1"/>
+    <arc id="a2" source="t1" target="p2"/>
+  </page>
+</net></pnml>`
+      const result = pnmlParser.parse(pnml)
+
+      expect(result.success).toBe(true)
+      expect(result.net!.places).toHaveLength(2)
+      expect(result.net!.transitions).toHaveLength(1)
+      expect(result.net!.arcs).toHaveLength(2)
+      expect(result.net!.places.find(p => p.id === 'p1')!.tokens).toBe(1)
+    })
+
+    it('should merge legacy expanded operator members into one operator', () => {
+      // Legacy WoPeD: one XOR split exported as two overlapping transitions
+      // (t5_op_1, t5_op_2) sharing <operator id="t5">.
+      const pnml = `<?xml version="1.0"?>
+<pnml><net id="legacy">
+  <place id="p2"><graphics><position x="300" y="150"/></graphics></place>
+  <place id="p7"><graphics><position x="370" y="50"/></graphics></place>
+  <place id="p8"><graphics><position x="440" y="150"/></graphics></place>
+  <transition id="t5_op_2">
+    <name><text>check form</text></name>
+    <graphics><position x="370" y="150"/></graphics>
+    <toolspecific tool="WoPeD" version="1.0"><operator id="t5" type="104"/></toolspecific>
+  </transition>
+  <transition id="t5_op_1">
+    <name><text>check form</text></name>
+    <graphics><position x="370" y="150"/></graphics>
+    <toolspecific tool="WoPeD" version="1.0"><operator id="t5" type="104"/></toolspecific>
+  </transition>
+  <arc id="a16" source="p2" target="t5_op_1"/>
+  <arc id="a16b" source="p2" target="t5_op_2"/>
+  <arc id="a18" source="t5_op_2" target="p7"/>
+  <arc id="a20" source="t5_op_1" target="p8"/>
+</net></pnml>`
+      const result = pnmlParser.parse(pnml)
+
+      expect(result.success).toBe(true)
+      // Two members collapse into a single operator node
+      expect(result.net!.operators).toHaveLength(1)
+      const op = result.net!.operators[0]
+      expect(op.id).toBe('t5')
+      expect(op.name).toBe('check form')
+
+      // Single shared input arc (duplicate p2->t5 de-duplicated)
+      const inputs = result.net!.arcs.filter(a => a.targetId === 't5')
+      expect(inputs).toHaveLength(1)
+      expect(inputs[0].sourceId).toBe('p2')
+
+      // Two distinct output branches enable the XOR branch choice dialog
+      const outputs = result.net!.arcs.filter(a => a.sourceId === 't5')
+      expect(outputs).toHaveLength(2)
+      expect(outputs.map(a => a.targetId).sort()).toEqual(['p7', 'p8'])
+
+      // No dangling references to the original member transition ids
+      const memberRefs = result.net!.arcs.filter(
+        a => a.sourceId.includes('_op_') || a.targetId.includes('_op_')
+      )
+      expect(memberRefs).toHaveLength(0)
+    })
   })
 
   describe('PNMLWriter', () => {

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { runP2T, runT2P } from "@/services/tools/t2pP2tCore";
 import type { LLMConfig } from "@/types/chat";
-import type { ServicesConfig } from "@/types/config";
 
 const llmConfig: LLMConfig = {
   provider: "openai",
@@ -11,12 +10,12 @@ const llmConfig: LLMConfig = {
   temperature: 0.7,
 };
 
-const servicesConfig: ServicesConfig = {
-  t2pEndpoint: "http://test-t2p/generate_pnml",
-  p2tEndpoint: "http://test-p2t/generateText",
-  t2pEnabled: true,
-  p2tEnabled: true,
-};
+vi.mock("@/services/tools/toolConfig", () => ({
+  getToolEndpoints: () => ({
+    t2p: "http://test-t2p/generate_pnml",
+    p2t: "http://test-p2t/generateText",
+  }),
+}));
 
 vi.mock("@/services/tools/llmFallback", () => ({
   llmFallbackT2P: vi.fn(async () =>
@@ -47,11 +46,7 @@ describe("t2pP2tCore", () => {
       ),
     );
 
-    const json = await runT2P(
-      { text: "order process" },
-      undefined,
-      servicesConfig,
-    );
+    const json = await runT2P({ text: "order process" });
     expect(JSON.parse(json).pnml).toBe("<pnml/>");
     expect(llmFallbackT2P).not.toHaveBeenCalled();
   });
@@ -62,11 +57,7 @@ describe("t2pP2tCore", () => {
       vi.fn(async () => new Response("", { status: 503 })),
     );
 
-    const json = await runT2P(
-      { text: "order process" },
-      llmConfig,
-      servicesConfig,
-    );
+    const json = await runT2P({ text: "order process" }, llmConfig);
     expect(JSON.parse(json).pnml).toContain("fallback");
     expect(llmFallbackT2P).toHaveBeenCalledOnce();
   });
@@ -77,36 +68,8 @@ describe("t2pP2tCore", () => {
       vi.fn(async () => new Response("", { status: 500 })),
     );
 
-    const json = await runT2P(
-      { text: "order process" },
-      undefined,
-      servicesConfig,
-    );
+    const json = await runT2P({ text: "order process" });
     expect(JSON.parse(json).error).toBeDefined();
-    expect(llmFallbackT2P).not.toHaveBeenCalled();
-  });
-
-  it("runT2P falls back to LLM when T2P is disabled and API key is present", async () => {
-    const disabledConfig = { ...servicesConfig, t2pEnabled: false };
-
-    const json = await runT2P(
-      { text: "order process" },
-      llmConfig,
-      disabledConfig,
-    );
-    expect(JSON.parse(json).pnml).toContain("fallback");
-    expect(llmFallbackT2P).toHaveBeenCalledOnce();
-  });
-
-  it("runT2P returns error when T2P is disabled and no API key", async () => {
-    const disabledConfig = { ...servicesConfig, t2pEnabled: false };
-
-    const json = await runT2P(
-      { text: "order process" },
-      undefined,
-      disabledConfig,
-    );
-    expect(JSON.parse(json).error).toContain("disabled");
     expect(llmFallbackT2P).not.toHaveBeenCalled();
   });
 
@@ -118,15 +81,7 @@ describe("t2pP2tCore", () => {
       }),
     );
 
-    const json = await runP2T({ pnml: "<pnml/>" }, llmConfig, servicesConfig);
-    expect(JSON.parse(json).description).toBe("LLM bypass description");
-    expect(llmFallbackP2T).toHaveBeenCalledOnce();
-  });
-
-  it("runP2T falls back to LLM when P2T is disabled and API key is present", async () => {
-    const disabledConfig = { ...servicesConfig, p2tEnabled: false };
-
-    const json = await runP2T({ pnml: "<pnml/>" }, llmConfig, disabledConfig);
+    const json = await runP2T({ pnml: "<pnml/>" }, llmConfig);
     expect(JSON.parse(json).description).toBe("LLM bypass description");
     expect(llmFallbackP2T).toHaveBeenCalledOnce();
   });

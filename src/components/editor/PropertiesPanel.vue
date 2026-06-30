@@ -44,6 +44,11 @@ const localLabel = ref('')
 const localOperatorType = ref(OperatorType.AND_SPLIT)
 const localRoutingMode = ref('direct')
 
+// Sentinel value shared by the operator/transition type dropdowns to represent
+// a plain (non-operator) transition.
+const TRANSITION_TYPE = '__transition__'
+const localTransitionType = ref(TRANSITION_TYPE)
+
 // Sync local state with selected element
 watch(
   selectedElement,
@@ -68,6 +73,9 @@ watch(
     if ('operatorType' in element) {
       localOperatorType.value = element.operatorType
     }
+
+    // The transition type dropdown always starts on the plain transition entry.
+    localTransitionType.value = TRANSITION_TYPE
 
     if ('routingMode' in element) {
       localRoutingMode.value = element.routingMode || 'direct'
@@ -95,7 +103,21 @@ const updateName = () => {
 
 const updateOperatorType = () => {
   if (!selectedElement.value || elementType.value !== 'operator') return
-  store.updateOperator(selectedIds.value[0], { operatorType: localOperatorType.value })
+  const id = selectedIds.value[0]
+
+  if (localOperatorType.value === TRANSITION_TYPE) {
+    store.convertOperatorToTransition(id)
+    return
+  }
+
+  store.updateOperator(id, { operatorType: localOperatorType.value })
+}
+
+const updateTransitionType = () => {
+  if (!selectedElement.value || elementType.value !== 'transition') return
+  if (localTransitionType.value === TRANSITION_TYPE) return
+
+  store.convertTransitionToOperator(selectedIds.value[0], localTransitionType.value)
 }
 
 const updateTokens = () => {
@@ -274,6 +296,25 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
         </div>
 
         <div class="property-row">
+          <label>{{ $t('operators.type') }}</label>
+          <select
+            v-model="localTransitionType"
+            @change="updateTransitionType"
+          >
+            <option :value="TRANSITION_TYPE">
+              {{ $t('operators.convertToTransition') }}
+            </option>
+            <option
+              v-for="opType in operatorTypes"
+              :key="opType"
+              :value="opType"
+            >
+              {{ getOperatorLabel(opType) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="property-row">
           <label>{{ $t('properties.label') }}</label>
           <input
             v-model="localLabel"
@@ -361,6 +402,9 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
             >
               {{ getOperatorLabel(opType) }}
             </option>
+            <option :value="TRANSITION_TYPE">
+              {{ $t('operators.convertToTransition') }}
+            </option>
           </select>
         </div>
       </div>
@@ -405,7 +449,7 @@ const getOperatorLabel = (type) => OPERATOR_INFO[type]?.label || type
     </div>
 
     <!-- Actions -->
-    <div v-if="selectedElement" class="panel-actions">
+    <div v-if="selectedIds.length > 0" class="panel-actions">
       <button
         class="delete-btn"
         @click="store.deleteSelected()"

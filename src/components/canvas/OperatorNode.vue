@@ -1,7 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
+import { usePetriNetStore } from '@/stores/petriNet'
 import { VISUAL, OPERATOR_INFO, OperatorType, getOperatorCategory } from '@/types/petri-net'
+import { getOperatorOrientation, getOperatorGlyphs, chevronGeometry } from '@/utils/operatorGlyph'
 
 const props = defineProps({
   operator: {
@@ -26,13 +29,17 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['click', 'dragend'])
+const emit = defineEmits(['click', 'dblclick', 'dragend'])
 
 const { size, strokeWidth } = VISUAL.operator
 const halfSize = size / 2
 
 // Theme colors
 const configStore = useConfigStore()
+const petriNetStore = usePetriNetStore()
+const { operatorNotation } = storeToRefs(configStore)
+
+const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
 
 const themeColors = computed(() => {
   const dark = configStore.isDarkMode
@@ -80,6 +87,95 @@ const isXorType = computed(() => {
 })
 
 const isCombinedType = computed(() => category.value === 'combined')
+
+// ---------------------------------------------------------------------------
+// van der Aalst notation (authentic WoPeD): transition rectangle + chevron
+// ---------------------------------------------------------------------------
+const glyphBox = { width: size, height: size, border: strokeWidth }
+
+const topLeft = computed(() => ({
+  x: props.operator.position.x - halfSize,
+  y: props.operator.position.y - halfSize,
+}))
+
+// Look up the canvas position of a connected element by id.
+const elementPosition = (id) => {
+  const net = petriNetStore.net
+  const candidates = [
+    ...net.places,
+    ...net.transitions,
+    ...net.operators,
+    ...(net.subProcesses || []),
+  ]
+  const found = candidates.find((el) => el.id === id)
+  return found ? found.position : null
+}
+
+// Derive split/join sides from the flow of connected arcs.
+const orientation = computed(() => {
+  const id = props.operator.id
+  const incomingFrom = []
+  const outgoingTo = []
+  for (const arc of petriNetStore.net.arcs) {
+    if (arc.targetId === id) {
+      const p = elementPosition(arc.sourceId)
+      if (p) incomingFrom.push(p)
+    }
+    if (arc.sourceId === id) {
+      const p = elementPosition(arc.targetId)
+      if (p) outgoingTo.push(p)
+    }
+  }
+  return getOperatorOrientation(props.operator.position, incomingFrom, outgoingTo)
+})
+
+// Rectangle for the van der Aalst operator box.
+const rectConfig = computed(() => ({
+  id: props.operator.id,
+  name: props.operator.id,
+  x: topLeft.value.x,
+  y: topLeft.value.y,
+  width: size,
+  height: size,
+  fill: themeColors.value.fill,
+  stroke: strokeColor.value,
+  strokeWidth: currentStrokeWidth.value,
+}))
+
+// Chevron ink colour: matches the legacy `getInnerDrawingsColor` (border/black,
+// turning green while a transition is active in the token game).
+const inkColor = computed(() => {
+  if (props.isEnabled && props.isTokenGameActive) return themeColors.value.enabledStroke
+  return themeColors.value.stroke
+})
+
+// Convert a #rrggbb colour to an rgba() string with the given alpha.
+const hexToRgba = (hex, alpha) => {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!m) return hex
+  const r = parseInt(m[1], 16)
+  const g = parseInt(m[2], 16)
+  const b = parseInt(m[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+// Faint chevron fill (legacy draws the arrow filled at ~10% opacity).
+const inkFill = computed(() => hexToRgba(inkColor.value, 0.1))
+
+// Resolved chevron glyphs (translated to canvas coordinates). All arrows are
+// drawn identically (monochrome outline with a faint fill, matching the legacy
+// WoPeD rendering). The AND/XOR distinction is encoded by the arrow direction
+// (inward vs. outward), not by the fill, and split/join by the side.
+const aalstGlyphs = computed(() => {
+  const ox = topLeft.value.x
+  const oy = topLeft.value.y
+  return getOperatorGlyphs(props.operator.operatorType, orientation.value).map((g) => {
+    const geo = chevronGeometry(glyphBox, g.position, g.direction)
+    const polygon = geo.polygon.map((v, i) => (i % 2 === 0 ? v + ox : v + oy))
+    const line = geo.line ? geo.line.map((v, i) => (i % 2 === 0 ? v + ox : v + oy)) : null
+    return { ...g, polygon, line }
+  })
+})
 
 // Diamond points for AND operator
 const diamondPoints = computed(() => {
@@ -142,6 +238,8 @@ const typeIndicatorConfig = computed(() => ({
 
 // Group config for dragging
 const groupConfig = computed(() => ({
+  id: props.operator.id,
+  name: props.operator.id,
   x: 0,
   y: 0,
   draggable: props.draggable,
@@ -149,6 +247,10 @@ const groupConfig = computed(() => ({
 
 const handleClick = (e) => {
   emit('click', e)
+}
+
+const handleDblClick = (e) => {
+  emit('dblclick', e)
 }
 
 const handleDragEnd = (e) => {
@@ -172,8 +274,39 @@ const handleDragEnd = (e) => {
   <v-group
     :config="groupConfig"
     @click="handleClick"
+    @dblclick="handleDblClick"
     @dragend="handleDragEnd"
   >
+    <!-- van der Aalst notation: transition rectangle with directional chevron(s) -->
+    <template v-if="isVanDerAalst">
+      <!-- Operator box (same footprint as a transition) -->
+      <v-rect :config="rectConfig" />
+
+      <!-- Chevron glyphs (monochrome, legacy WoPeD); AND/XOR differ by arrow direction -->
+      <template v-for="(glyph, index) in aalstGlyphs" :key="`glyph-${index}`">
+        <v-line
+          :config="{
+            points: glyph.polygon,
+            closed: true,
+            stroke: inkColor,
+            strokeWidth: 1.5,
+            fill: inkFill,
+            lineJoin: 'round',
+          }"
+        />
+        <v-line
+          v-if="glyph.line"
+          :config="{
+            points: glyph.line,
+            stroke: inkColor,
+            strokeWidth: 1.5,
+          }"
+        />
+      </template>
+    </template>
+
+    <!-- Modern notation: AND diamond / XOR circle / combined gateway glyphs -->
+    <template v-else>
     <!-- AND type: Diamond shape -->
     <template v-if="isAndType">
       <v-line
@@ -332,11 +465,12 @@ const handleDragEnd = (e) => {
         />
       </template>
     </template>
+    </template>
 
     <!-- Label -->
     <v-text :config="labelConfig" />
-    
-    <!-- Type indicator -->
-    <v-text :config="typeIndicatorConfig" />
+
+    <!-- Type indicator (modern only; legacy van der Aalst shows just the name) -->
+    <v-text v-if="!isVanDerAalst" :config="typeIndicatorConfig" />
   </v-group>
 </template>

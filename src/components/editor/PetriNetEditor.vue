@@ -14,7 +14,6 @@ import BreadcrumbNav from './BreadcrumbNav.vue'
 import TokenGameControls from '@/components/token-game/TokenGameControls.vue'
 import AnalysisPanel from '@/components/analysis/AnalysisPanel.vue'
 import SimulationPanel from '@/components/simulation/SimulationPanel.vue'
-import ContextMenu from './ContextMenu.vue'
 import { fileService } from '@/services/file/fileService'
 import { useConfigStore } from '@/stores/config'
 import { useAutoSave } from '@/composables/useAutoSave'
@@ -32,13 +31,6 @@ const { isRunning: isTokenGameActive } = storeToRefs(tokenGameStore)
 
 // Auto-save
 const { lastSaved } = useAutoSave()
-
-// Context menu
-const contextMenuRef = ref(null)
-
-const handleContextMenu = (event) => {
-  contextMenuRef.value?.show(event.x, event.y, event.elementId, event.elementType)
-}
 
 // Drag & Drop file opening
 const isDragOver = ref(false)
@@ -81,6 +73,10 @@ const handleDrop = async (e) => {
 
 // Right panel tab
 const rightPanelTab = ref('properties')
+
+// Conference: Quantitative Simulation UI disabled (engine/panel preserved and
+// can be re-enabled by flipping this flag back to true).
+const SHOW_SIMULATION = false
 
 // Right panel collapsed state (start expanded by default)
 const rightPanelCollapsed = ref(false)
@@ -141,6 +137,14 @@ const toggleRightPanel = () => {
   setTimeout(updateCanvasDimensions, 250)
 }
 
+function openPropertiesPanel() {
+  rightPanelTab.value = 'properties'
+  if (rightPanelCollapsed.value) {
+    rightPanelCollapsed.value = false
+    setTimeout(updateCanvasDimensions, 250)
+  }
+}
+
 // Auto-switch to token game tab and expand panel when token game starts
 watch(isTokenGameActive, (active) => {
   if (active) {
@@ -168,10 +172,10 @@ function updateCanvasDimensions() {
   }
 }
 
-// Initialize with a sample net demonstrating operators if no persisted state exists
+// Initialize with a sample net demonstrating operators.
+// Skipped when a previously persisted net was restored on startup.
 onMounted(() => {
-  const hasPersistedNet = store.net && store.net.places.length > 0
-  if (!hasPersistedNet) {
+  if (!store.hydratedFromStorage) {
     // Start place with token
     const start = store.addPlace({ x: 100, y: 250 }, 'Start')
     store.updatePlace(start.id, { tokens: 1 })
@@ -239,7 +243,7 @@ onMounted(() => {
         <EditorCanvas 
           ref="canvasRef"
           @resize="updateCanvasDimensions"
-          @contextmenu="handleContextMenu"
+          @open-properties="openPropertiesPanel"
         />
         
         <!-- Floating View Toolbar -->
@@ -303,6 +307,7 @@ onMounted(() => {
               <span v-if="showTabLabels" class="tab-label">{{ $t('analysis.title') }}</span>
             </button>
             <button
+              v-if="SHOW_SIMULATION"
               :class="['tab-btn', { active: rightPanelTab === 'simulation' }]"
               @click="rightPanelTab = 'simulation'"
               :title="$t('simulation.title')"
@@ -325,14 +330,12 @@ onMounted(() => {
               <TokenGameControls />
             </div>
             <AnalysisPanel v-else-if="rightPanelTab === 'analysis'" />
-            <SimulationPanel v-else-if="rightPanelTab === 'simulation'" />
+            <SimulationPanel v-else-if="SHOW_SIMULATION && rightPanelTab === 'simulation'" />
             <ChatPanel v-else-if="rightPanelTab === 'chat'" />
           </div>
         </template>
       </div>
     </div>
-    <ContextMenu ref="contextMenuRef" />
-
     <!-- Help system -->
     <HelpDialog />
     <GuidedTour />
@@ -363,6 +366,8 @@ onMounted(() => {
   flex: 1;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .view-toolbar-container {
