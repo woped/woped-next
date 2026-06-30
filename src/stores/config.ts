@@ -135,6 +135,7 @@ export const useConfigStore = defineStore('config', {
       this.$reset()
       this.save()
       this.applyTheme()
+      this.applyLocale()
     },
 
     /**

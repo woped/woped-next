@@ -5,6 +5,16 @@ import { useConfigStore } from '@/stores/config'
 import { usePetriNetStore } from '@/stores/petriNet'
 import { VISUAL, OPERATOR_INFO, OperatorType, getOperatorCategory } from '@/types/petri-net'
 import { getOperatorOrientation, getOperatorGlyphs, chevronGeometry } from '@/utils/operatorGlyph'
+import {
+  LEGACY_BORDER,
+  getLegacyCombiZoneRects,
+  getLegacyElementColors,
+  getLegacyInnerBoxRect,
+  legacyChevronFill,
+  centerToTopLeft,
+  LEGACY_SIZE,
+  LEGACY_COLORS,
+} from '@/utils/canvasLegacy'
 
 const props = defineProps({
   operator: {
@@ -91,14 +101,51 @@ const isCombinedType = computed(() => category.value === 'combined')
 // ---------------------------------------------------------------------------
 // van der Aalst notation (authentic WoPeD): transition rectangle + chevron
 // ---------------------------------------------------------------------------
-const glyphBox = { width: size, height: size, border: strokeWidth }
+const glyphBox = { width: LEGACY_SIZE, height: LEGACY_SIZE, border: LEGACY_BORDER }
 
-const topLeft = computed(() => ({
-  x: props.operator.position.x - halfSize,
-  y: props.operator.position.y - halfSize,
-}))
+// Legacy WoPeD palette for van der Aalst notation.
+const legacyColors = computed(() =>
+  getLegacyElementColors({
+    active: props.isEnabled && props.isTokenGameActive,
+    selected: props.isSelected,
+    isDark: configStore.isDarkMode,
+  }),
+)
 
-// Look up the canvas position of a connected element by id.
+const legacyInnerBox = computed(() =>
+  getLegacyInnerBoxRect(props.operator.position.x, props.operator.position.y),
+)
+
+const legacyCombiZones = computed(() => {
+  if (!isCombinedType.value) return []
+  return getLegacyCombiZoneRects(props.operator.position.x, props.operator.position.y)
+})
+
+// Rectangle for the van der Aalst operator box (TransSimpleView inner rect).
+const rectConfig = computed(() => {
+  const box = legacyInnerBox.value
+  return {
+    id: props.operator.id,
+    name: props.operator.id,
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    fill: legacyColors.value.fill,
+    stroke: legacyColors.value.stroke,
+    strokeWidth: LEGACY_BORDER,
+  }
+})
+
+// Chevron ink colour: legacy inner drawing colour (#000000, green when active).
+const inkColor = computed(() => legacyColors.value.inner)
+
+const inkFill = computed(() => legacyChevronFill(inkColor.value))
+
+const topLeft = computed(() =>
+  centerToTopLeft(props.operator.position.x, props.operator.position.y),
+)
+
 const elementPosition = (id) => {
   const net = petriNetStore.net
   const candidates = [
@@ -129,43 +176,7 @@ const orientation = computed(() => {
   return getOperatorOrientation(props.operator.position, incomingFrom, outgoingTo)
 })
 
-// Rectangle for the van der Aalst operator box.
-const rectConfig = computed(() => ({
-  id: props.operator.id,
-  name: props.operator.id,
-  x: topLeft.value.x,
-  y: topLeft.value.y,
-  width: size,
-  height: size,
-  fill: themeColors.value.fill,
-  stroke: strokeColor.value,
-  strokeWidth: currentStrokeWidth.value,
-}))
-
-// Chevron ink colour: matches the legacy `getInnerDrawingsColor` (border/black,
-// turning green while a transition is active in the token game).
-const inkColor = computed(() => {
-  if (props.isEnabled && props.isTokenGameActive) return themeColors.value.enabledStroke
-  return themeColors.value.stroke
-})
-
-// Convert a #rrggbb colour to an rgba() string with the given alpha.
-const hexToRgba = (hex, alpha) => {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!m) return hex
-  const r = parseInt(m[1], 16)
-  const g = parseInt(m[2], 16)
-  const b = parseInt(m[3], 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-// Faint chevron fill (legacy draws the arrow filled at ~10% opacity).
-const inkFill = computed(() => hexToRgba(inkColor.value, 0.1))
-
-// Resolved chevron glyphs (translated to canvas coordinates). All arrows are
-// drawn identically (monochrome outline with a faint fill, matching the legacy
-// WoPeD rendering). The AND/XOR distinction is encoded by the arrow direction
-// (inward vs. outward), not by the fill, and split/join by the side.
+// Resolved chevron glyphs (translated to canvas coordinates).
 const aalstGlyphs = computed(() => {
   const ox = topLeft.value.x
   const oy = topLeft.value.y
@@ -279,17 +290,33 @@ const handleDragEnd = (e) => {
   >
     <!-- van der Aalst notation: transition rectangle with directional chevron(s) -->
     <template v-if="isVanDerAalst">
-      <!-- Operator box (same footprint as a transition) -->
+      <!-- Combined operator: three-zone background (CombiOperatorView) -->
+      <template v-if="isCombinedType">
+        <v-rect
+          v-for="(zone, zIdx) in legacyCombiZones"
+          :key="`zone-${zIdx}`"
+          :config="{
+            x: zone.x,
+            y: zone.y,
+            width: zone.width,
+            height: zone.height,
+            fill: zIdx === 1 ? LEGACY_COLORS.combiZoneFill : LEGACY_COLORS.fill,
+            listening: false,
+          }"
+        />
+      </template>
+
+      <!-- Operator box (TransSimpleView inner rect) -->
       <v-rect :config="rectConfig" />
 
-      <!-- Chevron glyphs (monochrome, legacy WoPeD); AND/XOR differ by arrow direction -->
+      <!-- Chevron glyphs (PetriNetElementView.drawOperatorArrow2) -->
       <template v-for="(glyph, index) in aalstGlyphs" :key="`glyph-${index}`">
         <v-line
           :config="{
             points: glyph.polygon,
             closed: true,
             stroke: inkColor,
-            strokeWidth: 1.5,
+            strokeWidth: LEGACY_BORDER,
             fill: inkFill,
             lineJoin: 'round',
           }"
@@ -299,7 +326,7 @@ const handleDragEnd = (e) => {
           :config="{
             points: glyph.line,
             stroke: inkColor,
-            strokeWidth: 1.5,
+            strokeWidth: LEGACY_BORDER,
           }"
         />
       </template>

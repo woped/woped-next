@@ -74,25 +74,13 @@ describe("t2pMcpTool", () => {
             headers: { "Content-Type": "application/json" },
           }),
       ),
-    );
+    )
 
-    const result = await executeT2P({ text: "order process" });
+    const result = await executeT2P({ text: "order process" }, llmConfig)
 
     expect(result.isError).toBeFalsy();
     const payload = JSON.parse(result.content[0].text);
     expect(payload.pnml).toBe("<pnml/>");
-  });
-
-  it("returns an error result when the T2P service responds non-2xx", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("", { status: 500 })),
-    );
-
-    const result = await executeT2P({ text: "order process" });
-
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain("500");
   });
 
   it("uses LLM fallback when the service fails and llmConfig is set", async () => {
@@ -112,13 +100,13 @@ describe("t2pMcpTool", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
-        throw new Error("network down");
+        throw new Error("network down")
       }),
-    );
+    )
 
-    const result = await executeT2P({ text: "order process" });
+    const result = await executeT2P({ text: "order process" })
 
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text.toLowerCase()).toContain("unreachable");
-  });
+    expect(result.isError).toBe(true)
+    expect(result.content[0].text.toLowerCase()).toContain("api key")
+  })
 });

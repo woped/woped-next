@@ -7,8 +7,6 @@ export async function llmFallbackT2P(
   text: string,
   language: string,
 ): Promise<string> {
-  chatLogger.warn('T2P service unavailable — using LLM fallback')
-
   const client = new LLMClient({ ...config, temperature: 0.3 })
   const response = await client.chatCompletion([
     {

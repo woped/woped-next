@@ -3,7 +3,13 @@ import type { ChatMessage } from './llmClient'
 import { createNlpMcpServer } from './mcp/createNlpMcpServer'
 import { modelSerializer } from './modelSerializer'
 import { chatLogger } from './chatLogger'
-import type { LLMConfig, OrchestratorResponse, ModelCommand, ToolCall } from '@/types/chat'
+import type {
+  ChatSendCallbacks,
+  LLMConfig,
+  OrchestratorResponse,
+  ModelCommand,
+  ToolCall,
+} from '@/types/chat'
 import type { ServicesConfig } from '@/types/config'
 
 const SYSTEM_PROMPT = `You are a helpful Petri net modeling assistant in WoPeD (Workflow Petri Net Designer). You help users with:
@@ -41,6 +47,7 @@ export class ChatOrchestrator {
   async sendMessage(
     userMessage: string,
     history: Array<{ role: string; content: string }>,
+    callbacks?: ChatSendCallbacks,
   ): Promise<OrchestratorResponse> {
     const modelContext = modelSerializer.getModelContext()
     const modelPnml = modelSerializer.getModelPnml()
@@ -90,6 +97,7 @@ export class ChatOrchestrator {
 
         for (const toolCall of toolCalls) {
           const executableToolCall = this.withModelContext(toolCall, modelPnml)
+          callbacks?.onToolStart?.(executableToolCall.name)
           chatLogger.toolCall(executableToolCall.name, executableToolCall.arguments)
           const { result, commands } = await this.client.executeMcpToolCall(executableToolCall)
           chatLogger.toolResult(toolCall.name, result.content.substring(0, 120))

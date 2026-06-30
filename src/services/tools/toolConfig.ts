@@ -29,6 +29,25 @@ export function withPort(url: string, port?: number | null): string {
 }
 
 /**
+ * Map legacy T2P 1.x endpoints to the T2P 2.0 v2 API path.
+ */
+export function normalizeT2pEndpoint(url: string): string {
+  const trimmed = (url ?? '').trim()
+  if (!trimmed) return trimmed
+
+  try {
+    const parsed = new URL(trimmed)
+    if (!parsed.pathname.endsWith('/generate_pnml')) {
+      return trimmed
+    }
+    parsed.pathname = parsed.pathname.replace(/\/generate_pnml$/, '/v2/generate/pnml')
+    return parsed.toString()
+  } catch {
+    return trimmed
+  }
+}
+
+/**
  * Resolve the effective T2P/P2T endpoints.
  *
  * When a services config is provided, the user-defined URLs, optional port
@@ -43,10 +62,17 @@ export function getToolEndpoints(servicesConfig?: ServicesConfig): { p2t?: strin
         ? withPort(servicesConfig.p2tEndpoint.trim(), servicesConfig.p2tPort)
         : '',
       t2p: servicesConfig.t2pEnabled
-        ? withPort(servicesConfig.t2pEndpoint.trim(), servicesConfig.t2pPort)
+        ? normalizeT2pEndpoint(
+            withPort(servicesConfig.t2pEndpoint.trim(), servicesConfig.t2pPort),
+          )
         : '',
     }
   }
 
-  return DEFAULT_TOOL_ENDPOINTS
+  return {
+    p2t: DEFAULT_TOOL_ENDPOINTS.p2t,
+    t2p: DEFAULT_TOOL_ENDPOINTS.t2p
+      ? normalizeT2pEndpoint(DEFAULT_TOOL_ENDPOINTS.t2p)
+      : undefined,
+  }
 }

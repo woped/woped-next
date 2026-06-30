@@ -67,6 +67,14 @@ export interface LanguageConfig {
 }
 
 /**
+ * T2P prompting strategies supported by the WoPeD t2p-llm-api-connector.
+ * @see https://github.com/woped/t2p-llm-api-connector — `zero_shot` | `few_shot`
+ */
+export type T2PPromptingStrategy = 'zero_shot' | 'few_shot'
+
+export const T2P_PROMPTING_STRATEGIES: T2PPromptingStrategy[] = ['zero_shot', 'few_shot']
+
+/**
  * External conversion service settings (T2P / P2T).
  * When a service is disabled, the chat tools fall back to the LLM (if an API
  * key is configured) instead of calling the HTTP endpoint.
@@ -76,6 +84,8 @@ export interface ServicesConfig {
   t2pEnabled: boolean
   /** Optional port override applied to the T2P endpoint URL (null = use URL's port). */
   t2pPort?: number | null
+  /** Prompting strategy forwarded to the T2P v2 API (default: zero_shot). */
+  t2pPromptingStrategy: T2PPromptingStrategy
   p2tEndpoint: string
   p2tEnabled: boolean
   /** Optional port override applied to the P2T endpoint URL (null = use URL's port). */
@@ -109,7 +119,8 @@ export interface AppConfig {
  * Public WoPeD conversion endpoints, used as defaults when no build-time
  * environment override (VITE_T2P_ENDPOINT / VITE_P2T_ENDPOINT) is provided.
  */
-export const DEFAULT_T2P_ENDPOINT = 'https://woped.dhbw-karlsruhe.de/t2p-2.0/generate_pnml'
+export const DEFAULT_T2P_ENDPOINT =
+  'https://woped.dhbw-karlsruhe.de/t2p-2.0/v2/generate/pnml'
 export const DEFAULT_P2T_ENDPOINT = 'https://woped.dhbw-karlsruhe.de/p2t/generateText'
 
 /**
@@ -153,6 +164,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     t2pEndpoint: import.meta.env.VITE_T2P_ENDPOINT || DEFAULT_T2P_ENDPOINT,
     t2pEnabled: false,
     t2pPort: null,
+    t2pPromptingStrategy: 'zero_shot',
     p2tEndpoint: import.meta.env.VITE_P2T_ENDPOINT || DEFAULT_P2T_ENDPOINT,
     p2tEnabled: false,
     p2tPort: null,

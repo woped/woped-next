@@ -4,6 +4,11 @@ import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
 import { VISUAL, getTransitionSize } from '@/types/petri-net'
 import { TRIGGER_COLORS } from '@/types/triggers'
+import {
+  LEGACY_BORDER,
+  getLegacyElementColors,
+  getLegacyInnerBoxRect,
+} from '@/utils/canvasLegacy'
 
 const props = defineProps({
   transition: {
@@ -38,8 +43,17 @@ const { operatorNotation } = storeToRefs(configStore)
 // Square in van der Aalst notation, wider rectangle in modern notation.
 const dims = computed(() => getTransitionSize(operatorNotation.value))
 
+const isLegacyCanvas = computed(() => operatorNotation.value === 'vanDerAalst')
+
 const colors = computed(() => {
   const dark = configStore.isDarkMode
+  if (isLegacyCanvas.value) {
+    return getLegacyElementColors({
+      active: props.isEnabled && props.isTokenGameActive,
+      selected: props.isSelected,
+      isDark: dark,
+    })
+  }
   return {
     fill: dark ? '#1f2937' : '#ffffff',
     stroke: dark ? '#9ca3af' : '#374151',
@@ -51,27 +65,49 @@ const colors = computed(() => {
 })
 
 const strokeColor = computed(() => {
+  if (isLegacyCanvas.value) return colors.value.stroke
   if (props.isSelected) return colors.value.selectedStroke
   if (props.isEnabled && props.isTokenGameActive) return colors.value.enabledStroke
   return colors.value.stroke
 })
 
 const fillColor = computed(() => {
+  if (isLegacyCanvas.value) return colors.value.fill
   if (props.isEnabled && props.isTokenGameActive) return colors.value.enabledFill
   return colors.value.fill
 })
 
-const rectConfig = computed(() => ({
-  id: props.transition.id,
-  name: props.transition.id,
-  x: props.transition.position.x - dims.value.width / 2,
-  y: props.transition.position.y - dims.value.height / 2,
-  width: dims.value.width,
-  height: dims.value.height,
-  fill: fillColor.value,
-  stroke: strokeColor.value,
-  strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
-}))
+const rectConfig = computed(() => {
+  const cx = props.transition.position.x
+  const cy = props.transition.position.y
+
+  if (isLegacyCanvas.value) {
+    const box = getLegacyInnerBoxRect(cx, cy)
+    return {
+      id: props.transition.id,
+      name: props.transition.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      fill: fillColor.value,
+      stroke: strokeColor.value,
+      strokeWidth: LEGACY_BORDER,
+    }
+  }
+
+  return {
+    id: props.transition.id,
+    name: props.transition.id,
+    x: cx - dims.value.width / 2,
+    y: cy - dims.value.height / 2,
+    width: dims.value.width,
+    height: dims.value.height,
+    fill: fillColor.value,
+    stroke: strokeColor.value,
+    strokeWidth: props.isSelected ? 3 : (props.isEnabled && props.isTokenGameActive ? 2.5 : strokeWidth),
+  }
+})
 
 const groupConfig = computed(() => ({
   id: props.transition.id,
@@ -83,11 +119,15 @@ const groupConfig = computed(() => ({
 
 const labelConfig = computed(() => ({
   x: props.transition.position.x,
-  y: props.transition.position.y + dims.value.height / 2 + 15,
+  y: props.transition.position.y + (isLegacyCanvas.value ? 20 : dims.value.height / 2) + 15,
   text: props.transition.name,
   fontSize: 12,
   fontFamily: 'system-ui, sans-serif',
-  fill: colors.value.labelFill,
+  fill: isLegacyCanvas.value
+    ? configStore.isDarkMode
+      ? '#e5e7eb'
+      : '#374151'
+    : colors.value.labelFill,
   align: 'center',
   offsetX: props.transition.name.length * 3,
 }))

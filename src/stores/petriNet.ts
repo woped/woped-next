@@ -1066,6 +1066,61 @@ export const usePetriNetStore = defineStore('petriNet', {
     },
 
     /**
+     * Populate the active net with the default sample diagram (AND split/join).
+     */
+    buildDefaultSampleNet() {
+      const start = this.addPlace({ x: 100, y: 250 }, 'Start')
+      this.updatePlace(start.id, { tokens: 1 })
+
+      const andSplit = this.addOperator({ x: 250, y: 250 }, OperatorType.AND_SPLIT, 'Split')
+
+      const p1 = this.addPlace({ x: 400, y: 150 }, 'P1')
+      const p2 = this.addPlace({ x: 400, y: 350 }, 'P2')
+
+      const t1 = this.addTransition({ x: 550, y: 150 }, 'Task A')
+      const t2 = this.addTransition({ x: 550, y: 350 }, 'Task B')
+
+      const p3 = this.addPlace({ x: 700, y: 150 }, 'P3')
+      const p4 = this.addPlace({ x: 700, y: 350 }, 'P4')
+
+      const andJoin = this.addOperator({ x: 850, y: 250 }, OperatorType.AND_JOIN, 'Join')
+      const end = this.addPlace({ x: 1000, y: 250 }, 'End')
+
+      this.addArc(start.id, andSplit.id)
+      this.addArc(andSplit.id, p1.id)
+      this.addArc(andSplit.id, p2.id)
+      this.addArc(p1.id, t1.id)
+      this.addArc(p2.id, t2.id)
+      this.addArc(t1.id, p3.id)
+      this.addArc(t2.id, p4.id)
+      this.addArc(p3.id, andJoin.id)
+      this.addArc(p4.id, andJoin.id)
+      this.addArc(andJoin.id, end.id)
+
+      this.saveToHistory()
+    },
+
+    /**
+     * Clear persisted net state and restore the default sample diagram.
+     */
+    resetToDefaultSample() {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout)
+        saveTimeout = null
+      }
+      try {
+        localStorage.removeItem(PETRI_NET_STORAGE_KEY)
+      } catch (e) {
+        console.warn('Failed to clear saved Petri net state:', e)
+      }
+
+      this.newNet()
+      this.buildDefaultSampleNet()
+      this.hydratedFromStorage = false
+      this.fitToViewRequest++
+    },
+
+    /**
      * Load a net from data (supports legacy single-net and new multi-net format)
      */
     loadNet(net: PetriNet) {

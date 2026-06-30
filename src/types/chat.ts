@@ -5,7 +5,13 @@ export interface ChatMessage {
   timestamp: string
   commands?: ModelCommand[]
   isLoading?: boolean
+  /** i18n key shown below the loading indicator while waiting */
+  loadingHintKey?: string
   error?: string
+}
+
+export interface ChatSendCallbacks {
+  onToolStart?: (toolName: string) => void
 }
 
 export type ModelCommandType =

@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   message: { type: Object, required: true },
@@ -21,9 +24,14 @@ const timeFormatted = computed(() => {
     </div>
     <div class="message-body">
       <div v-if="message.isLoading" class="message-loading">
-        <span class="loading-dot"></span>
-        <span class="loading-dot"></span>
-        <span class="loading-dot"></span>
+        <div class="loading-indicator">
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+        </div>
+        <p v-if="message.loadingHintKey" class="loading-hint">
+          {{ t(message.loadingHintKey) }}
+        </p>
       </div>
       <div v-else-if="message.error" class="message-error">
         <span class="error-icon">⚠️</span>
@@ -113,9 +121,23 @@ const timeFormatted = computed(() => {
   border-radius: 12px;
   background: var(--color-bg-tertiary);
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom-left-radius: 4px;
+}
+
+.loading-indicator {
+  display: flex;
   gap: 4px;
   align-items: center;
-  border-bottom-left-radius: 4px;
+}
+
+.loading-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  max-width: 220px;
 }
 
 .loading-dot {
