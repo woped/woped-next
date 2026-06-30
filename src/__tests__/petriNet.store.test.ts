@@ -178,4 +178,33 @@ describe('PetriNet Store', () => {
       expect(store.selectedIds).toHaveLength(0)
     })
   })
+
+  describe('Quick connect', () => {
+    it('auto-places the successor to the right of the source', () => {
+      const store = usePetriNetStore()
+      const place = store.addPlace({ x: 100, y: 200 }, 'P1')
+
+      const newId = store.quickConnectAdd(place.id, 'transition')
+
+      expect(newId).toBeTruthy()
+      const transition = store.net.transitions.find((t) => t.id === newId)
+      expect(transition).toBeDefined()
+      expect(transition!.position.x).toBeGreaterThan(place.position.x)
+      // An arc connects source and the new element
+      expect(store.net.arcs.some((a) => a.sourceId === place.id && a.targetId === newId)).toBe(true)
+    })
+
+    it('honors an explicit drop position from drag-and-drop', () => {
+      const store = usePetriNetStore()
+      const place = store.addPlace({ x: 100, y: 200 }, 'P1')
+
+      const newId = store.quickConnectAdd(place.id, 'transition', undefined, { x: 640, y: 480 })
+
+      expect(newId).toBeTruthy()
+      const transition = store.net.transitions.find((t) => t.id === newId)
+      expect(transition).toBeDefined()
+      expect(transition!.position).toEqual({ x: 640, y: 480 })
+      expect(store.net.arcs.some((a) => a.sourceId === place.id && a.targetId === newId)).toBe(true)
+    })
+  })
 })

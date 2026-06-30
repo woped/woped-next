@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { usePetriNetStore } from '@/stores/petriNet'
@@ -27,7 +27,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['connect'])
+const emit = defineEmits(['connect', 'drag-start', 'drag-move', 'drag-end', 'drag-cancel'])
 
 const { t } = useI18n()
 const store = usePetriNetStore()
@@ -35,6 +35,12 @@ const configStore = useConfigStore()
 const { operatorNotation } = storeToRefs(configStore)
 
 const showOperatorSubmenu = ref(false)
+
+// Drag-and-drop: pressing a suggestion and dragging lets the user drop the new
+// element anywhere on the canvas instead of using its auto-placed position.
+const DRAG_THRESHOLD = 5
+const suppressClick = ref(false)
+let dragData = null
 
 const isVanDerAalst = computed(() => operatorNotation.value === 'vanDerAalst')
 const options = computed(() => getQuickConnectOptions(props.elementType))
@@ -51,6 +57,7 @@ const operatorTypes = computed(() => [
 ])
 
 function handleConnect(target) {
+  if (suppressClick.value) return
   if (target === 'operator') {
     showOperatorSubmenu.value = !showOperatorSubmenu.value
     return
@@ -61,10 +68,88 @@ function handleConnect(target) {
 }
 
 function handleOperatorConnect(type) {
+  if (suppressClick.value) return
   showOperatorSubmenu.value = false
   const newId = store.quickConnectAdd(props.elementId, 'operator', type)
   if (newId) emit('connect', newId)
 }
+
+function iconFor(target, operatorType) {
+  if (operatorType !== undefined) {
+    const op = operatorTypes.value.find((o) => o.type === operatorType)
+    return op ? op.icon : '◇'
+  }
+  const opt = options.value.find((o) => o.target === target)
+  return opt ? opt.icon : ''
+}
+
+function onItemMouseDown(e, target, operatorType) {
+  // Only the primary button starts a drag; the operator parent button (no type)
+  // only toggles its submenu, so it is not draggable.
+  if (e.button !== 0) return
+  if (target === 'operator' && operatorType === undefined) return
+
+  e.preventDefault()
+  dragData = { startX: e.clientX, startY: e.clientY, target, operatorType, started: false }
+  window.addEventListener('mousemove', onDragMove)
+  window.addEventListener('mouseup', onDragUp)
+  window.addEventListener('keydown', onDragKey)
+}
+
+function onDragMove(e) {
+  if (!dragData) return
+
+  if (!dragData.started) {
+    const dx = Math.abs(e.clientX - dragData.startX)
+    const dy = Math.abs(e.clientY - dragData.startY)
+    if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return
+
+    dragData.started = true
+    suppressClick.value = true
+    showOperatorSubmenu.value = false
+    emit('drag-start', {
+      target: dragData.target,
+      operatorType: dragData.operatorType,
+      icon: iconFor(dragData.target, dragData.operatorType),
+    })
+  }
+
+  emit('drag-move', { clientX: e.clientX, clientY: e.clientY })
+}
+
+function onDragUp(e) {
+  removeDragListeners()
+  const wasDragging = dragData?.started
+  dragData = null
+
+  if (wasDragging) {
+    emit('drag-end', { clientX: e.clientX, clientY: e.clientY })
+    // The trailing click (fired right after mouseup) must be ignored so we
+    // don't also create an auto-placed element. Reset after that click.
+    setTimeout(() => {
+      suppressClick.value = false
+    }, 0)
+  }
+}
+
+function onDragKey(e) {
+  if (e.key === 'Escape') cancelDrag()
+}
+
+function cancelDrag() {
+  removeDragListeners()
+  if (dragData?.started) emit('drag-cancel')
+  dragData = null
+  suppressClick.value = false
+}
+
+function removeDragListeners() {
+  window.removeEventListener('mousemove', onDragMove)
+  window.removeEventListener('mouseup', onDragUp)
+  window.removeEventListener('keydown', onDragKey)
+}
+
+onUnmounted(removeDragListeners)
 </script>
 
 <template>
@@ -82,9 +167,10 @@ function handleOperatorConnect(type) {
     >
       <button
         :class="['qc-btn', { active: opt.target === 'operator' && showOperatorSubmenu }]"
-        :title="t(opt.labelKey)"
+        :title="opt.target === 'operator' ? t(opt.labelKey) : `${t(opt.labelKey)} — ${t('quickConnect.dragHint')}`"
         :aria-label="t(opt.labelKey)"
         :aria-expanded="opt.target === 'operator' ? showOperatorSubmenu : undefined"
+        @mousedown="onItemMouseDown($event, opt.target)"
         @click="handleConnect(opt.target)"
       >
         <span class="qc-icon">{{ opt.icon }}</span>
@@ -101,6 +187,8 @@ function handleOperatorConnect(type) {
           :key="op.type"
           class="qc-submenu-item"
           role="menuitem"
+          :title="`${op.label} — ${t('quickConnect.dragHint')}`"
+          @mousedown="onItemMouseDown($event, 'operator', op.type)"
           @click="handleOperatorConnect(op.type)"
         >
           <span class="qc-submenu-icon">

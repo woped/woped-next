@@ -542,6 +542,7 @@ export const usePetriNetStore = defineStore('petriNet', {
       sourceId: string,
       targetKind: QuickConnectTarget,
       operatorType?: OperatorType,
+      dropPosition?: Position,
     ): string | null {
       const net = this.nets[this.activeNetId]
       const getType = this.getElementType
@@ -552,13 +553,17 @@ export const usePetriNetStore = defineStore('petriNet', {
       const sourceEl = this.getElementById(sourceId)
       if (!sourceEl || !('position' in sourceEl)) return null
 
+      // When dropped via drag-and-drop, honor the explicit position; otherwise
+      // auto-place the successor to the right of the source.
       const outgoingCount = net.arcs.filter((a) => a.sourceId === sourceId).length
-      let position = computeQuickConnectPosition(
-        sourceEl.position,
-        sourceType,
-        targetKind,
-        outgoingCount,
-      )
+      let position = dropPosition
+        ? { x: dropPosition.x, y: dropPosition.y }
+        : computeQuickConnectPosition(
+            sourceEl.position,
+            sourceType,
+            targetKind,
+            outgoingCount,
+          )
 
       const configStore = useConfigStore()
       if (configStore.$state.editor.snapToGrid) {

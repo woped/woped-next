@@ -82,6 +82,62 @@ const quickConnectScreenPos = computed(() => {
   return quickConnectPadScreenPosition(position, type, viewport.value)
 })
 
+// Quick connect drag-and-drop: a suggestion can be dragged from the pad and
+// dropped anywhere on the canvas. While dragging we render a ghost following
+// the cursor; on drop the new element is created at that world position.
+const quickConnectDrag = ref(null)
+
+function handleQuickConnectDragStart(payload) {
+  quickConnectDrag.value = {
+    target: payload.target,
+    operatorType: payload.operatorType,
+    icon: payload.icon,
+    screenX: 0,
+    screenY: 0,
+  }
+}
+
+function handleQuickConnectDragMove(payload) {
+  if (!quickConnectDrag.value || !containerRef.value) return
+  const rect = containerRef.value.getBoundingClientRect()
+  quickConnectDrag.value = {
+    ...quickConnectDrag.value,
+    screenX: payload.clientX - rect.left,
+    screenY: payload.clientY - rect.top,
+  }
+}
+
+function handleQuickConnectDragEnd(payload) {
+  const drag = quickConnectDrag.value
+  quickConnectDrag.value = null
+  if (!drag) return
+
+  const sourceId = quickConnectElementId.value
+  if (!sourceId) return
+
+  const stage = stageRef.value?.getStage()
+  if (!stage) return
+
+  const rect = stage.container().getBoundingClientRect()
+  const px = payload.clientX - rect.left
+  const py = payload.clientY - rect.top
+
+  // Ignore drops outside the visible canvas.
+  if (px < 0 || py < 0 || px > rect.width || py > rect.height) return
+
+  const worldPos = {
+    x: (px - viewport.value.x) / viewport.value.scale,
+    y: (py - viewport.value.y) / viewport.value.scale,
+  }
+
+  const newId = store.quickConnectAdd(sourceId, drag.target, drag.operatorType, worldPos)
+  if (newId) store.select(newId, false)
+}
+
+function handleQuickConnectDragCancel() {
+  quickConnectDrag.value = null
+}
+
 // Canvas container ref
 const containerRef = ref(null)
 const stageRef = ref(null)
@@ -688,7 +744,19 @@ defineExpose({
       :element-type="quickConnectTarget.type"
       :screen-x="quickConnectScreenPos.x"
       :screen-y="quickConnectScreenPos.y"
+      @drag-start="handleQuickConnectDragStart"
+      @drag-move="handleQuickConnectDragMove"
+      @drag-end="handleQuickConnectDragEnd"
+      @drag-cancel="handleQuickConnectDragCancel"
     />
+
+    <div
+      v-if="quickConnectDrag"
+      class="qc-drag-ghost"
+      :style="{ left: `${quickConnectDrag.screenX}px`, top: `${quickConnectDrag.screenY}px` }"
+    >
+      <span class="qc-drag-ghost-icon">{{ quickConnectDrag.icon }}</span>
+    </div>
 
     <v-stage
       ref="stageRef"
@@ -809,5 +877,28 @@ defineExpose({
   border: 1px solid var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   pointer-events: none;
+}
+
+.qc-drag-ghost {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-primary);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-secondary));
+  color: var(--color-primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.qc-drag-ghost-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 </style>

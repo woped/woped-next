@@ -52,6 +52,7 @@ export default {
     transition: 'Transition hinzufügen',
     operator: 'Operator hinzufügen',
     subprocess: 'Subprozess hinzufügen',
+    dragHint: 'Ziehen, um frei zu platzieren',
   },
 
   // Templates (Vorlagen)

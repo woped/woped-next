@@ -52,6 +52,7 @@ export default {
     transition: 'Add transition',
     operator: 'Add operator',
     subprocess: 'Add subprocess',
+    dragHint: 'Drag to place freely',
   },
 
   // Templates
